@@ -1,0 +1,29 @@
+{
+  "strategy": "rsiqui-v3-final",
+  "preset": "gold-loose",
+  "side": "both",
+  "timeframe": "5m",
+  "dataset_id": "022eea2471fd39b7",
+  "feature_set_id": "698a2dda21e251f7",
+  "initial_equity": 1500,
+  "volume": 0.03,
+  "price_value_per_lot": 100,
+  "risk_usd": 24,
+  "reward_usd": 9,
+  "equity_risk_cap_pct": null,
+  "synthetic_spread": 0,
+  "max_spread": 0.2,
+  "spread_multiplier": 1,
+  "slippage_per_side": 0.5,
+  "commission_per_trade_usd": 0,
+  "blocked_entry_hours_gmt7": [
+    5,
+    6,
+    7,
+    20,
+    21
+  ],
+  "telegram_enabled": false,
+  "status_log_interval_seconds": 300,
+  "weekend_symbol": "XAUUSD.24-7"
+}

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local Hermes working notes
+.hermes/
+
+# Generated/backtest/runtime artifacts
+outputs/
+backtest_report_manifest.js
+*.log
+
+# Raw market exports / local datasets
+data/raw/
+
+# Secrets / local env
+.env
+.env.*
+*.key
+*.pem

@@ -1,0 +1,10 @@
+{
+  "targets": [
+    {
+      "key": "portfolio_managers",
+      "label": "Portfolio Managers",
+      "chat_id": "-5043082181",
+      "message_thread_id": null
+    }
+  ]
+}
