@@ -285,8 +285,22 @@
     }
     .twocol {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
       gap: 14px;
+    }
+    .twocol > div { min-width: 0; }
+    .month-bar {
+      border-radius: 10px;
+      transition: background .15s ease, box-shadow .15s ease, outline-color .15s ease;
+    }
+    .month-bar:hover,
+    .month-bar.active {
+      background: rgba(135, 231, 165, .12) !important;
+      outline: 2px solid #ffd27a;
+      outline-offset: 3px;
+    }
+    .monthly-chart-shell {
+      min-height: 300px;
     }
     .table-panel { padding: 18px; overflow: hidden; }
     table {
@@ -886,24 +900,28 @@
         return;
       }
 
+      state.selectedMonth = state.selectedMonth || state.monthly[state.monthly.length - 1]?.month;
       const maxAbs = Math.max(...state.monthly.map(m => Math.abs(m.pnl))) || 1;
       const bars = state.monthly.map((item, idx) => {
-        const h = Math.max(8, (Math.abs(item.pnl) / maxAbs) * 180);
+        const h = Math.max(8, (Math.abs(item.pnl) / maxAbs) * 260);
         const color = item.pnl >= 0 ? '#87e7a5' : '#ff9b9b';
-        return `<button type="button" data-month="${esc(item.month)}" class="month-bar" style="appearance:none;border:none;background:transparent;cursor:pointer;padding:0;display:grid;gap:8px;justify-items:center;align-content:end;min-height:220px;">
-          <div style="width:100%;display:grid;align-items:end;justify-items:center;min-height:190px;">
-            <div style="width:100%;max-width:46px;height:${h}px;background:${color};border-radius:10px 10px 4px 4px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);"></div>
+        const active = item.month === state.selectedMonth ? ' active' : '';
+        return `<button type="button" data-month="${esc(item.month)}" class="month-bar${active}" style="appearance:none;border:none;background:transparent;cursor:pointer;padding:0;display:grid;gap:8px;justify-items:center;align-content:end;min-height:300px;">
+          <div style="width:100%;display:grid;align-items:end;justify-items:center;min-height:270px;">
+            <div style="width:100%;max-width:30px;height:${h}px;background:${color};border-radius:8px 8px 3px 3px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);"></div>
           </div>
           <div style="font-size:12px;color:#9db0a4;font-weight:700;">${esc(item.month)}</div>
         </button>`;
       }).join('');
 
       $('monthlyChartWrap').className = '';
-      $('monthlyChartWrap').innerHTML = `<div class="chart-shell"><div style="display:grid;grid-template-columns:repeat(${state.monthly.length}, minmax(54px, 1fr));gap:12px;align-items:end;">${bars}</div></div><div class="hint" style="margin-top:10px;">Click một tháng để xem chi tiết.</div>`;
+      const monthlyMinWidth = Math.max(0, state.monthly.length * 66);
+      $('monthlyChartWrap').innerHTML = `<div class="chart-shell monthly-chart-shell"><div style="min-width:${monthlyMinWidth}px;display:grid;grid-template-columns:repeat(${state.monthly.length}, minmax(54px, 1fr));gap:12px;align-items:end;">${bars}</div></div><div class="hint" style="margin-top:10px;">Click một tháng để xem chi tiết.</div>`;
 
       document.querySelectorAll('.month-bar').forEach((btn) => btn.addEventListener('click', () => {
         state.selectedMonth = btn.dataset.month;
         state.selectedDay = null;
+        document.querySelectorAll('.month-bar').forEach((monthBtn) => monthBtn.classList.toggle('active', monthBtn === btn));
         renderSelectedMonth();
         renderDailyLedger();
       }));
@@ -931,7 +949,6 @@
       $('tradeSampleWrap').className = '';
       $('tradeSampleWrap').innerHTML = `<div style="overflow:auto;"><table><thead><tr><th>Side</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Bars</th></tr></thead><tbody>${sampleRows}</tbody></table></div>`;
 
-      state.selectedMonth = state.selectedMonth || state.monthly[state.monthly.length - 1]?.month;
       renderSelectedMonth();
     }
 
@@ -943,12 +960,13 @@
       }
       renderTable($('monthDetailTable'), [
         ['Month', esc(month.month)],
-        ['Trades', fmtInt(month.trades)],
-        ['Wins / Losses', `${fmtInt(month.wins)} / ${fmtInt(month.losses)}`],
+        ['Trades (Win / Losses)', `${fmtInt(month.trades)} (${fmtInt(month.wins)} / ${fmtInt(month.losses)})`],
         ['Win rate', fmtPct(month.winRate)],
         ['Net P&L', fmtMoney(month.pnl)],
         ['Profit factor', Number.isFinite(month.profitFactor) ? fmtNum(month.profitFactor, 3) : '∞'],
         ['Average bars held', fmtNum(month.avgBars, 2)],
+        ['DD', `${fmtMoney(month.drawdownUsd)} / ${fmtPct(month.drawdownPct)}`],
+        ['Max DD', `${fmtMoney(month.maxDailyDrawdownUsd)}${month.worstDay ? ` (${esc(month.worstDay)})` : ''} / ${fmtPct(month.maxDailyDrawdownPct)}`],
         ['End equity', fmtMoney(month.endEquity)],
       ]);
     }

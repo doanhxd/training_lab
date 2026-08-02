@@ -119,6 +119,45 @@ def compute_daily_drawdown_stats(trades: pd.DataFrame, initial_equity: float) ->
     }
 
 
+def attach_monthly_drawdown(monthly: list[dict], daily_rows: list[dict]) -> list[dict]:
+    """Add month-level DD plus worst daily-DD context to each monthly row."""
+    by_month: dict[str, list[dict]] = {}
+    for row in daily_rows:
+        month = str(row.get("day", ""))[:7]
+        if month:
+            by_month.setdefault(month, []).append(row)
+
+    for month in monthly:
+        days = by_month.get(month["month"], [])
+        if not days:
+            month.update(
+                {
+                    "drawdownUsd": 0.0,
+                    "drawdownPct": 0.0,
+                    "maxDailyDrawdownUsd": 0.0,
+                    "maxDailyDrawdownPct": 0.0,
+                    "worstDay": None,
+                }
+            )
+            continue
+
+        start_equity = float(days[0]["start_equity"])
+        min_intraday_equity = min(float(day["min_intraday_equity"]) for day in days)
+        drawdown_usd = max(0.0, start_equity - min_intraday_equity)
+        drawdown_pct = drawdown_usd / start_equity if start_equity > 0 else 0.0
+        worst = max(days, key=lambda day: float(day.get("daily_drawdown", 0.0)))
+        month.update(
+            {
+                "drawdownUsd": drawdown_usd,
+                "drawdownPct": drawdown_pct,
+                "maxDailyDrawdownUsd": float(worst.get("daily_drawdown_usd", 0.0)),
+                "maxDailyDrawdownPct": float(worst.get("daily_drawdown", 0.0)),
+                "worstDay": worst.get("day"),
+            }
+        )
+    return monthly
+
+
 def sample_equity(df: pd.DataFrame, max_points: int = 720) -> list[dict]:
     if df.empty or "equity" not in df.columns:
         return []
@@ -164,8 +203,11 @@ def main() -> None:
         trades_df = pd.read_csv(trades_path) if trades_path.exists() else pd.DataFrame()
         equity_df = pd.read_csv(equity_path) if equity_path.exists() else pd.DataFrame()
         initial_equity = float(report.get("backtest_config", {}).get("initial_equity", 0.0) or 0.0)
-        monthly = compute_monthly(trades_df, initial_equity)
         daily_drawdown = compute_daily_drawdown_stats(trades_df, initial_equity)
+        monthly = attach_monthly_drawdown(
+            compute_monthly(trades_df, initial_equity),
+            daily_drawdown.get("daily_rows", []),
+        )
         metrics = report.get("metrics_summary", {})
         created_ts = report_path.stat().st_mtime
         entries.append(

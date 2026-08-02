@@ -2,7 +2,8 @@
   "strategy": "rsiqui-v3-final",
   "preset": "gold-loose",
   "side": "both",
-  "timeframe": "5m",
+  "symbol": "XAUUSD",
+  "timeframe": "M5",
   "dataset_id": "022eea2471fd39b7",
   "feature_set_id": "698a2dda21e251f7",
   "initial_equity": 500,
@@ -17,6 +18,8 @@
   "slippage_per_side": 0.5,
   "commission_per_trade_usd": 0,
   "blocked_entry_hours_gmt7": [],
-  "telegram_enabled": true,
-  "status_log_interval_seconds": 300
+  "telegram_enabled": false,
+  "status_log_interval_seconds": 300,
+  "source_config_file": "configs/strategies/rsiqui/final_m5_demo.json",
+  "variant_note": "FINAL comparison run with GMT+7 entry blackout temporarily disabled"
 }

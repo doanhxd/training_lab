@@ -72,7 +72,7 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
 
 
 class DemoOnlyRsiquiMt5Runner:
-    """Closed-bar M15 RSIQUI V3 executor guarded for MT5 demo accounts only."""
+    """Closed-bar RSIQUI V3 FINAL executor for a logged-in MT5 account."""
 
     def __init__(self, config: Mt5DemoConfig, *, mt5: Any, notifier: TelegramNotifier | None = None) -> None:
         self.config = config
@@ -118,8 +118,8 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = f"MT5 initialize failed: {self.mt5.last_error()}"
             return False
         account = self.mt5.account_info()
-        if account is None or account.trade_mode != self.mt5.ACCOUNT_TRADE_MODE_DEMO:
-            self.last_status = "blocked: a DEMO MT5 account is required"
+        if account is None:
+            self.last_status = "blocked: MT5 account information unavailable"
             self.mt5.shutdown()
             return False
         self._account_equity = float(account.equity)
@@ -127,7 +127,7 @@ class DemoOnlyRsiquiMt5Runner:
         _, active_risk_usd, _ = self._money_contract_for_symbol(active_symbol)
         self._effective_risk_usd = self._effective_risk_for(active_risk_usd)
         if self._effective_risk_usd <= 0:
-            self.last_status = "blocked: non-positive demo equity/risk cap"
+            self.last_status = "blocked: non-positive account equity/risk cap"
             self.mt5.shutdown()
             return False
         for symbol in self._symbols_required_for_start():
@@ -140,7 +140,7 @@ class DemoOnlyRsiquiMt5Runner:
                 self.mt5.shutdown()
                 return False
         self._started = True
-        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} close-confirm RSIQUI V3 FINAL ({self.config.preset})"
+        self.last_status = f"ready: {self._active_symbol()} {self.config.timeframe} close-confirm RSIQUI V3 FINAL ({self.config.preset})"
         return True
 
     def stop(self) -> None:
@@ -417,7 +417,7 @@ class DemoOnlyRsiquiMt5Runner:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run RSIQUI V3 FINAL on a currently logged-in MT5 DEMO account only.")
+    parser = argparse.ArgumentParser(description="Run RSIQUI V3 FINAL on the currently logged-in MT5 account.")
     parser.add_argument("--config", default="final_m5_demo.json")
     parser.add_argument("--symbol", default="XAUUSD")
     parser.add_argument("--poll-seconds", type=float, default=1.0)
