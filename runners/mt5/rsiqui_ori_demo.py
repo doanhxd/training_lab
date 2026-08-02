@@ -26,7 +26,7 @@ class Mt5DemoConfig:
     risk_usd: float = 10.0
     reward_usd: float = 20.0
     max_spread_price: float = 1.2
-    poll_seconds: float = 5.0
+    poll_seconds: float = 1.0
     magic: int = 573503
     deviation_points: int = 20
     max_open_positions: int = 1
@@ -35,6 +35,7 @@ class Mt5DemoConfig:
     status_log_interval_seconds: float = 300.0
     preclose_check_min_seconds: int = 1
     preclose_check_max_seconds: int = 5
+    postclose_confirm_max_seconds: int = 5
 
 def load_demo_config(path: str | Path) -> Mt5DemoConfig:
     config_path = Path(path)
@@ -78,6 +79,8 @@ class DemoOnlyRsiquiMt5Runner:
         self._started = False
         self._last_submitted_bar: int | None = None
         self._last_evaluated_bar: int | None = None
+        self._last_confirmed_bar: int | None = None
+        self._pending_preclose_signal: tuple[int, str] | None = None
         self._effective_risk_usd = config.risk_usd
         self._last_status_log_at: float | None = None
 
@@ -117,7 +120,7 @@ class DemoOnlyRsiquiMt5Runner:
                 self.mt5.shutdown()
                 return False
         self._started = True
-        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} pre-close RSIQUI V3 ORI ({self.config.preset})"
+        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} close-confirm RSIQUI V3 ORI ({self.config.preset})"
         return True
 
     def stop(self) -> None:
@@ -138,7 +141,7 @@ class DemoOnlyRsiquiMt5Runner:
             blocked_entry_hours_gmt7=self.config.blocked_entry_hours_gmt7,
         )
 
-    def evaluate_preclose_bar(self, bar_time: int) -> tuple[str | None, int | None]:
+    def _evaluate_signal_bar(self, bar_time: int, *, active: bool) -> tuple[str | None, int | None]:
         symbol = self._active_symbol()
         timeframe = getattr(self.mt5, f"TIMEFRAME_{self.config.timeframe}")
         rates = self.mt5.copy_rates_from_pos(symbol, timeframe, 0, 200)
@@ -148,15 +151,25 @@ class DemoOnlyRsiquiMt5Runner:
         frame = pd.DataFrame(rates)
         frame = frame[frame["time"] <= bar_time]
         if frame.empty or int(frame.iloc[-1]["time"]) != bar_time:
-            self.last_status = f"blocked: active {self.config.timeframe} bar {bar_time} is unavailable"
+            kind = "active" if active else "closed"
+            self.last_status = f"blocked: {kind} {self.config.timeframe} bar {bar_time} is unavailable"
             return None, None
         frame["timestamp"] = pd.to_datetime(frame["time"], unit="s", utc=True)
         frame["spread"] = frame["spread"] * float(self.mt5.symbol_info(symbol).point)
         strategy_config = self._strategy_config()
         prepared = prepare_rsiqui_v3_frame(frame, strategy_config)
-        row = prepared.iloc[-1]  # Pre-close contract: evaluate the active bar once near close.
+        row = prepared.iloc[-1]
         side = evaluate_rsiqui_v3_signal(row, strategy_config)
         return side, int(row["time"])
+
+    def evaluate_preclose_bar(self, bar_time: int) -> tuple[str | None, int | None]:
+        # Preview only: never submit from the forming bar.
+        return self._evaluate_signal_bar(bar_time, active=True)
+
+    def evaluate_confirmed_close_bar(self, bar_time: int) -> tuple[str | None, int | None]:
+        # Entry confirmation: submit only after this bar has closed and the
+        # closed-bar signal matches the preview captured before close.
+        return self._evaluate_signal_bar(bar_time, active=False)
 
     def _seconds_per_bar(self) -> int:
         return {"M5": 5 * 60, "M15": 15 * 60}[self.config.timeframe]
@@ -174,6 +187,15 @@ class DemoOnlyRsiquiMt5Runner:
         remaining = self._seconds_until_bar_close(now_utc)
         return self.config.preclose_check_min_seconds <= remaining <= self.config.preclose_check_max_seconds
 
+    def _seconds_since_bar_open(self, now_utc: datetime) -> float:
+        return now_utc.timestamp() - self._bar_open_timestamp(now_utc)
+
+    def _is_postclose_confirm_window(self, now_utc: datetime) -> bool:
+        return 0 <= self._seconds_since_bar_open(now_utc) <= self.config.postclose_confirm_max_seconds
+
+    def _last_closed_bar_timestamp(self, now_utc: datetime) -> int:
+        return self._bar_open_timestamp(now_utc) - self._seconds_per_bar()
+
     def _current_tick_time(self) -> datetime:
         tick = self.mt5.symbol_info_tick(self._active_symbol())
         tick_time = getattr(tick, "time", None) if tick is not None else None
@@ -190,7 +212,12 @@ class DemoOnlyRsiquiMt5Runner:
             total += len(positions_get(symbol=symbol) or ())
         return total
 
-    def _waiting_open_position_status(self, open_positions: int) -> str:
+    def _open_positions_exist(self) -> bool:
+        return self._open_positions_count() >= self.config.max_open_positions
+
+    def _waiting_open_position_status(self, open_positions: int | None = None) -> str:
+        if open_positions is None:
+            open_positions = self._open_positions_count()
         return f"waiting: {open_positions} XAUUSD positions already open (cap {self.config.max_open_positions}); runner staying alive until capacity frees up"
 
     @staticmethod
@@ -256,7 +283,7 @@ class DemoOnlyRsiquiMt5Runner:
 
     def _entry_time_from_signal_bar(self, bar_time: int) -> datetime:
         seconds_per_bar = self._seconds_per_bar()
-        return datetime.fromtimestamp(bar_time + seconds_per_bar - 1, tz=UTC) + timedelta(hours=7)
+        return datetime.fromtimestamp(bar_time + seconds_per_bar, tz=UTC) + timedelta(hours=7)
 
     def _is_gmt7_entry_blackout(self, bar_time: int) -> bool:
         return self._entry_time_from_signal_bar(bar_time).hour in self.config.blocked_entry_hours_gmt7
@@ -265,32 +292,64 @@ class DemoOnlyRsiquiMt5Runner:
         if not self._started:
             self.last_status = "blocked: runner not started"
             return False
-        now_utc = self._current_tick_time() if now_utc is None else now_utc.astimezone(UTC)
-        if not self._is_preclose_entry_window(now_utc):
+        # Scheduling must follow the wall clock, not the broker tick timestamp.
+        # During quiet/stale ticks MT5 can keep symbol_info_tick().time frozen,
+        # which makes the runner appear stuck at the same seconds-since-open and
+        # can miss the M5 close-confirm windows entirely.
+        now_utc = datetime.now(tz=UTC) if now_utc is None else now_utc.astimezone(UTC)
+
+        if self._is_preclose_entry_window(now_utc):
+            bar_time = self._bar_open_timestamp(now_utc)
+            if bar_time == self._last_evaluated_bar:
+                self.last_status = "blocked: duplicate pre-close preview for this bar"
+                return False
+            self._last_evaluated_bar = bar_time
+            self._pending_preclose_signal = None
+            if self._open_positions_exist():
+                self.last_status = self._waiting_open_position_status()
+                return False
+            side, evaluated_bar = self.evaluate_preclose_bar(bar_time)
+            if side is None or evaluated_bar is None:
+                self.last_status = "no pre-close preview RSIQUI V3 ORI signal" if not self.last_status.startswith("blocked:") else self.last_status
+                return False
+            self._pending_preclose_signal = (evaluated_bar, side)
+            self.last_status = f"preview only: {side} {self.config.timeframe} bar {evaluated_bar}; waiting for candle close confirmation"
+            return False
+
+        if not self._is_postclose_confirm_window(now_utc):
             remaining = self._seconds_until_bar_close(now_utc)
-            self.last_status = f"waiting: outside {self.config.timeframe} pre-close entry window ({remaining}s to close)"
+            elapsed = self._seconds_since_bar_open(now_utc)
+            self.last_status = f"waiting: outside {self.config.timeframe} close-confirm windows ({elapsed:.1f}s since open, {remaining:.1f}s to close)"
             return False
-        bar_time = self._bar_open_timestamp(now_utc)
-        if bar_time == self._last_evaluated_bar:
-            self.last_status = "blocked: duplicate pre-close check for this bar"
+
+        closed_bar = self._last_closed_bar_timestamp(now_utc)
+        if closed_bar == self._last_confirmed_bar:
+            self.last_status = "blocked: duplicate close confirmation for this bar"
             return False
-        self._last_evaluated_bar = bar_time
-        open_positions = self._open_positions_count()
-        if open_positions > 0:
-            self.last_status = self._waiting_open_position_status(open_positions)
+        self._last_confirmed_bar = closed_bar
+        pending = self._pending_preclose_signal
+        if pending is None or pending[0] != closed_bar:
+            self.last_status = "blocked: no matching pre-close preview for the just-closed bar"
             return False
-        side, evaluated_bar = self.evaluate_preclose_bar(bar_time)
-        if side is None or evaluated_bar is None:
-            self.last_status = "no pre-close RSIQUI V3 ORI signal" if not self.last_status.startswith("blocked:") else self.last_status
+        if self._open_positions_exist():
+            self.last_status = self._waiting_open_position_status()
+            return False
+        close_side, evaluated_bar = self.evaluate_confirmed_close_bar(closed_bar)
+        if close_side is None or evaluated_bar is None:
+            self.last_status = "blocked: closed candle no longer has RSIQUI V3 signal" if not self.last_status.startswith("blocked:") else self.last_status
+            return False
+        preview_side = pending[1]
+        if evaluated_bar != closed_bar or close_side != preview_side:
+            self.last_status = f"blocked: pre-close preview {preview_side} does not match closed-candle signal {close_side}"
             return False
         if self._is_gmt7_entry_blackout(evaluated_bar):
             local_time = self._entry_time_from_signal_bar(evaluated_bar)
             self.last_status = f"blocked: GMT+7 blackout at {local_time:%H:%M}"
             return False
         if evaluated_bar == self._last_submitted_bar:
-            self.last_status = "blocked: duplicate pre-close setup"
+            self.last_status = "blocked: duplicate closed-candle setup"
             return False
-        request = self._build_request(side)
+        request = self._build_request(close_side)
         if request is None:
             return False
         result = self.mt5.order_send(request)
@@ -298,10 +357,11 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = f"order rejected: {None if result is None else result.retcode}"
             return False
         self._last_submitted_bar = evaluated_bar
-        self.last_status = f"order filled: {side} ticket {getattr(result, 'order', '?')} on {self.config.timeframe} pre-close bar {evaluated_bar}"
+        self._pending_preclose_signal = None
+        self.last_status = f"order filled: {close_side} ticket {getattr(result, 'order', '?')} after {self.config.timeframe} candle close {evaluated_bar}"
         message = format_filled_order_message(
             symbol=str(request.get("symbol", self.config.symbol)),
-            side=side,
+            side=close_side,
             request=request,
             ticket=getattr(result, "order", "?"),
             timeframe=self.config.timeframe,
@@ -319,16 +379,19 @@ class DemoOnlyRsiquiMt5Runner:
             return True
         return False
 
+    def _terminal_status_line(self) -> str:
+        return f"[{datetime.now():%H:%M:%S}] {self.last_status}"
+
     def run_forever(self) -> None:
         if not self.start():
-            print(self.last_status, flush=True)
+            print(self._terminal_status_line(), flush=True)
             return
-        print(self.last_status, flush=True)
+        print(self._terminal_status_line(), flush=True)
         try:
             while True:
                 self.poll_once()
                 if self.should_print_status():
-                    print(self.last_status, flush=True)
+                    print(self._terminal_status_line(), flush=True)
                 time.sleep(self.config.poll_seconds)
         finally:
             self.stop()
@@ -338,7 +401,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run RSIQUI V3 ORI on a currently logged-in MT5 DEMO account only.")
     parser.add_argument("--config", default="configs/strategies/rsiqui/ori_m5_demo.json")
     parser.add_argument("--symbol", default="XAUUSD")
-    parser.add_argument("--poll-seconds", type=float, default=5.0)
+    parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--status-log-interval-seconds", type=float, default=None)
     args = parser.parse_args()
     config = load_demo_config(args.config)

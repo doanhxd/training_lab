@@ -90,7 +90,7 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertEqual(1.0, config.price_value_per_lot)
         self.assertEqual(10.0, config.risk_usd)
         self.assertEqual(10.0, config.reward_usd)
-        self.assertEqual(15.0, config.max_spread_price)
+        self.assertEqual(10.0, config.max_spread_price)
         self.assertIsNone(config.equity_risk_cap_pct)
         self.assertFalse(config.telegram_enabled)
 
@@ -115,7 +115,7 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertEqual(1.0, strategy_config.price_value_per_lot)
         self.assertEqual(10.0, strategy_config.risk_usd)
         self.assertEqual(10.0, strategy_config.reward_usd)
-        self.assertEqual(15.0, strategy_config.max_spread)
+        self.assertEqual(10.0, strategy_config.max_spread)
         self.assertEqual([], mt5.sent_orders)
 
     def test_poll_once_waits_until_m5_preclose_window(self) -> None:
@@ -129,22 +129,24 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         filled = runner.poll_once(datetime(2026, 8, 2, 8, 24, 54, tzinfo=UTC))
 
         self.assertFalse(filled)
-        self.assertIn("outside M5 pre-close entry window", runner.last_status)
+        self.assertIn("outside M5 close-confirm windows", runner.last_status)
         self.assertEqual([], mt5.sent_orders)
 
-    def test_poll_once_checks_only_once_per_m5_bar(self) -> None:
+    def test_poll_once_previews_then_submits_after_candle_close(self) -> None:
         config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
         mt5 = FillMt5()
         runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
         self.assertTrue(runner.start())
         runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)  # type: ignore[method-assign]
+        runner.evaluate_confirmed_close_bar = lambda bar_time: ("long", bar_time)  # type: ignore[method-assign]
         runner._build_request = lambda side: {"symbol": "BTCUSD", "price": 100.0, "sl": 90.0, "tp": 110.0}  # type: ignore[method-assign]
 
-        self.assertTrue(runner.poll_once(datetime(2026, 8, 2, 8, 24, 56, tzinfo=UTC)))
-        self.assertFalse(runner.poll_once(datetime(2026, 8, 2, 8, 24, 58, tzinfo=UTC)))
+        self.assertFalse(runner.poll_once(datetime(2026, 8, 2, 8, 24, 56, tzinfo=UTC)))
+        self.assertTrue(runner.poll_once(datetime(2026, 8, 2, 8, 25, 1, tzinfo=UTC)))
+        self.assertFalse(runner.poll_once(datetime(2026, 8, 2, 8, 25, 2, tzinfo=UTC)))
 
         self.assertEqual(1, len(mt5.sent_orders))
-        self.assertIn("duplicate pre-close check", runner.last_status)
+        self.assertIn("duplicate close confirmation", runner.last_status)
 
     def test_open_position_skips_the_current_preclose_bar(self) -> None:
         config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
@@ -160,7 +162,7 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertFalse(runner.poll_once(datetime(2026, 8, 2, 8, 24, 58, tzinfo=UTC)))
 
         self.assertEqual([], mt5.sent_orders)
-        self.assertIn("duplicate pre-close check", runner.last_status)
+        self.assertIn("duplicate pre-close preview", runner.last_status)
 
 
 if __name__ == "__main__":

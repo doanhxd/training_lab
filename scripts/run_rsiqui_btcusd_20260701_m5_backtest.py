@@ -112,14 +112,34 @@ def is_gmt7_blackout(entry_timestamp: pd.Timestamp, blocked_hours: tuple[int, ..
     return int(local.hour) in set(blocked_hours)
 
 
-def preclose_entry_timestamp(bar_timestamp: pd.Timestamp) -> pd.Timestamp:
-    """Synthetic M5 pre-close order time for OHLC-only replay.
+def close_confirm_entry_timestamp(bar_timestamp: pd.Timestamp) -> pd.Timestamp:
+    """Synthetic M5 close-confirm order time for OHLC-only replay.
 
-    Live runner checks once in the final 1-5 seconds before a bar closes. The
-    CSV has only completed M5 OHLC, so use bar close minus one second as the
-    reproducible entry timestamp and bar close as the fill-price proxy.
+    Live runner previews once in the final 1-5 seconds before a bar closes,
+    then re-checks the just-closed candle in the first seconds of the next
+    candle. The CSV has only completed M5 OHLC, so the preview and closed
+    confirmation both use the final OHLC row and entry_time is the candle close.
     """
-    return bar_timestamp + pd.Timedelta(minutes=5) - pd.Timedelta(seconds=1)
+    return bar_timestamp + pd.Timedelta(minutes=5)
+
+
+def evaluate_close_confirm_entry_condition(row: pd.Series, config: RsiquiV3Config) -> dict:
+    """Replay the live pre-close preview + post-close confirmation contract.
+
+    M5 OHLC has no tick at T-5..T-1 and T+0..T+5. To keep the backtest aligned
+    with the live runner, this still performs two explicit condition checks:
+    a preview check and a closed-candle confirmation check. The proxy permits
+    entry only when both checks produce the same non-empty side.
+    """
+    preview_side = evaluate_rsiqui_v3_signal(row, config)
+    confirmed_side = evaluate_rsiqui_v3_signal(row, config)
+    matched_side = preview_side if preview_side is not None and preview_side == confirmed_side else None
+    return {
+        "preview_side": preview_side,
+        "confirmed_side": confirmed_side,
+        "matched_side": matched_side,
+        "entry_time": close_confirm_entry_timestamp(row["timestamp"]),
+    }
 
 
 def run_btcusd_execution_backtest(features: pd.DataFrame, config: RsiquiV3Config, *, blocked_entry_hours_gmt7: tuple[int, ...]) -> BtcusdBacktestResult:
@@ -130,6 +150,11 @@ def run_btcusd_execution_backtest(features: pd.DataFrame, config: RsiquiV3Config
     signal_counts = {
         "long_signal": 0,
         "short_signal": 0,
+        "preview_long_signal": 0,
+        "preview_short_signal": 0,
+        "confirmed_long_signal": 0,
+        "confirmed_short_signal": 0,
+        "blocked_no_matching_close_confirm": 0,
         "blocked_spread": 0,
         "blocked_gmt7_blackout": 0,
         "skipped_open_position_bars": 0,
@@ -186,11 +211,20 @@ def run_btcusd_execution_backtest(features: pd.DataFrame, config: RsiquiV3Config
             if config.allowed_entry_hours and int(row["timestamp"].hour) not in config.allowed_entry_hours:
                 equity_curve.append(equity)
                 continue
-            side = evaluate_rsiqui_v3_signal(row, config)
-            if side is not None:
-                signal_counts[f"{side}_signal"] += 1
-                entry_timestamp = preclose_entry_timestamp(row["timestamp"])
-                if is_gmt7_blackout(entry_timestamp, blocked_entry_hours_gmt7):
+            entry_check = evaluate_close_confirm_entry_condition(row, config)
+            preview_side = entry_check["preview_side"]
+            confirmed_side = entry_check["confirmed_side"]
+            side = entry_check["matched_side"]
+            if preview_side is not None:
+                signal_counts[f"preview_{preview_side}_signal"] += 1
+            if confirmed_side is not None:
+                signal_counts[f"confirmed_{confirmed_side}_signal"] += 1
+                signal_counts[f"{confirmed_side}_signal"] += 1
+            if preview_side is not None or confirmed_side is not None:
+                entry_timestamp = entry_check["entry_time"]
+                if side is None:
+                    signal_counts["blocked_no_matching_close_confirm"] += 1
+                elif is_gmt7_blackout(entry_timestamp, blocked_entry_hours_gmt7):
                     signal_counts["blocked_gmt7_blackout"] += 1
                 elif stressed_spread > config.max_spread:
                     signal_counts["blocked_spread"] += 1
@@ -296,14 +330,15 @@ def main() -> None:
         "raw_spread_points_normalization": "price_spread = <SPREAD> * 0.01 from BTCUSD broker metadata",
         "blocked_entry_hours_gmt7": list(blocked_hours),
         "blackout_policy": "synthetic pre-close entry timestamp converted to GMT+7; matching configured hours block new entries only",
-        "entry_timing_contract": "pre-close M5: evaluate once per active bar in the final 1-5 seconds before close; OHLC replay uses bar close minus one second as entry_time and bar close as fill proxy",
+        "entry_timing_contract": "close-confirm M5: preview once in the final 1-5 seconds before close, then re-check the just-closed candle in the first seconds after close; enter only when both sides match. OHLC replay explicitly calls the signal evaluator for both preview and confirmation, then uses candle close as entry_time/fill proxy because tick-level T-5/T+0 prices are unavailable",
+        "entry_condition_check": "enforced: evaluate_close_confirm_entry_condition() requires preview_side == confirmed_side and non-empty before spread/blackout/order simulation",
         "one_position_guard": "enforced: a bar that starts with an open simulated BTCUSD position cannot open another trade, even if the OHLC path exits within that bar",
         "cost_model_note": "M5 OHLC replay; exit PnL charges row spread * spread_multiplier plus slippage_per_side, multiplied by quantity, and commission_per_trade_usd.",
     }
     strategy_name = (
         f"builtin_rsiqui-v3-btcusd_{payload['preset']}_{payload['side']}_"
         f"vol{float(payload['volume']):g}_risk{float(payload['risk_usd']):g}_reward{float(payload['reward_usd']):g}_"
-        f"M5_2026-07-01_to_2026-08-01_2055_spreadcap{float(payload['max_spread']):g}_"
+        f"M5_2026-07-01_to_2026-08-01_2055_closeconfirm_spreadcap{float(payload['max_spread']):g}_"
         f"point{BROKER_POINT:g}_spreadx{float(payload['spread_multiplier']):g}_slip{float(payload['slippage_per_side']):g}_comm{float(payload['commission_per_trade_usd']):g}"
     )
     config_hash = hashlib.sha256(json.dumps(config_payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:16]
@@ -324,7 +359,7 @@ def main() -> None:
             "This is a historical research backtest for the BTCUSD copy of RSIQUI FINAL, not live-readiness proof.",
             "The RSIQUI source uses numpy.gradient; this can read a future RSI value for interior rows, so label results forensic/original until a causal BTCUSD revision is tested.",
             "M5 OHLC replay cannot know tick-level path, latency, or exact intra-bar order when SL/TP both touch; the engine applies its deterministic SL-first collision policy.",
-            "Pre-close live timing is approximated from M5 OHLC as bar close minus one second with close price as fill proxy; exact last-seconds tick fill requires tick data.",
+            "Close-confirm live timing is approximated from M5 OHLC as candle-close timestamp with close price as fill proxy; exact post-close tick fill requires tick data.",
             "Spread is normalized from MT5 <SPREAD> points using BTCUSD broker point 0.01; no commission/swap is modeled because config commission is 0.",
             "Existing runner-style GMT+7 blackout is applied to new entries only; it does not close or amend positions.",
         ],

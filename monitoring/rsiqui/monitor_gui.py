@@ -150,6 +150,7 @@ def load_read_only_profile(config_path: str | Path) -> dict[str, str | float]:
         "side": config.trade_side,
         "symbol": str(payload.get("symbol", getattr(config, "symbol", "XAUUSD"))),
         "volume": float(payload["volume"]),
+        "price_value_per_lot": float(payload.get("price_value_per_lot", 100.0)),
         "risk_usd": float(payload["risk_usd"]),
         "reward_usd": float(payload["reward_usd"]),
         "max_spread": float(payload.get("max_spread", 0.0)),
@@ -770,13 +771,20 @@ class RsiquiV3MonitorApp(tk.Tk):
         config = config_for_preset(
             str(profile["preset"]),
             volume_lots=self._safe_float(self._volume_value.get(), float(profile["volume"])),
-            price_value_per_lot=100.0,
+            price_value_per_lot=float(profile.get("price_value_per_lot", 100.0)),
             risk_usd=self._safe_float(self._risk_value.get(), float(profile["risk_usd"])),
             reward_usd=self._safe_float(self._reward_value.get(), float(profile["reward_usd"])),
             max_spread=float(profile["max_spread"]),
             trade_side=str(profile["side"]),
         )
         return strategy_key, profile, config, prepare_frame, evaluate_signal
+
+    def _has_open_position_for_selected_symbol(self) -> bool:
+        snapshot = self._latest_snapshot
+        if snapshot is None:
+            return False
+        selected_symbol = self._selected_symbol().casefold()
+        return any(position.symbol.casefold() == selected_symbol for position in snapshot.positions)
 
     @staticmethod
     def _summarize_bot_status(selected_strategy_key: str, runner_detection_available: bool, running_runners: tuple[RunnerView, ...]) -> tuple[str, str, str]:
@@ -896,6 +904,13 @@ class RsiquiV3MonitorApp(tk.Tk):
         mt5 = self.monitor.mt5
         strategy_key, profile, config, prepare_frame, evaluate_signal = self._selected_strategy_runtime_config()
         self._last_signal_check_value.set(f"{self.clock():%H:%M:%S}")
+        if self._has_open_position_for_selected_symbol():
+            self._set_last_signal_state(
+                "WAIT",
+                f"{STRATEGY_SELECTIONS[strategy_key].label}: đang có vị thế {self._selected_symbol()} mở; tạm dừng signal preview để khớp one-position guard.",
+                UiPalette.WARNING,
+            )
+            return
         timeframe = getattr(mt5, f"TIMEFRAME_{profile['timeframe']}")
         rates = mt5.copy_rates_from_pos(self._selected_symbol(), timeframe, 0, 200)
         if rates is None or len(rates) < 121:

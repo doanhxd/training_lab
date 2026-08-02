@@ -8,8 +8,8 @@
   "initial_equity": 1500,
   "volume": 0.13,
   "price_value_per_lot": 1,
-  "risk_usd": 10,
-  "reward_usd": 10,
+  "risk_usd": 15,
+  "reward_usd": 5,
   "equity_risk_cap_pct": null,
   "synthetic_spread": 0,
   "max_spread": 10.0,
@@ -25,5 +25,6 @@
   ],
   "telegram_enabled": false,
   "status_log_interval_seconds": 300,
-  "symbol": "BTCUSD"
+  "symbol": "BTCUSD",
+  "profile_name": "BTCUSD negative-R SL15 TP5"
 }

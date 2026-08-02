@@ -25,12 +25,12 @@ from trading_lab.strategies.builtins.rsiqui.btcusd import (
     rsiqui_v3_config_for_preset,
 )
 
-RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "BTCUSD_M5_202608010010_202608020840.csv"
+RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "BTCUSD_M5_202501010005_202608020925.csv"
 CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "btcusd_m5_demo.json"
 SYMBOL = "BTCUSD"
 TIMEFRAME = "5m"
-START_UTC = pd.Timestamp("2026-08-01T00:00:00Z")
-END_UTC = pd.Timestamp("2026-08-02T08:40:00Z")
+START_UTC = pd.Timestamp("2025-01-01T00:00:00Z")
+END_UTC = pd.Timestamp("2026-08-02T09:25:00Z")
 # Broker screenshot for BTCUSD: digits=2, tick_size=0.01, tick_value=0.01.
 # MT5 export <SPREAD> is raw points, so 1000 points = 10.00 price.
 BROKER_POINT = 0.01
@@ -184,7 +184,7 @@ def run_btcusd_execution_backtest(features: pd.DataFrame, config: RsiquiV3Config
             if exit_price is not None:
                 direction = 1 if active["side"] == "long" else -1
                 pnl = (float(exit_price) - active["entry_price"]) * active["quantity"] * direction
-                pnl -= (stressed_spread + config.slippage_per_side) * active["quantity"]
+                pnl -= (stressed_spread + config.slippage_per_side * 2) * active["quantity"]
                 pnl -= config.commission_per_trade_usd
                 equity += pnl
                 trades.append(
@@ -302,7 +302,7 @@ def main() -> None:
     blocked_hours = tuple(int(hour) for hour in payload.get("blocked_entry_hours_gmt7", ()))
     config = rsiqui_v3_config_for_preset(
         payload["preset"],
-        initial_equity=float(payload["initial_equity"]),
+        initial_equity=2000.0,
         volume_lots=float(payload["volume"]),
         price_value_per_lot=float(payload["price_value_per_lot"]),
         risk_usd=float(payload["risk_usd"]),
@@ -333,12 +333,13 @@ def main() -> None:
         "entry_timing_contract": "close-confirm M5: preview once in the final 1-5 seconds before close, then re-check the just-closed candle in the first seconds after close; enter only when both sides match. OHLC replay explicitly calls the signal evaluator for both preview and confirmation, then uses candle close as entry_time/fill proxy because tick-level T-5/T+0 prices are unavailable",
         "entry_condition_check": "enforced: evaluate_close_confirm_entry_condition() requires preview_side == confirmed_side and non-empty before spread/blackout/order simulation",
         "one_position_guard": "enforced: a bar that starts with an open simulated BTCUSD position cannot open another trade, even if the OHLC path exits within that bar",
-        "cost_model_note": "M5 OHLC replay; exit PnL charges row spread * spread_multiplier plus slippage_per_side, multiplied by quantity, and commission_per_trade_usd.",
+        "cost_model_note": "M5 OHLC replay; PnL charges actual row spread * spread_multiplier plus slippage_per_side * 2 (entry+exit), multiplied by quantity, and commission_per_trade_usd.",
+        "optimization_policy": "none: no parameter search/overfit; fixed root RSIQUI BTCUSD signal, volume 0.13 lot, SL $10, TP $10, RR 1:1, max_spread from JSON",
     }
     strategy_name = (
         f"builtin_rsiqui-v3-btcusd_{payload['preset']}_{payload['side']}_"
         f"vol{float(payload['volume']):g}_risk{float(payload['risk_usd']):g}_reward{float(payload['reward_usd']):g}_"
-        f"M5_2026-08-01_to_2026-08-02_0840_closeconfirm_spreadcap{float(payload['max_spread']):g}_"
+        f"M5_2025-01-01_to_2026-08-02_0925_initial2000_closeconfirm_spreadcap{float(payload['max_spread']):g}_"
         f"point{BROKER_POINT:g}_spreadx{float(payload['spread_multiplier']):g}_slip{float(payload['slippage_per_side']):g}_comm{float(payload['commission_per_trade_usd']):g}"
     )
     config_hash = hashlib.sha256(json.dumps(config_payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:16]
@@ -358,9 +359,9 @@ def main() -> None:
         "limitations": [
             "This is a historical research backtest for the BTCUSD copy of RSIQUI FINAL, not live-readiness proof.",
             "The RSIQUI source uses numpy.gradient; this can read a future RSI value for interior rows, so label results forensic/original until a causal BTCUSD revision is tested.",
-            "M5 OHLC replay cannot know tick-level path, latency, or exact intra-bar order when SL/TP both touch; the engine applies its deterministic SL-first collision policy.",
+            "M5 OHLC replay cannot know tick-level path, latency, exact final-seconds fill, or exact intra-bar order when SL/TP both touch; the engine applies a conservative deterministic SL-first collision policy.",
             "Close-confirm live timing is approximated from M5 OHLC as candle-close timestamp with close price as fill proxy; exact post-close tick fill requires tick data.",
-            "Spread is normalized from MT5 <SPREAD> points using BTCUSD broker point 0.01; no commission/swap is modeled because config commission is 0.",
+            "Spread is normalized from MT5 <SPREAD> points using BTCUSD broker point 0.01; per-side slippage is charged on both entry and exit. No commission/swap is modeled because config commission is 0.",
             "Existing runner-style GMT+7 blackout is applied to new entries only; it does not close or amend positions.",
         ],
     }
@@ -370,7 +371,7 @@ def main() -> None:
             "strategy": payload["strategy"],
             "symbol": SYMBOL,
             "raw_path": str(RAW_PATH),
-            "period": "2026-08-01 00:10:00 UTC..2026-08-02 08:40:00 UTC",
+            "period": "2025-01-01 00:05:00 UTC..2026-08-02 09:25:00 UTC",
             "requested_csv": RAW_PATH.name,
             "broker_point_used_for_spread": BROKER_POINT,
         },

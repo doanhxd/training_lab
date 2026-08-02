@@ -46,6 +46,8 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertEqual(20.0, neg["risk_usd"])
         self.assertEqual(0.03, final["volume"])
         self.assertEqual("BTCUSD", btcusd["symbol"])
+        self.assertEqual(100.0, final["price_value_per_lot"])
+        self.assertEqual(1.0, btcusd["price_value_per_lot"])
 
     def test_log_badge_classifier_supports_long_short_and_error(self) -> None:
         long_badge = RsiquiV3MonitorApp._classify_log_badge("RSIQUI BUY signal")
@@ -90,6 +92,15 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertIn('body.grid_columnconfigure(1, weight=6, uniform="main")', source)
         self.assertIn('message_wrap = max(560, self._log_canvas.winfo_width() - 170)', source)
 
+    def test_signal_preview_uses_profile_price_value_and_blocks_when_position_open(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn('"price_value_per_lot": float(payload.get("price_value_per_lot", 100.0))', source)
+        self.assertIn('price_value_per_lot=float(profile.get("price_value_per_lot", 100.0))', source)
+        self.assertIn("def _has_open_position_for_selected_symbol", source)
+        self.assertIn("tạm dừng signal preview để khớp one-position guard", source)
+        self.assertIn("self._has_open_position_for_selected_symbol()", source)
+
     def test_history_tab_contract_has_nav_filters_stats_and_read_only_history(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
@@ -124,8 +135,8 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertNotIn("CHẠY BOT", source)
         self.assertIn("BẢNG LOG TÍN HIỆU", source)
         self.assertIn("LỆNH XAU/BTC", source)
-        self.assertIn("Tất cả vị thế XAUUSD / BTCUSD • chỉ xem", source)
-        self.assertIn('("time", 76, "TIME")', source)
+        self.assertIn("Tất cả vị thế XAUUSD / BTCUSD • read-only", source)
+        self.assertIn('("time", 62, "TIME")', source)
         self.assertIn('self._position_day_value', source)
         self.assertIn('upper.startswith("BTC")', source)
         self.assertIn('upper.startswith("XAU")', source)
