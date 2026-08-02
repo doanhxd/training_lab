@@ -5,7 +5,7 @@
   "timeframe": "5m",
   "dataset_id": "022eea2471fd39b7",
   "feature_set_id": "698a2dda21e251f7",
-  "initial_equity": 1500,
+  "initial_equity": 500,
   "volume": 0.13,
   "price_value_per_lot": 1,
   "risk_usd": 10,

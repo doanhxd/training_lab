@@ -115,7 +115,7 @@ def compute_daily_drawdown_stats(trades: pd.DataFrame, initial_equity: float) ->
         "max_daily_drawdown": worst["daily_drawdown"],
         "max_daily_drawdown_usd": worst["daily_drawdown_usd"],
         "worst_day": worst["day"],
-        "daily_rows": rows[-31:],
+        "daily_rows": rows,
     }
 
 
@@ -180,6 +180,7 @@ def main() -> None:
                 "dataset_id": report.get("dataset_id"),
                 "feature_set_id": report.get("feature_set_id"),
                 "backtest_config": report.get("backtest_config", {}),
+                "data_coverage": report.get("data_coverage", {}),
                 "metrics_summary": metrics,
                 "validation_results": report.get("validation_results", {}),
                 "signal_counts": report.get("signal_counts", {}),

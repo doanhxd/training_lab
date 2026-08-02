@@ -152,6 +152,37 @@
     .hero {
       padding: 20px 22px;
     }
+    .hero-title-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .hero-title-row h2 {
+      margin: 0;
+    }
+    .hero-period {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 38px;
+      padding: 8px 13px;
+      border: 1px solid #466354;
+      border-radius: 10px;
+      background: #101814;
+      color: #d8e4dc;
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+    .hero-period .period-label {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
     .hero-grid {
       display: grid;
       grid-template-columns: 1.15fr .85fr;
@@ -205,49 +236,13 @@
     }
     .metric-card.danger .value { color: var(--bad); }
     .metric-card.warnmetric .value { color: var(--warn); }
-    .dd-panel { padding: 18px; }
-    .dd-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 12px;
+    .metric-card.info .value { color: #8ed8ff; }
+    .metric-card.period-card .value {
+      font-size: clamp(15px, 1.55vw, 22px);
+      line-height: 1.2;
+      white-space: normal;
     }
-    .dd-tile {
-      background: var(--panel-2);
-      border: 1px solid #304036;
-      border-radius: 14px;
-      padding: 14px 16px;
-    }
-    .dd-tile .label {
-      color: var(--muted);
-      font: 800 11px Consolas, monospace;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-    .dd-tile .value {
-      margin-top: 8px;
-      font-size: clamp(24px, 3vw, 34px);
-      line-height: 1.05;
-      font-weight: 900;
-    }
-    .dd-tile .value.bad { color: var(--bad); }
-    .dd-tile .value.warn { color: var(--warn); }
-    .dd-tile .note {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-    .dd-explain {
-      margin-top: 12px;
-      color: #c8d4cc;
-      font-size: 12px;
-      line-height: 1.55;
-      background: #121916;
-      border: 1px solid #26342d;
-      border-radius: 12px;
-      padding: 12px 14px;
-    }
+
     .daily-ledger-grid {
       display: grid;
       grid-template-columns: minmax(0, 1.28fr) minmax(220px, .72fr);
@@ -359,9 +354,10 @@
     .good { color: var(--good); }
     .bad { color: var(--bad); }
     .warn { color: var(--warn); }
+    .weekend-day { color: #ffcf75 !important; }
     code { color: #d9f7e1; }
     @media (max-width: 1080px) {
-      .hero-grid, .twocol, .dd-grid, .daily-ledger-grid { grid-template-columns: 1fr; }
+      .hero-grid, .twocol, .daily-ledger-grid { grid-template-columns: 1fr; }
       .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .controls { position: static; }
       .controls section { grid-template-columns: 1fr; }
@@ -369,6 +365,7 @@
     @media (max-width: 640px) {
       main { width: min(100% - 18px, 1280px); }
       .card-grid { grid-template-columns: 1fr; }
+      .hero-period { width: 100%; justify-content: space-between; white-space: normal; }
     }
   </style>
 </head>
@@ -399,7 +396,10 @@
       <section class="content">
         <section class="panel hero">
           <div class="eyebrow">Loaded Run</div>
-          <h2 id="heroTitle" style="margin:8px 0 4px;font-size:28px;">Chưa nạp report</h2>
+          <div class="hero-title-row">
+            <h2 id="heroTitle" style="font-size:28px;">Chưa nạp report</h2>
+            <div id="heroPeriod" class="hero-period"><span class="period-label">Backtest UTC</span><span>—</span></div>
+          </div>
           <div id="heroSub" class="sub">Hãy chọn report JSON để bắt đầu.</div>
           <div class="hero-grid">
             <div id="heroMeta" class="muted-box">Report metadata sẽ hiện ở đây.</div>
@@ -411,36 +411,12 @@
           <div class="panel metric-card"><div class="label">Vốn đầu</div><div class="value" id="initialEquity">—</div><div class="subvalue" id="initialEquitySub">from backtest config</div></div>
           <div class="panel metric-card"><div class="label">Lãi ròng</div><div class="value" id="netPnl">—</div><div class="subvalue" id="netReturn">net return —</div></div>
           <div class="panel metric-card"><div class="label">Vốn cuối</div><div class="value" id="finalEquity">—</div><div class="subvalue">ending equity</div></div>
+          <div class="panel metric-card info"><div class="label">Win rate</div><div class="value" id="winRateValue">—</div><div class="subvalue" id="winRateSub">wins / total trades</div></div>
           <div class="panel metric-card danger"><div class="label">Max DD</div><div class="value" id="maxDdValue">—</div><div class="subvalue" id="drawdownSub">overall equity peak-to-trough</div></div>
           <div class="panel metric-card warnmetric"><div class="label">Max Daily DD</div><div class="value" id="maxDailyDdValue">—</div><div class="subvalue" id="maxDailyDdSub">worst day</div></div>
           <div class="panel metric-card"><div class="label">Tổng lệnh</div><div class="value" id="tradeCount">—</div><div class="subvalue" id="pfSub">profit factor —</div></div>
         </section>
 
-        <section class="panel dd-panel">
-          <h2 class="section-title">Drawdown Monitor · DD / Max DD (%)</h2>
-          <div class="dd-grid">
-            <div class="dd-tile">
-              <div class="label">Overall Max DD</div>
-              <div class="value bad" id="ddOverallPct">—</div>
-              <div class="note" id="ddOverallNote">Tính trên equity curve toàn kỳ.</div>
-            </div>
-            <div class="dd-tile">
-              <div class="label">Latest Daily DD</div>
-              <div class="value" id="ddLatestPct">—</div>
-              <div class="note" id="ddLatestNote">DD của ngày giao dịch mới nhất.</div>
-            </div>
-            <div class="dd-tile">
-              <div class="label">Max Daily DD</div>
-              <div class="value warn" id="ddWorstPct">—</div>
-              <div class="note" id="ddWorstNote">Ngày có DD nội ngày lớn nhất.</div>
-            </div>
-          </div>
-          <div class="dd-explain">
-            <b>Cách đọc:</b> <b>Overall Max DD</b> là drawdown lớn nhất của toàn equity curve.
-            <b>Daily DD</b> là mức tụt từ vốn đầu ngày xuống đáy nội ngày theo ledger lệnh.
-            <b>Max Daily DD</b> là ngày có daily drawdown lớn nhất trong run.
-          </div>
-        </section>
 
         <section class="twocol">
           <div class="panel table-panel">
@@ -471,7 +447,7 @@
         </section>
 
         <section class="panel table-panel">
-          <h2 class="section-title">Daily Ledger Report</h2>
+          <h2 class="section-title">Daily Ledger Report <span id="dailyFilterLabel" class="small"></span></h2>
           <div class="hint" style="margin-bottom:12px;">Dùng cho các backtest ngắn trong vòng khoảng 1 tháng: xem từng ngày, P&amp;L, WR, PF, DD $/% và long/short.</div>
           <div class="daily-ledger-grid">
             <div>
@@ -646,6 +622,19 @@
       return `1:${fmtNum(reward / risk, 2)}`;
     }
 
+    function getBacktestCoverage() {
+      const coverage = state.report?.data_coverage || {};
+      return {
+        start: String(coverage.first_timestamp || '').replace('T', ' ').replace('+00:00', ' UTC'),
+        end: String(coverage.last_timestamp || '').replace('T', ' ').replace('+00:00', ' UTC'),
+      };
+    }
+
+    function formatCoverageDate(value) {
+      if (!value) return '—';
+      return value.replace(' UTC', '').slice(0, 16);
+    }
+
     function compactRunTitle(report) {
       const cfg = report?.backtest_config || {};
       const name = String(report?.strategy_name || '').toLowerCase();
@@ -688,6 +677,7 @@
       const report = state.report;
       if (!report) {
         $('heroTitle').textContent = 'Chưa nạp report';
+        $('heroPeriod').innerHTML = '<span class="period-label">Backtest UTC</span><span>—</span>';
         $('heroSub').textContent = 'Hãy chọn report JSON để bắt đầu.';
         $('heroMeta').textContent = 'Report metadata sẽ hiện ở đây.';
         $('heroWarning').textContent = 'Lưu ý: nếu chỉ nạp report JSON, viewer vẫn hiện summary được nhưng chưa có monthly ledger / equity chart.';
@@ -695,7 +685,9 @@
       }
       $('heroTitle').textContent = compactRunTitle(report);
       $('heroTitle').title = report.strategy_name || 'Unnamed backtest run';
-      $('heroSub').innerHTML = `Run dữ liệu <b>${esc(report.dataset_id || '—')}</b> · Feature set <b>${esc(report.feature_set_id || '—')}</b> · Config hash <b>${esc(report.config_hash || '—')}</b> · Vốn đầu <b>${esc(fmtMoney(deriveInitialEquity()))}</b> · R:R <b>${esc(deriveRiskRewardRatio())}</b>`;
+      const coverage = getBacktestCoverage();
+      $('heroPeriod').innerHTML = `<span class="period-label">Backtest UTC</span><span>${esc(formatCoverageDate(coverage.start))} → ${esc(formatCoverageDate(coverage.end))}</span>`;
+      $('heroSub').innerHTML = `Backtest <b>${esc(formatCoverageDate(coverage.start))}</b> → <b>${esc(formatCoverageDate(coverage.end))}</b> <span class="small">(UTC)</span> · Run dữ liệu <b>${esc(report.dataset_id || '—')}</b> · Feature set <b>${esc(report.feature_set_id || '—')}</b> · Vốn đầu <b>${esc(fmtMoney(deriveInitialEquity()))}</b> · R:R <b>${esc(deriveRiskRewardRatio())}</b>`;
 
       const companion = report.artifacts || {};
       $('heroMeta').innerHTML = [
@@ -723,6 +715,8 @@
       $('netPnl').textContent = fmtMoney(pnl);
       $('netReturn').textContent = `net return ${fmtPct(metrics.net_return)}`;
       $('finalEquity').textContent = fmtMoney(finalEquity);
+      $('winRateValue').textContent = fmtPct(metrics.win_rate);
+      $('winRateSub').textContent = `${fmtInt(metrics.total_trades * Number(metrics.win_rate || 0))} wins / ${fmtInt(metrics.total_trades)} trades`;
       $('maxDdValue').textContent = fmtPct(metrics.max_drawdown);
       $('drawdownSub').textContent = `Overall Max DD`;
       const dd = getDailyDrawdownInfo();
@@ -732,26 +726,6 @@
       $('pfSub').textContent = `profit factor ${fmtNum(metrics.profit_factor, 3)}`;
     }
 
-    function renderDrawdownMonitor() {
-      const metrics = state.report?.metrics_summary || {};
-      const dd = getDailyDrawdownInfo();
-      $('ddOverallPct').textContent = fmtPct(Number(metrics.max_drawdown));
-      $('ddOverallNote').innerHTML = `Overall Max DD (%) toàn kỳ · <b>${esc(fmtPct(Number(metrics.max_drawdown)))}</b>`;
-
-      const latestPct = Number(dd.latest_daily_drawdown);
-      const latestUsd = Number(dd.latest_daily_drawdown_usd);
-      $('ddLatestPct').textContent = fmtPct(latestPct);
-      $('ddLatestNote').innerHTML = dd.latest_day
-        ? `<b>${esc(dd.latest_day)}</b> · ${esc(fmtMoney(latestUsd))} / ${esc(fmtPct(latestPct))}`
-        : 'Chưa có daily DD trong manifest.';
-
-      const worstPct = Number(dd.max_daily_drawdown);
-      const worstUsd = Number(dd.max_daily_drawdown_usd);
-      $('ddWorstPct').textContent = fmtPct(worstPct);
-      $('ddWorstNote').innerHTML = dd.worst_day
-        ? `<b>${esc(dd.worst_day)}</b> · ${esc(fmtMoney(worstUsd))} / ${esc(fmtPct(worstPct))}`
-        : 'Chưa có max daily DD trong manifest.';
-    }
 
     function renderContractAndSignals() {
       const cfg = state.report?.backtest_config || {};
@@ -761,6 +735,7 @@
       const dd = getDailyDrawdownInfo();
       renderTable($('contractTable'), [
         ['Initial equity', fmtMoney(Number(cfg.initial_equity))],
+        ['Backtest period (UTC)', `${esc(formatCoverageDate(getBacktestCoverage().start))} → ${esc(formatCoverageDate(getBacktestCoverage().end))}`],
         ['Risk / Reward USD', `${fmtMoney(Number(cfg.risk_usd))} / ${fmtMoney(Number(cfg.reward_usd))}`],
         ['R:R ratio', deriveRiskRewardRatio()],
         ['Daily DD latest ($ / %)', dd.latest_daily_drawdown != null ? `${fmtMoney(Number(dd.latest_daily_drawdown_usd))} / ${fmtPct(Number(dd.latest_daily_drawdown))} · ${esc(dd.latest_day || '—')}` : '—'],
@@ -822,7 +797,9 @@
     }
 
     function renderDailyLedger() {
-      const rows = state.daily || [];
+      const selectedMonth = state.selectedMonth || null;
+      const rows = (state.daily || []).filter((day) => !selectedMonth || String(day.day || '').startsWith(selectedMonth));
+      $('dailyFilterLabel').textContent = selectedMonth ? `· lọc theo ${selectedMonth}` : '';
       if (!rows.length) {
         $('dailyChartWrap').className = 'empty';
         $('dailyChartWrap').innerHTML = 'Daily chart sẽ hiện khi manifest có daily ledger.';
@@ -834,17 +811,22 @@
       }
 
       const maxAbs = Math.max(...rows.map(d => Math.abs(Number(d.pnl) || 0))) || 1;
+      const isWeekendDay = (day) => {
+        const weekday = new Date(`${String(day)}T00:00:00Z`).getUTCDay();
+        return weekday === 0 || weekday === 6;
+      };
       const bars = rows.map((day) => {
         const pnl = Number(day.pnl) || 0;
         const h = Math.max(8, (Math.abs(pnl) / maxAbs) * 190);
         const color = pnl >= 0 ? '#b4f067' : '#ff8f8f';
         const label = String(day.day || '').slice(8, 10);
+        const weekend = isWeekendDay(day.day);
         const active = day.day === state.selectedDay ? 'outline:2px solid #ffd27a;' : '';
         return `<button type="button" data-day="${esc(day.day)}" class="daily-bar" style="appearance:none;border:none;background:transparent;cursor:pointer;padding:0;display:grid;gap:8px;justify-items:center;align-content:end;min-height:230px;${active}">
           <div style="width:100%;display:grid;align-items:end;justify-items:center;min-height:200px;">
             <div title="${esc(day.day)} · ${esc(fmtMoney(pnl))}" style="width:100%;max-width:22px;height:${h}px;background:${color};border-radius:6px 6px 2px 2px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);"></div>
           </div>
-          <div style="font-size:10px;color:#9db0a4;font-weight:800;transform:rotate(-35deg);">${esc(label)}</div>
+          <div class="${weekend ? 'weekend-day' : ''}" style="font-size:10px;color:#9db0a4;font-weight:800;transform:rotate(-35deg);">${esc(label)}</div>
         </button>`;
       }).join('');
       $('dailyChartWrap').className = '';
@@ -856,8 +838,9 @@
 
       const tableRows = rows.map((day) => {
         const active = day.day === state.selectedDay ? ' class="daily-row active"' : ' class="daily-row"';
+        const dayClass = isWeekendDay(day.day) ? 'weekend-day' : '';
         return `<tr${active} data-day="${esc(day.day)}">
-          <td>${esc(day.day)}</td>
+          <td class="${dayClass}">${esc(day.day)}</td>
           <td>${fmtInt(Number(day.trades ?? day.trade_count))}</td>
           <td>${Number.isFinite(Number(day.profitFactor)) ? fmtNum(Number(day.profitFactor), 2) : '∞'}</td>
           <td>${fmtPct(Number(day.winRate))}</td>
@@ -920,7 +903,9 @@
 
       document.querySelectorAll('.month-bar').forEach((btn) => btn.addEventListener('click', () => {
         state.selectedMonth = btn.dataset.month;
+        state.selectedDay = null;
         renderSelectedMonth();
+        renderDailyLedger();
       }));
 
       const rows = state.monthly.map((item) => `
@@ -971,7 +956,7 @@
     function renderAll() {
       renderHero();
       renderMetrics();
-      renderDrawdownMonitor();
+
       renderContractAndSignals();
       renderEquity();
       renderDailyLedger();
@@ -1011,6 +996,7 @@
         feature_set_id: run.feature_set_id,
         config_hash: 'manifest',
         backtest_config: run.backtest_config || {},
+        data_coverage: run.data_coverage || {},
         metrics_summary: run.metrics_summary || {},
         validation_results: run.validation_results || {},
         signal_counts: run.signal_counts || {},
