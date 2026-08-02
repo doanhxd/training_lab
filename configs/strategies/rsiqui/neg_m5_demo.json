@@ -23,6 +23,5 @@
     21
   ],
   "telegram_enabled": false,
-  "status_log_interval_seconds": 300,
-  "weekend_symbol": "XAUUSD.24-7"
+  "status_log_interval_seconds": 300
 }

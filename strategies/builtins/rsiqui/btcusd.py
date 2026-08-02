@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-"""RSIQUI V3 FINAL variant.
+"""RSIQUI V3 BTCUSD variant.
 
-Entry/signal logic is intentionally re-exported from the operator-supplied
-root implementation so FINAL cannot drift from `rsiqui_v3_root.py`. Runner and
-JSON config files may still define symbol/risk/spread execution guards.
+BTCUSD uses the operator-supplied root RSIQUI V3 entry/signal logic exactly.
+Only the runner/config money contract and symbol metadata are BTC-specific.
 """
 
 from trading_lab.strategies.builtins.rsiqui_v3_root import (  # noqa: F401

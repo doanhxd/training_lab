@@ -4,7 +4,7 @@ from pathlib import Path
 import inspect
 import unittest
 
-from trading_lab.monitoring.rsiqui.monitor_gui import RsiquiV3MonitorApp, load_read_only_profile, load_telegram_targets
+from trading_lab.monitoring.rsiqui.monitor_gui import RsiquiV3MonitorApp, load_read_only_profile
 from trading_lab.monitoring.rsiqui.position_monitor import RunnerView
 
 
@@ -32,23 +32,20 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
 
         self.assertEqual("", signature.parameters["text"].default)
 
-    def test_read_only_profile_loader_supports_ori_and_neg_variants(self) -> None:
+    def test_read_only_profile_loader_supports_ori_neg_final_and_btcusd_variants(self) -> None:
         ori = load_read_only_profile("configs/strategies/rsiqui/ori_m5_demo.json")
         neg = load_read_only_profile("configs/strategies/rsiqui/neg_m5_demo.json")
         final = load_read_only_profile("configs/strategies/rsiqui/final_m5_demo.json")
+        btcusd = load_read_only_profile("configs/strategies/rsiqui/btcusd_m5_demo.json")
 
         self.assertEqual("rsiqui_v3_ori", ori["strategy_key"])
         self.assertEqual("rsiqui_v3_neg", neg["strategy_key"])
         self.assertEqual("rsiqui_v3_final", final["strategy_key"])
+        self.assertEqual("rsiqui_v3_btcusd", btcusd["strategy_key"])
         self.assertEqual(0.01, ori["volume"])
         self.assertEqual(20.0, neg["risk_usd"])
         self.assertEqual(0.03, final["volume"])
-
-    def test_default_telegram_targets_expose_portfolio_managers_destination(self) -> None:
-        targets = load_telegram_targets(path="configs/strategies/rsiqui/__missing_targets__.json")
-
-        self.assertTrue(any(target.label == "Portfolio Managers" for target in targets))
-        self.assertTrue(any(target.chat_id == "-5043082181" for target in targets))
+        self.assertEqual("BTCUSD", btcusd["symbol"])
 
     def test_log_badge_classifier_supports_long_short_and_error(self) -> None:
         long_badge = RsiquiV3MonitorApp._classify_log_badge("RSIQUI BUY signal")
@@ -74,32 +71,80 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
 
     def test_runner_command_points_to_expected_script_and_config(self) -> None:
         command = RsiquiV3MonitorApp._build_runner_command("rsiqui_v3_final")
+        btcusd_command = RsiquiV3MonitorApp._build_runner_command("rsiqui_v3_btcusd")
 
         self.assertTrue(command[0])
         self.assertEqual("-m", command[1])
         self.assertEqual("trading_lab.runners.mt5.rsiqui_final_demo", command[2])
         self.assertEqual("--config", command[3])
         self.assertTrue(command[4].endswith("final_m5_demo.json"))
+        self.assertEqual("trading_lab.runners.mt5.rsiqui_btcusd_demo", btcusd_command[2])
+        self.assertTrue(btcusd_command[4].endswith("btcusd_m5_demo.json"))
 
-    def test_monitor_source_mentions_strategy_selector_and_telegram_toggle_without_trade_actions(self) -> None:
+    def test_monitor_defaults_to_final_config_and_wider_log_column(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn('default=str(CONFIG_ROOT / "final_m5_demo.json")', source)
+        self.assertIn('profile.get("strategy_key", "rsiqui_v3_final")', source)
+        self.assertIn('body.grid_columnconfigure(0, weight=5, uniform="main")', source)
+        self.assertIn('body.grid_columnconfigure(1, weight=6, uniform="main")', source)
+        self.assertIn('message_wrap = max(560, self._log_canvas.winfo_width() - 170)', source)
+
+    def test_history_tab_contract_has_nav_filters_stats_and_read_only_history(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn("LỊCH SỬ LỆNH", source)
+        self.assertIn("command=self._show_monitor_page", source)
+        self.assertIn("command=self._open_history_window", source)
+        self.assertIn("history_deals_get", source)
+        self.assertIn("KHOẢNG THỜI GIAN", source)
+        self.assertIn("MÃ GIAO DỊCH", source)
+        self.assertIn("BTCUSD", source)
+        self.assertIn("_filter_history_deals_by_symbol", source)
+        self.assertIn("7 ngày qua", source)
+        self.assertIn("30 ngày qua", source)
+        self.assertIn("90 ngày qua", source)
+        self.assertIn("1 năm qua", source)
+        self.assertIn("Tùy chỉnh", source)
+        self.assertIn("START DATE", source)
+        self.assertIn("END DATE", source)
+        self.assertIn("_set_custom_history_controls_visible", source)
+        self.assertIn("MAX DD NGÀY", source)
+        self.assertIn("WINRATE", source)
+        self.assertIn("NET P/L", source)
+
+    def test_monitor_source_mentions_strategy_selector_without_trade_or_telegram_actions(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
         self.assertIn("class UiPalette", source)
         self.assertIn("rsiqui_v3_ori", source)
         self.assertIn("rsiqui_v3_neg", source)
         self.assertIn("rsiqui_v3_final", source)
-        self.assertIn("BOT STATUS", source)
-        self.assertIn("LAST SIGNAL", source)
-        self.assertIn("CHẠY BOT", source)
-        self.assertIn("_run_selected_strategy", source)
-        self.assertIn("TELEGRAM_TEMP_DISABLED = True", source)
-        self.assertIn("TELEGRAM TẠM TẮT", source)
-        self.assertIn("GỬI KÈO TELEGRAM", source)
+        self.assertIn("rsiqui_v3_btcusd", source)
+        self.assertNotIn("CHẠY BOT", source)
         self.assertIn("BẢNG LOG TÍN HIỆU", source)
+        self.assertIn("LỆNH XAU/BTC", source)
+        self.assertIn("Tất cả vị thế XAUUSD / BTCUSD • chỉ xem", source)
+        self.assertIn('("time", 76, "TIME")', source)
+        self.assertIn('self._position_day_value', source)
+        self.assertIn('upper.startswith("BTC")', source)
+        self.assertIn('upper.startswith("XAU")', source)
+        self.assertNotIn('"TICKET"', source)
+
+        self.assertIn('f"ONLINE • {snapshot.server}"', source)
+        self.assertNotIn("TRẠNG THÁI HỆ THỐNG", source)
+        self.assertNotIn('text="BOT STATUS"', source)
+        self.assertNotIn('text="LAST CHECK"', source)
+        self.assertNotIn('text="LAST SIGNAL"', source)
+        self.assertNotIn("GỬI KÈO TELEGRAM", source)
+        self.assertNotIn("TELEGRAM TẠM TẮT", source)
+        self.assertNotIn("TelegramNotifier", source)
+        self.assertNotIn("TelegramSettings", source)
         self.assertNotIn("order_send(", source)
         self.assertNotIn("TRADE_ACTION_DEAL", source)
         self.assertNotIn("login(", source)
         self.assertNotIn("ĐÓNG LỆNH", source)
+        self.assertNotIn("CHẾ ĐỘ AN TOÀN", source)
 
 
 if __name__ == "__main__":

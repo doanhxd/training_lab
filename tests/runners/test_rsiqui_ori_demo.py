@@ -124,7 +124,7 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
         mt5 = FakeMt5()
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(timeframe="M5"), mt5=mt5)
 
-        runner.evaluate_closed_bar()
+        runner.evaluate_preclose_bar(1_700_000_000)
 
         self.assertEqual(mt5.TIMEFRAME_M5, mt5.last_timeframe)
 
@@ -146,9 +146,10 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
         gmt7 = timezone(timedelta(hours=7))
         for local_time in (datetime(2026, 1, 2, 5, 0, tzinfo=gmt7), datetime(2026, 1, 2, 20, 0, tzinfo=gmt7)):
             with self.subTest(local_time=local_time):
-                runner.evaluate_closed_bar = lambda t=int(local_time.timestamp()): ("long", t)
+                signal_bar = int(local_time.timestamp()) - runner._seconds_per_bar() + 1
+                runner.evaluate_preclose_bar = lambda bar_time, t=signal_bar: ("long", t)
                 self.assertTrue(runner.start())
-                self.assertFalse(runner.poll_once())
+                self.assertFalse(runner.poll_once(datetime.fromtimestamp(signal_bar + runner._seconds_per_bar() - 4, tz=timezone.utc)))
                 self.assertEqual([], mt5.order_requests)
                 self.assertIn("GMT+7 blackout", runner.last_status)
 
@@ -158,17 +159,17 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
             mt5=FakeMt5(),
         )
         gmt7 = timezone(timedelta(hours=7))
-        self.assertTrue(runner._is_gmt7_entry_blackout(int(datetime(2026, 1, 2, 4, 55, tzinfo=gmt7).timestamp())))
-        self.assertFalse(runner._is_gmt7_entry_blackout(int(datetime(2026, 1, 2, 7, 55, tzinfo=gmt7).timestamp())))
+        self.assertTrue(runner._is_gmt7_entry_blackout(int(datetime(2026, 1, 2, 5, 0, tzinfo=gmt7).timestamp()) - runner._seconds_per_bar() + 1))
+        self.assertFalse(runner._is_gmt7_entry_blackout(int(datetime(2026, 1, 2, 8, 0, tzinfo=gmt7).timestamp()) - runner._seconds_per_bar() + 1))
 
     def test_blocks_when_open_position_cap_is_reached(self) -> None:
         mt5 = FakeMt5()
         mt5.positions = (object(), object(), object())
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(symbol="XAUUSD", max_open_positions=3), mt5=mt5)
-        runner.evaluate_closed_bar = lambda: ("long", 1_700_100_000)
+        runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)
 
         self.assertTrue(runner.start())
-        self.assertFalse(runner.poll_once())
+        self.assertFalse(runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc)))
         self.assertEqual([], mt5.order_requests)
         self.assertIn("waiting:", runner.last_status)
         self.assertIn("cap 3", runner.last_status)
@@ -196,13 +197,13 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
         self.assertGreaterEqual(len(sleep_calls), 2)
         self.assertEqual([], mt5.order_requests)
 
-    def test_submits_one_risk_capped_order_for_new_closed_bar_signal(self) -> None:
+    def test_submits_one_risk_capped_order_for_new_preclose_signal(self) -> None:
         mt5 = FakeMt5()
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(symbol="XAUUSD", volume_lots=0.01), mt5=mt5)
-        runner.evaluate_closed_bar = lambda: ("long", 1_700_100_000)
+        runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)
 
         self.assertTrue(runner.start())
-        self.assertTrue(runner.poll_once())
+        self.assertTrue(runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc)))
         self.assertEqual(1, len(mt5.order_requests))
         request = mt5.order_requests[0]
         self.assertEqual(mt5.ORDER_TYPE_BUY, request["type"])
@@ -210,7 +211,7 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
         self.assertLess(request["sl"], request["price"])
         self.assertGreater(request["tp"], request["price"])
         self.assertLessEqual(request["volume"], 0.01)
-        self.assertIn("M5 bar", runner.last_status)
+        self.assertIn("pre-close bar", runner.last_status)
 
     def test_notifies_only_broker_fill_with_order_levels(self) -> None:
         mt5 = FakeMt5()
@@ -220,10 +221,10 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
             mt5=mt5,
             notifier=notifier,
         )
-        runner.evaluate_closed_bar = lambda: ("short", 1_700_100_000)
+        runner.evaluate_preclose_bar = lambda bar_time: ("short", bar_time)
 
         self.assertTrue(runner.start())
-        self.assertTrue(runner.poll_once())
+        self.assertTrue(runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc)))
         self.assertEqual(1, len(notifier.messages))
         filled_message = notifier.messages[0]
         self.assertNotIn("✅ LỆNH ĐÃ KHỚP", filled_message)
@@ -236,15 +237,15 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
         self.assertNotIn("Volume", filled_message)
         self.assertNotIn("Ticket", filled_message)
 
-    def test_notifies_only_one_fill_for_a_closed_bar(self) -> None:
+    def test_notifies_only_one_fill_for_a_preclose_bar(self) -> None:
         mt5 = FakeMt5()
         notifier = FakeNotifier()
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(symbol="XAUUSD", volume_lots=0.01), mt5=mt5, notifier=notifier)
-        runner.evaluate_closed_bar = lambda: ("long", 1_700_100_000)
+        runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)
 
         self.assertTrue(runner.start())
-        runner.poll_once()
-        runner.poll_once()
+        runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc))
+        runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc))
         self.assertEqual(1, len(notifier.messages))  # one fill alert; duplicate bar is blocked
         self.assertNotIn("✅ LỆNH ĐÃ KHỚP", notifier.messages[0])
         self.assertIn("XAUUSD | M5 | LONG 🟢", notifier.messages[0])
@@ -307,7 +308,7 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
 
     def test_rate_limits_repetitive_status_logs_to_five_minutes(self) -> None:
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(status_log_interval_seconds=300), mt5=FakeMt5())
-        runner.last_status = "no closed-bar RSIQUI V3 signal"
+        runner.last_status = "no pre-close RSIQUI V3 signal"
 
         self.assertTrue(runner.should_print_status(now=0))
         self.assertFalse(runner.should_print_status(now=299.9))
@@ -315,29 +316,29 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
 
     def test_prints_filled_order_status_without_waiting_for_rate_limit(self) -> None:
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(status_log_interval_seconds=300), mt5=FakeMt5())
-        runner.last_status = "no closed-bar RSIQUI V3 signal"
+        runner.last_status = "no pre-close RSIQUI V3 signal"
         self.assertTrue(runner.should_print_status(now=0))
-        runner.last_status = "order filled: long ticket 123 on M5 bar 1700100000"
+        runner.last_status = "order filled: long ticket 123 on M5 pre-close bar 1700100000"
         self.assertTrue(runner.should_print_status(now=1))
 
     def test_caps_trade_risk_at_quarter_percent_of_demo_equity(self) -> None:
         mt5 = FakeMt5(equity=1_000.0)
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(symbol="XAUUSD"), mt5=mt5)
-        runner.evaluate_closed_bar = lambda: ("long", 1_700_100_000)
+        runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)
 
         runner.start()
-        self.assertTrue(runner.poll_once())
+        self.assertTrue(runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc)))
         request = mt5.order_requests[0]
         self.assertAlmostEqual(2.5, request["price"] - request["sl"], places=2)
 
-    def test_does_not_submit_duplicate_order_for_same_closed_bar(self) -> None:
+    def test_does_not_submit_duplicate_order_for_same_preclose_bar(self) -> None:
         mt5 = FakeMt5()
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(symbol="XAUUSD"), mt5=mt5)
-        runner.evaluate_closed_bar = lambda: ("short", 1_700_100_000)
+        runner.evaluate_preclose_bar = lambda bar_time: ("short", bar_time)
 
         runner.start()
-        runner.poll_once()
-        runner.poll_once()
+        runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc))
+        runner.poll_once(datetime(2026, 1, 2, 0, 4, 56, tzinfo=timezone.utc))
 
         self.assertEqual(1, len(mt5.order_requests))
 

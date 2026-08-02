@@ -11,7 +11,7 @@ from typing import Any
 
 import pandas as pd
 
-from trading_lab.strategies.builtins.rsiqui.neg import RsiquiV3Config, evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
+from trading_lab.strategies.builtins.rsiqui.btcusd import RsiquiV3Config, evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_filled_order_message
 
 
@@ -25,6 +25,7 @@ class Mt5DemoConfig:
     price_value_per_lot: float = 100.0
     risk_usd: float = 10.0
     reward_usd: float = 20.0
+    equity_risk_cap_pct: float | None = 0.0025
     max_spread_price: float = 1.2
     poll_seconds: float = 5.0
     magic: int = 573503
@@ -45,20 +46,24 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
         else:
             config_path = Path(__file__).with_name(config_path.name)
     payload = json.loads(config_path.read_text(encoding="utf-8"))
-    if payload.get("strategy") != "rsiqui-v3-neg":
-        raise ValueError("runner accepts only strategy rsiqui-v3-neg")
+    if payload.get("strategy") != "rsiqui-v3-btcusd":
+        raise ValueError("runner accepts only strategy rsiqui-v3-btcusd")
     timeframe = str(payload["timeframe"]).upper()
     timeframe = {"5M": "M5", "15M": "M15"}.get(timeframe, timeframe)
     if timeframe not in {"M5", "M15"}:
         raise ValueError("timeframe must be 5m/M5 or 15m/M15")
+    cap_payload = payload.get("equity_risk_cap_pct", 0.0025)
+    equity_risk_cap_pct = None if cap_payload is None else float(cap_payload)
     return Mt5DemoConfig(
         timeframe=timeframe,
+        symbol=str(payload.get("symbol", "BTCUSD")),
         preset=str(payload["preset"]),
         trade_side=str(payload["side"]),
         volume_lots=float(payload["volume"]),
         price_value_per_lot=float(payload["price_value_per_lot"]),
         risk_usd=float(payload["risk_usd"]),
         reward_usd=float(payload["reward_usd"]),
+        equity_risk_cap_pct=equity_risk_cap_pct,
         max_spread_price=float(payload["max_spread"]),
         blocked_entry_hours_gmt7=tuple(int(hour) for hour in payload.get("blocked_entry_hours_gmt7", ())),
         telegram_enabled=bool(payload.get("telegram_enabled", False)),
@@ -78,6 +83,7 @@ class DemoOnlyRsiquiMt5Runner:
         self._last_submitted_bar: int | None = None
         self._last_evaluated_bar: int | None = None
         self._effective_risk_usd = config.risk_usd
+        self._account_equity: float | None = None
         self._last_status_log_at: float | None = None
 
     def _active_symbol(self, now: datetime | None = None) -> str:
@@ -89,8 +95,25 @@ class DemoOnlyRsiquiMt5Runner:
     def _max_spread_price_for_symbol(self, symbol: str) -> float:
         return float(self.config.max_spread_price)
 
+    def _money_contract_for_symbol(self, symbol: str) -> tuple[float, float, float]:
+        return float(self.config.volume_lots), float(self.config.risk_usd), float(self.config.reward_usd)
+
+    def _price_value_per_lot_for_symbol(self, symbol: str) -> float:
+        return float(self.config.price_value_per_lot)
+
+    def _effective_risk_for(self, risk_usd: float) -> float:
+        if self.config.equity_risk_cap_pct is None:
+            return float(risk_usd)
+        if self._account_equity is None:
+            return min(float(risk_usd), 0.0)
+        return min(float(risk_usd), float(self._account_equity) * self.config.equity_risk_cap_pct)
+
     def _symbols_required_for_start(self) -> tuple[str, ...]:
-        return (self.config.symbol,)
+        symbols = [self.config.symbol]
+        active_symbol = self._active_symbol()
+        if active_symbol not in symbols:
+            symbols.append(active_symbol)
+        return tuple(symbols)
 
     def start(self) -> bool:
         if not self.mt5.initialize():
@@ -101,7 +124,10 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = "blocked: a DEMO MT5 account is required"
             self.mt5.shutdown()
             return False
-        self._effective_risk_usd = min(self.config.risk_usd, float(account.equity) * 0.0025)
+        self._account_equity = float(account.equity)
+        active_symbol = self._active_symbol()
+        _, active_risk_usd, _ = self._money_contract_for_symbol(active_symbol)
+        self._effective_risk_usd = self._effective_risk_for(active_risk_usd)
         if self._effective_risk_usd <= 0:
             self.last_status = "blocked: non-positive demo equity/risk cap"
             self.mt5.shutdown()
@@ -116,7 +142,7 @@ class DemoOnlyRsiquiMt5Runner:
                 self.mt5.shutdown()
                 return False
         self._started = True
-        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} pre-close RSIQUI V3 NEG ({self.config.preset})"
+        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} pre-close RSIQUI V3 BTCUSD ({self.config.preset})"
         return True
 
     def stop(self) -> None:
@@ -126,15 +152,16 @@ class DemoOnlyRsiquiMt5Runner:
         self.last_status = "stopped"
 
     def _strategy_config(self) -> RsiquiV3Config:
+        symbol = self._active_symbol()
+        volume_lots, risk_usd, reward_usd = self._money_contract_for_symbol(symbol)
         return rsiqui_v3_config_for_preset(
             self.config.preset,
-            volume_lots=self.config.volume_lots,
-            price_value_per_lot=self.config.price_value_per_lot,
-            risk_usd=self.config.risk_usd,
-            reward_usd=self.config.reward_usd,
-            max_spread=self.config.max_spread_price,
+            volume_lots=volume_lots,
+            price_value_per_lot=self._price_value_per_lot_for_symbol(symbol),
+            risk_usd=risk_usd,
+            reward_usd=reward_usd,
+            max_spread=self._max_spread_price_for_symbol(symbol),
             trade_side=self.config.trade_side,
-            blocked_entry_hours_gmt7=self.config.blocked_entry_hours_gmt7,
         )
 
     def evaluate_preclose_bar(self, bar_time: int) -> tuple[str | None, int | None]:
@@ -153,7 +180,7 @@ class DemoOnlyRsiquiMt5Runner:
         frame["spread"] = frame["spread"] * float(self.mt5.symbol_info(symbol).point)
         strategy_config = self._strategy_config()
         prepared = prepare_rsiqui_v3_frame(frame, strategy_config)
-        row = prepared.iloc[-1]  # Pre-close contract: evaluate the active bar once near close.
+        row = prepared.iloc[-1]  # Pre-close contract: evaluate the active M5 bar once near close.
         side = evaluate_rsiqui_v3_signal(row, strategy_config)
         return side, int(row["time"])
 
@@ -190,7 +217,7 @@ class DemoOnlyRsiquiMt5Runner:
         return False
 
     def _waiting_open_position_status(self) -> str:
-        return "waiting: an XAUUSD position is already open; runner staying alive until the position closes"
+        return "waiting: a BTCUSD position is already open; runner staying alive until the position closes"
 
     @staticmethod
     def _floor_volume(raw: float, minimum: float, maximum: float, step: float) -> float:
@@ -212,21 +239,24 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = f"blocked: {symbol} spread {spread:.3f} > cap {max_spread_price:.3f}"
             return None
         entry = float(tick.ask if side == "long" else tick.bid)
-        raw_stop_distance = self._effective_risk_usd / max(self.config.volume_lots * self.config.price_value_per_lot, 1e-12)
+        configured_volume_lots, configured_risk_usd, configured_reward_usd = self._money_contract_for_symbol(symbol)
+        effective_risk_usd = self._effective_risk_for(configured_risk_usd)
+        price_value_per_lot = self._price_value_per_lot_for_symbol(symbol)
+        raw_stop_distance = effective_risk_usd / max(configured_volume_lots * price_value_per_lot, 1e-12)
         stops_level = float(getattr(info, "trade_stops_level", 0))
         min_stop_distance = max(stops_level * float(info.point), float(info.trade_tick_size))
         stop_distance = max(raw_stop_distance, min_stop_distance)
         loss_per_lot = stop_distance / float(info.trade_tick_size) * float(info.trade_tick_value)
-        risk_volume_cap = self._effective_risk_usd / loss_per_lot
-        volume = self._floor_volume(min(self.config.volume_lots, risk_volume_cap), float(info.volume_min), float(info.volume_max), float(info.volume_step))
+        risk_volume_cap = effective_risk_usd / loss_per_lot
+        volume = self._floor_volume(min(configured_volume_lots, risk_volume_cap), float(info.volume_min), float(info.volume_max), float(info.volume_step))
         if volume <= 0:
             self.last_status = "blocked: broker minimum volume exceeds effective risk cap"
             return None
         actual_risk = stop_distance / float(info.trade_tick_size) * float(info.trade_tick_value) * volume
-        if actual_risk > self._effective_risk_usd + 1e-9:
+        if actual_risk > effective_risk_usd + 1e-9:
             self.last_status = "blocked: rounded volume exceeds configured risk cap"
             return None
-        reward_ratio = self.config.reward_usd / max(self.config.risk_usd, 1e-12)
+        reward_ratio = configured_reward_usd / max(configured_risk_usd, 1e-12)
         reward_distance = stop_distance * reward_ratio
         filling_mode = int(getattr(info, "filling_mode", 0))
         if filling_mode & 1:  # SYMBOL_FILLING_FOK
@@ -248,7 +278,7 @@ class DemoOnlyRsiquiMt5Runner:
             "tp": round(entry + reward_distance if is_long else entry - reward_distance, digits),
             "deviation": self.config.deviation_points,
             "magic": self.config.magic,
-            "comment": "DoanhHD_Trader N",
+            "comment": "DoanhHD_BTC",
             "type_time": self.mt5.ORDER_TIME_GTC,
             "type_filling": filling,
         }
@@ -279,7 +309,7 @@ class DemoOnlyRsiquiMt5Runner:
             return False
         side, evaluated_bar = self.evaluate_preclose_bar(bar_time)
         if side is None or evaluated_bar is None:
-            self.last_status = "no pre-close RSIQUI V3 NEG signal" if not self.last_status.startswith("blocked:") else self.last_status
+            self.last_status = "no pre-close RSIQUI V3 BTCUSD signal" if not self.last_status.startswith("blocked:") else self.last_status
             return False
         if self._is_gmt7_entry_blackout(evaluated_bar):
             local_time = self._entry_time_from_signal_bar(evaluated_bar)
@@ -333,9 +363,9 @@ class DemoOnlyRsiquiMt5Runner:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run RSIQUI V3 on a currently logged-in MT5 DEMO account only.")
-    parser.add_argument("--config", default="rsiqui_v3_m5_demo.json")
-    parser.add_argument("--symbol", default="XAUUSD")
+    parser = argparse.ArgumentParser(description="Run RSIQUI V3 BTCUSD on a currently logged-in MT5 DEMO account only.")
+    parser.add_argument("--config", default="btcusd_m5_demo.json")
+    parser.add_argument("--symbol", default="BTCUSD")
     parser.add_argument("--poll-seconds", type=float, default=5.0)
     parser.add_argument("--status-log-interval-seconds", type=float, default=None)
     args = parser.parse_args()

@@ -18,7 +18,6 @@ from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, fo
 @dataclass(frozen=True)
 class Mt5DemoConfig:
     symbol: str = "XAUUSD"
-    weekend_symbol: str | None = "XAUUSD.24-7"
     timeframe: str = "M5"
     preset: str = "gold-loose"
     trade_side: str = "both"
@@ -34,6 +33,8 @@ class Mt5DemoConfig:
     blocked_entry_hours_gmt7: tuple[int, ...] = ()
     telegram_enabled: bool = False
     status_log_interval_seconds: float = 300.0
+    preclose_check_min_seconds: int = 1
+    preclose_check_max_seconds: int = 5
 
 def load_demo_config(path: str | Path) -> Mt5DemoConfig:
     config_path = Path(path)
@@ -52,7 +53,6 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
         raise ValueError("timeframe must be 5m/M5 or 15m/M15")
     return Mt5DemoConfig(
         timeframe=timeframe,
-        weekend_symbol=payload.get("weekend_symbol", "XAUUSD.24-7"),
         preset=str(payload["preset"]),
         trade_side=str(payload["side"]),
         volume_lots=float(payload["volume"]),
@@ -77,32 +77,21 @@ class DemoOnlyRsiquiMt5Runner:
         self.last_status = "not started"
         self._started = False
         self._last_submitted_bar: int | None = None
+        self._last_evaluated_bar: int | None = None
         self._effective_risk_usd = config.risk_usd
         self._last_status_log_at: float | None = None
 
-    def _is_weekend_symbol_session(self, now: datetime | None = None) -> bool:
-        """Use the broker 24/7 gold symbol during UTC Saturday/Sunday sessions."""
-        now = now or datetime.now(UTC)
-        return now.weekday() >= 5
-
     def _active_symbol(self, now: datetime | None = None) -> str:
-        weekend_symbol = self.config.weekend_symbol
-        if weekend_symbol and self._is_weekend_symbol_session(now):
-            return str(weekend_symbol)
         return self.config.symbol
 
     def _symbols_to_guard(self) -> tuple[str, ...]:
-        symbols = [self.config.symbol]
-        if self.config.weekend_symbol and self.config.weekend_symbol not in symbols:
-            symbols.append(str(self.config.weekend_symbol))
-        return tuple(symbols)
+        return (self.config.symbol,)
+
+    def _max_spread_price_for_symbol(self, symbol: str) -> float:
+        return float(self.config.max_spread_price)
 
     def _symbols_required_for_start(self) -> tuple[str, ...]:
-        symbols = [self.config.symbol]
-        active_symbol = self._active_symbol()
-        if active_symbol not in symbols:
-            symbols.append(active_symbol)
-        return tuple(symbols)
+        return (self.config.symbol,)
 
     def start(self) -> bool:
         if not self.mt5.initialize():
@@ -128,7 +117,7 @@ class DemoOnlyRsiquiMt5Runner:
                 self.mt5.shutdown()
                 return False
         self._started = True
-        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} closed-bar RSIQUI V3 ORI ({self.config.preset})"
+        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} pre-close RSIQUI V3 ORI ({self.config.preset})"
         return True
 
     def stop(self) -> None:
@@ -149,7 +138,7 @@ class DemoOnlyRsiquiMt5Runner:
             blocked_entry_hours_gmt7=self.config.blocked_entry_hours_gmt7,
         )
 
-    def evaluate_closed_bar(self) -> tuple[str | None, int | None]:
+    def evaluate_preclose_bar(self, bar_time: int) -> tuple[str | None, int | None]:
         symbol = self._active_symbol()
         timeframe = getattr(self.mt5, f"TIMEFRAME_{self.config.timeframe}")
         rates = self.mt5.copy_rates_from_pos(symbol, timeframe, 0, 200)
@@ -157,13 +146,40 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = f"blocked: insufficient {self.config.timeframe} history for {symbol}"
             return None, None
         frame = pd.DataFrame(rates)
+        frame = frame[frame["time"] <= bar_time]
+        if frame.empty or int(frame.iloc[-1]["time"]) != bar_time:
+            self.last_status = f"blocked: active {self.config.timeframe} bar {bar_time} is unavailable"
+            return None, None
         frame["timestamp"] = pd.to_datetime(frame["time"], unit="s", utc=True)
         frame["spread"] = frame["spread"] * float(self.mt5.symbol_info(symbol).point)
         strategy_config = self._strategy_config()
         prepared = prepare_rsiqui_v3_frame(frame, strategy_config)
-        row = prepared.iloc[-2]  # Never trade from the forming bar.
+        row = prepared.iloc[-1]  # Pre-close contract: evaluate the active bar once near close.
         side = evaluate_rsiqui_v3_signal(row, strategy_config)
         return side, int(row["time"])
+
+    def _seconds_per_bar(self) -> int:
+        return {"M5": 5 * 60, "M15": 15 * 60}[self.config.timeframe]
+
+    def _bar_open_timestamp(self, now_utc: datetime) -> int:
+        seconds_per_bar = self._seconds_per_bar()
+        return int(now_utc.timestamp()) // seconds_per_bar * seconds_per_bar
+
+    def _seconds_until_bar_close(self, now_utc: datetime) -> float:
+        seconds_per_bar = self._seconds_per_bar()
+        elapsed = now_utc.timestamp() - self._bar_open_timestamp(now_utc)
+        return seconds_per_bar - elapsed
+
+    def _is_preclose_entry_window(self, now_utc: datetime) -> bool:
+        remaining = self._seconds_until_bar_close(now_utc)
+        return self.config.preclose_check_min_seconds <= remaining <= self.config.preclose_check_max_seconds
+
+    def _current_tick_time(self) -> datetime:
+        tick = self.mt5.symbol_info_tick(self._active_symbol())
+        tick_time = getattr(tick, "time", None) if tick is not None else None
+        if tick_time is not None:
+            return datetime.fromtimestamp(int(tick_time), tz=UTC)
+        return datetime.now(tz=UTC)
 
     def _open_positions_count(self) -> int:
         positions_get = getattr(self.mt5, "positions_get", None)
@@ -192,8 +208,9 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = "blocked: incomplete symbol/tick metadata"
             return None
         spread = float(tick.ask - tick.bid)
-        if spread > self.config.max_spread_price:
-            self.last_status = f"blocked: spread {spread:.3f} > cap {self.config.max_spread_price:.3f}"
+        max_spread_price = self._max_spread_price_for_symbol(symbol)
+        if spread > max_spread_price:
+            self.last_status = f"blocked: {symbol} spread {spread:.3f} > cap {max_spread_price:.3f}"
             return None
         entry = float(tick.ask if side == "long" else tick.bid)
         raw_stop_distance = self._effective_risk_usd / max(self.config.volume_lots * self.config.price_value_per_lot, 1e-12)
@@ -238,30 +255,40 @@ class DemoOnlyRsiquiMt5Runner:
         }
 
     def _entry_time_from_signal_bar(self, bar_time: int) -> datetime:
-        seconds_per_bar = {"M5": 5 * 60, "M15": 15 * 60}[self.config.timeframe]
-        return datetime.fromtimestamp(bar_time + seconds_per_bar, tz=UTC) + timedelta(hours=7)
+        seconds_per_bar = self._seconds_per_bar()
+        return datetime.fromtimestamp(bar_time + seconds_per_bar - 1, tz=UTC) + timedelta(hours=7)
 
     def _is_gmt7_entry_blackout(self, bar_time: int) -> bool:
         return self._entry_time_from_signal_bar(bar_time).hour in self.config.blocked_entry_hours_gmt7
 
-    def poll_once(self) -> bool:
+    def poll_once(self, now_utc: datetime | None = None) -> bool:
         if not self._started:
             self.last_status = "blocked: runner not started"
             return False
+        now_utc = self._current_tick_time() if now_utc is None else now_utc.astimezone(UTC)
+        if not self._is_preclose_entry_window(now_utc):
+            remaining = self._seconds_until_bar_close(now_utc)
+            self.last_status = f"waiting: outside {self.config.timeframe} pre-close entry window ({remaining}s to close)"
+            return False
+        bar_time = self._bar_open_timestamp(now_utc)
+        if bar_time == self._last_evaluated_bar:
+            self.last_status = "blocked: duplicate pre-close check for this bar"
+            return False
+        self._last_evaluated_bar = bar_time
         open_positions = self._open_positions_count()
-        if open_positions >= self.config.max_open_positions:
+        if open_positions > 0:
             self.last_status = self._waiting_open_position_status(open_positions)
             return False
-        side, bar_time = self.evaluate_closed_bar()
-        if side is None or bar_time is None:
-            self.last_status = "no closed-bar RSIQUI V3 ORI signal"
+        side, evaluated_bar = self.evaluate_preclose_bar(bar_time)
+        if side is None or evaluated_bar is None:
+            self.last_status = "no pre-close RSIQUI V3 ORI signal" if not self.last_status.startswith("blocked:") else self.last_status
             return False
-        if self._is_gmt7_entry_blackout(bar_time):
-            local_time = self._entry_time_from_signal_bar(bar_time)
+        if self._is_gmt7_entry_blackout(evaluated_bar):
+            local_time = self._entry_time_from_signal_bar(evaluated_bar)
             self.last_status = f"blocked: GMT+7 blackout at {local_time:%H:%M}"
             return False
-        if bar_time == self._last_submitted_bar:
-            self.last_status = "blocked: duplicate closed-bar setup"
+        if evaluated_bar == self._last_submitted_bar:
+            self.last_status = "blocked: duplicate pre-close setup"
             return False
         request = self._build_request(side)
         if request is None:
@@ -270,8 +297,8 @@ class DemoOnlyRsiquiMt5Runner:
         if result is None or result.retcode != self.mt5.TRADE_RETCODE_DONE:
             self.last_status = f"order rejected: {None if result is None else result.retcode}"
             return False
-        self._last_submitted_bar = bar_time
-        self.last_status = f"order filled: {side} ticket {getattr(result, 'order', '?')} on {self.config.timeframe} bar {bar_time}"
+        self._last_submitted_bar = evaluated_bar
+        self.last_status = f"order filled: {side} ticket {getattr(result, 'order', '?')} on {self.config.timeframe} pre-close bar {evaluated_bar}"
         message = format_filled_order_message(
             symbol=str(request.get("symbol", self.config.symbol)),
             side=side,
@@ -311,12 +338,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run RSIQUI V3 ORI on a currently logged-in MT5 DEMO account only.")
     parser.add_argument("--config", default="configs/strategies/rsiqui/ori_m5_demo.json")
     parser.add_argument("--symbol", default="XAUUSD")
-    parser.add_argument("--weekend-symbol", default="XAUUSD.24-7")
     parser.add_argument("--poll-seconds", type=float, default=5.0)
     parser.add_argument("--status-log-interval-seconds", type=float, default=None)
     args = parser.parse_args()
     config = load_demo_config(args.config)
-    overrides = {"symbol": args.symbol, "weekend_symbol": args.weekend_symbol, "poll_seconds": args.poll_seconds}
+    overrides = {"symbol": args.symbol, "poll_seconds": args.poll_seconds}
     if args.status_log_interval_seconds is not None:
         overrides["status_log_interval_seconds"] = args.status_log_interval_seconds
     config = Mt5DemoConfig(**(config.__dict__ | overrides))

@@ -14,6 +14,29 @@ from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 
+def _read_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    if value or os.name != "nt":
+        return value
+    try:
+        import winreg
+        for root_key, subkey in (
+            (winreg.HKEY_CURRENT_USER, "Environment"),
+            (winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"),
+        ):
+            try:
+                with winreg.OpenKey(root_key, subkey) as key:
+                    value, _ = winreg.QueryValueEx(key, name)
+            except OSError:
+                continue
+            value = str(value).strip()
+            if value:
+                return value
+    except Exception:
+        return ""
+    return ""
+
+
 @dataclass(frozen=True)
 class TelegramSettings:
     enabled: bool = False
@@ -24,15 +47,15 @@ class TelegramSettings:
 
     @classmethod
     def from_environment(cls, *, enabled: bool = False) -> "TelegramSettings":
-        raw_thread_id = os.environ.get("TELEGRAM_MESSAGE_THREAD_ID", "").strip()
+        raw_thread_id = _read_env("TELEGRAM_MESSAGE_THREAD_ID")
         try:
             message_thread_id = int(raw_thread_id) if raw_thread_id else None
         except ValueError:
             message_thread_id = None
         return cls(
             enabled=enabled,
-            bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", "").strip(),
-            chat_id=os.environ.get("TELEGRAM_CHAT_ID", "").strip(),
+            bot_token=_read_env("TELEGRAM_BOT_TOKEN"),
+            chat_id=_read_env("TELEGRAM_CHAT_ID"),
             message_thread_id=message_thread_id,
         )
 

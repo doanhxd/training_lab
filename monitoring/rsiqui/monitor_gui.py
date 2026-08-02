@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 import json
 from pathlib import Path
 import subprocess
@@ -14,18 +14,14 @@ from typing import Callable
 import pandas as pd
 
 from trading_lab.monitoring.rsiqui.position_monitor import MonitorSnapshot, RsiquiV3PositionMonitor, RunnerView
-from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_signal_message
+
 
 
 APP_TITLE = "RSIQUI V3 • GOLD Trader"
 REFRESH_MILLISECONDS = 2_000
 CONFIG_ROOT = Path(__file__).resolve().parents[2] / "configs" / "strategies" / "rsiqui"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-TELEGRAM_TARGETS_PATH = CONFIG_ROOT / "telegram_targets.json"
-TELEGRAM_TEMP_DISABLED = True
-DEFAULT_TELEGRAM_TARGETS = (
-    {"key": "portfolio_managers", "label": "Portfolio Managers", "chat_id": "-5043082181", "message_thread_id": None},
-)
+
 
 
 class UiPalette:
@@ -66,14 +62,6 @@ class StrategySelection:
 
 
 @dataclass(frozen=True)
-class TelegramTarget:
-    key: str
-    label: str
-    chat_id: str
-    message_thread_id: int | None = None
-
-
-@dataclass(frozen=True)
 class LogEntry:
     timestamp: str
     badge: str
@@ -85,18 +73,21 @@ STRATEGY_SELECTIONS = {
     "rsiqui_v3_ori": StrategySelection("rsiqui_v3_ori", "rsiqui_v3_ori", CONFIG_ROOT / "ori_m5_demo.json"),
     "rsiqui_v3_neg": StrategySelection("rsiqui_v3_neg", "rsiqui_v3_neg", CONFIG_ROOT / "neg_m5_demo.json"),
     "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "rsiqui_v3_final", CONFIG_ROOT / "final_m5_demo.json"),
+    "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "rsiqui_v3_btcusd", CONFIG_ROOT / "btcusd_m5_demo.json"),
 }
 
 RUNNER_SCRIPT_BY_STRATEGY = {
     "rsiqui_v3_ori": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_ori_demo.py",
     "rsiqui_v3_neg": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_neg_demo.py",
     "rsiqui_v3_final": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_demo.py",
+    "rsiqui_v3_btcusd": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_btcusd_demo.py",
 }
 
 RUNNER_MODULE_BY_STRATEGY = {
     "rsiqui_v3_ori": "trading_lab.runners.mt5.rsiqui_ori_demo",
     "rsiqui_v3_neg": "trading_lab.runners.mt5.rsiqui_neg_demo",
     "rsiqui_v3_final": "trading_lab.runners.mt5.rsiqui_final_demo",
+    "rsiqui_v3_btcusd": "trading_lab.runners.mt5.rsiqui_btcusd_demo",
 }
 
 
@@ -119,6 +110,10 @@ def _strategy_loader_for_payload(payload: dict):
         from trading_lab.runners.mt5.rsiqui_final_demo import load_demo_config
 
         return "rsiqui_v3_final", load_demo_config
+    if strategy == "rsiqui-v3-btcusd":
+        from trading_lab.runners.mt5.rsiqui_btcusd_demo import load_demo_config
+
+        return "rsiqui_v3_btcusd", load_demo_config
     raise ValueError(f"Unsupported RSIQUI strategy payload: {strategy or '<missing>'}")
 
 
@@ -133,6 +128,10 @@ def _strategy_runtime(strategy_key: str):
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
     if strategy_key == "rsiqui_v3_final":
         from trading_lab.strategies.builtins.rsiqui.final import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
+
+        return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
+    if strategy_key == "rsiqui_v3_btcusd":
+        from trading_lab.strategies.builtins.rsiqui.btcusd import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
     raise ValueError(f"Unsupported strategy runtime: {strategy_key}")
@@ -157,35 +156,8 @@ def load_read_only_profile(config_path: str | Path) -> dict[str, str | float]:
     }
 
 
-def load_telegram_targets(path: str | Path = TELEGRAM_TARGETS_PATH) -> list[TelegramTarget]:
-    target_path = Path(path)
-    if target_path.exists():
-        payload = json.loads(target_path.read_text(encoding="utf-8"))
-        items = payload if isinstance(payload, list) else payload.get("targets", [])
-    else:
-        items = list(DEFAULT_TELEGRAM_TARGETS)
-    targets: list[TelegramTarget] = []
-    for index, item in enumerate(items):
-        if not item.get("chat_id"):
-            continue
-        thread_id = item.get("message_thread_id")
-        try:
-            parsed_thread_id = int(thread_id) if thread_id not in (None, "") else None
-        except (TypeError, ValueError):
-            parsed_thread_id = None
-        targets.append(
-            TelegramTarget(
-                key=str(item.get("key", f"target_{index}")),
-                label=str(item.get("label", item.get("chat_id"))),
-                chat_id=str(item["chat_id"]),
-                message_thread_id=parsed_thread_id,
-            )
-        )
-    return targets
-
-
 class RsiquiV3MonitorApp(tk.Tk):
-    """Modern GOLD TRADER observer shell with signal preview + Telegram routing."""
+    """Modern GOLD TRADER observer shell with signal preview and runner status."""
 
     def __init__(
         self,
@@ -204,14 +176,11 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._latest_snapshot: MonitorSnapshot | None = None
         self._log_history: list[LogEntry] = []
         self._last_signal_bar_by_strategy: dict[str, int] = {}
-        self._last_telegram_signal_key: tuple[str, int, str, str] | None = None
         self.shell: tk.Frame | None = None
         self._strategy_profiles = {key: load_read_only_profile(selection.config_path) for key, selection in STRATEGY_SELECTIONS.items()}
-        current_strategy_key = str(profile.get("strategy_key", "rsiqui_v3_ori"))
+        current_strategy_key = str(profile.get("strategy_key", "rsiqui_v3_final"))
         if current_strategy_key not in self._strategy_profiles:
-            current_strategy_key = "rsiqui_v3_ori"
-        self._telegram_targets = load_telegram_targets()
-        self._telegram_target_map = {target.label: target for target in self._telegram_targets}
+            current_strategy_key = "rsiqui_v3_final"
 
         self._account_value = tk.StringVar(value="—")
         self._equity_value = tk.StringVar(value="—")
@@ -231,10 +200,21 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._volume_value = tk.StringVar(value="0.01")
         self._risk_value = tk.StringVar(value="5.00")
         self._reward_value = tk.StringVar(value="5.00")
-        self._telegram_target_value = tk.StringVar(value="")
-        self._telegram_enabled = tk.BooleanVar(value=False)
-        self._telegram_toggle_label = tk.StringVar(value="TELEGRAM OFF")
         self._run_button_label = tk.StringVar(value="RUN")
+        self._history_filter_value = tk.StringVar(value="30 ngày qua")
+        self._history_symbol_value = tk.StringVar(value="Tất cả")
+        self._history_start_date_value = tk.StringVar(value=(date.today() - timedelta(days=30)).isoformat())
+        self._history_end_date_value = tk.StringVar(value=date.today().isoformat())
+        self._history_range_value = tk.StringVar(value="—")
+        self._history_deals_value = tk.StringVar(value="0")
+        self._history_winrate_value = tk.StringVar(value="0.0%")
+        self._history_daily_dd_value = tk.StringVar(value="0.00 USD")
+        self._history_net_value = tk.StringVar(value="0.00 USD")
+        self._position_day_value = tk.StringVar(value=date.today().strftime("%d/%m"))
+        self._history_window: tk.Toplevel | None = None
+        self._history_table: ttk.Treeview | None = None
+        self._history_custom_start_wrap: tk.Frame | None = None
+        self._history_custom_end_wrap: tk.Frame | None = None
         self._bot_status_badge_color = UiPalette.WARNING
         self._last_signal_badge_color = UiPalette.INFO
         self._bot_status_badge_widget: tk.Canvas | None = None
@@ -249,7 +229,6 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._configure_style()
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
-        self._update_telegram_controls()
         self._append_log("Observer mode active. No trade orders are sent from this app.", badge="INFO")
         self._refresh()
 
@@ -312,23 +291,43 @@ class RsiquiV3MonitorApp(tk.Tk):
 
         nav_line = tk.Frame(sidebar, bg=UiPalette.ACCENT, height=2)
         nav_line.pack(fill="x", pady=(26, 18))
-        nav_item = tk.Frame(sidebar, bg=UiPalette.CARD_ALT, padx=12, pady=11)
-        nav_item.pack(fill="x")
-        self._label(nav_item, text="◉  THEO DÕI LỆNH & KÈO", font=("Segoe UI", 10, "bold"), bg=UiPalette.CARD_ALT).pack(anchor="w")
+        monitor_button = tk.Button(
+            sidebar,
+            text="◉  THEO DÕI LỆNH & KÈO",
+            command=self._show_monitor_page,
+            font=("Segoe UI", 10, "bold"),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.CARD_ALT,
+            activeforeground=UiPalette.TEXT,
+            activebackground=UiPalette.BORDER,
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=11,
+            anchor="w",
+            cursor="hand2",
+        )
+        monitor_button.pack(fill="x")
+        history_button = tk.Button(
+            sidebar,
+            text="◷  LỊCH SỬ LỆNH",
+            command=self._open_history_window,
+            font=("Segoe UI", 10, "bold"),
+            fg=UiPalette.NAV_TEXT,
+            bg=UiPalette.SIDEBAR,
+            activeforeground=UiPalette.NAV_TEXT,
+            activebackground=UiPalette.CARD_ALT,
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=11,
+            anchor="w",
+            cursor="hand2",
+        )
+        history_button.pack(fill="x", pady=(8, 0))
 
         sidebar_bottom = tk.Frame(sidebar, bg=UiPalette.SIDEBAR)
         sidebar_bottom.pack(side="bottom", fill="x")
-        safe = self._card(sidebar_bottom, padding=14, bg="#10263A")
-        safe.pack(fill="x")
-        self._label(safe, text="CHẾ ĐỘ AN TOÀN", font=("Segoe UI", 9, "bold"), fg=UiPalette.SUCCESS, bg="#10263A").pack(anchor="w")
-        self._label(
-            safe,
-            text="Không gửi lệnh MT5.\nChỉ hiển thị dữ liệu và gửi cảnh báo Telegram nếu bật.",
-            font=("Segoe UI", 9),
-            fg=UiPalette.NAV_MUTED,
-            bg="#10263A",
-            justify="left",
-        ).pack(anchor="w", pady=(6, 0))
         theme_button = tk.Button(
             sidebar_bottom,
             text="☀  LIGHT MODE" if self._theme_mode == "dark" else "◐  DARK MODE",
@@ -354,7 +353,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         title_group = tk.Frame(header, bg=UiPalette.APP)
         title_group.pack(side="left")
         self._label(title_group, text="TRẠM QUAN SÁT RSIQUI V3", font=("Segoe UI", 19, "bold"), bg=UiPalette.APP).pack(anchor="w")
-        self._label(title_group, text="GOLD Trader • theo dõi lệnh, preset và cảnh báo Telegram theo tín hiệu", font=("Segoe UI", 10), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(4, 0))
+        self._label(title_group, text="GOLD Trader • theo dõi lệnh, preset và signal nội bộ", font=("Segoe UI", 10), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(4, 0))
         updated = tk.Frame(header, bg=UiPalette.CARD_ALT, padx=12, pady=9)
         updated.pack(side="right", anchor="s")
         self._label(updated, text="CẬP NHẬT", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT).pack(anchor="e")
@@ -369,100 +368,31 @@ class RsiquiV3MonitorApp(tk.Tk):
         metrics.pack(fill="x", pady=(0, 14))
         for column in range(3):
             metrics.grid_columnconfigure(column, weight=1, uniform="metric")
-        self._metric(metrics, 0, "TÀI KHOẢN MT5", self._account_value, UiPalette.TEXT)
+        self._account_metric(metrics, 0)
         self._metric(metrics, 1, "EQUITY", self._equity_value, UiPalette.SUCCESS)
-        self._metric(metrics, 2, "LỆNH XAUUSD", self._position_count_value, UiPalette.ACCENT)
+        self._metric(metrics, 2, "LỆNH XAU/BTC", self._position_count_value, UiPalette.ACCENT)
 
         strategy_card = self._card(content, padding=16)
         strategy_card.pack(fill="x", pady=(0, 14))
-        self._label(strategy_card, text="CHIẾN LƯỢC & CẢNH BÁO", font=("Segoe UI", 11, "bold")).pack(anchor="w")
-        self._label(strategy_card, text="Chọn biến thể RSIQUI, xem sẵn preset TP/SL/volume và bật nơi gửi kèo Telegram.", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(anchor="w", pady=(4, 12))
+        self._label(strategy_card, text="CHIẾN LƯỢC & SIGNAL", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        self._label(strategy_card, text="Chọn biến thể RSIQUI và xem sẵn preset TP/SL/volume.", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(anchor="w", pady=(4, 12))
 
         fields = tk.Frame(strategy_card, bg=UiPalette.CARD)
         fields.pack(fill="x")
         for column in range(4):
             fields.grid_columnconfigure(column, weight=1)
         self._labeled_combobox(fields, 0, 0, "CHIẾN LƯỢC", self._strategy_choice, [item.label for item in STRATEGY_SELECTIONS.values()], self._on_strategy_selection)
-        run_wrap = tk.Frame(fields, bg=UiPalette.CARD)
-        run_wrap.grid(row=0, column=1, sticky="ew", padx=(0, 8))
-        self._label(run_wrap, text="CHẠY BOT", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
-        self._run_button = tk.Button(
-            run_wrap,
-            textvariable=self._run_button_label,
-            command=self._run_selected_strategy,
-            font=("Segoe UI", 9, "bold"),
-            fg=UiPalette.BADGE_FG,
-            bg=UiPalette.SUCCESS,
-            activeforeground=UiPalette.BADGE_FG,
-            activebackground=UiPalette.SUCCESS,
-            relief="flat",
-            bd=0,
-            padx=18,
-            pady=8,
-            cursor="hand2",
-        )
-        self._run_button.pack(fill="x", pady=(5, 0))
-        self._labeled_entry(fields, 0, 2, "TIMEFRAME", self._timeframe_value, state="readonly")
-        self._labeled_entry(fields, 0, 3, "PRESET", self._preset_value, state="readonly")
-        self._labeled_entry(fields, 1, 0, "SIDE", self._side_value, state="readonly")
-        self._labeled_entry(fields, 1, 1, "VOLUME LOT", self._volume_value)
-        self._labeled_entry(fields, 1, 2, "SL USD", self._risk_value)
-        self._labeled_entry(fields, 1, 3, "TP USD", self._reward_value)
-        self._labeled_combobox(fields, 2, 0, "GỬI KÈO TELEGRAM", self._telegram_target_value, [target.label for target in self._telegram_targets], self._on_telegram_target_change, allow_blank=True)
-
-        telegram_row = tk.Frame(strategy_card, bg=UiPalette.CARD)
-        telegram_row.pack(fill="x", pady=(12, 0))
-        self._telegram_toggle = tk.Checkbutton(
-            telegram_row,
-            textvariable=self._telegram_toggle_label,
-            variable=self._telegram_enabled,
-            command=self._on_telegram_toggle,
-            indicatoron=False,
-            relief="flat",
-            bd=0,
-            cursor="hand2",
-            padx=18,
-            pady=8,
-            font=("Segoe UI", 9, "bold"),
-            fg=UiPalette.BADGE_FG,
-            selectcolor=UiPalette.SUCCESS,
-            activeforeground=UiPalette.BADGE_FG,
-            activebackground=UiPalette.SUCCESS,
-        )
-        self._telegram_toggle.pack(side="left")
-        self._label(telegram_row, text="Telegram đang tắt tạm thời trong app. Chỉ xem signal nội bộ, chưa gửi ra chat.", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="left", padx=(12, 0))
-
-        status = self._card(content, padding=16)
-        status.pack(fill="x", pady=(0, 14))
-        self._label(status, text="TRẠNG THÁI HỆ THỐNG", font=("Segoe UI", 9, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
-        status_grid = tk.Frame(status, bg=UiPalette.CARD)
-        status_grid.pack(fill="x", pady=(10, 0))
-        status_grid.grid_columnconfigure(1, weight=1)
-
-        self._label(status_grid, text="MT5 STATUS", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=0, column=0, sticky="w", padx=(0, 12), pady=(0, 8))
-        self._label(status_grid, textvariable=self._mt5_status_value, font=("Consolas", 10), fg=UiPalette.TEXT).grid(row=0, column=1, sticky="e", pady=(0, 8))
-
-        self._label(status_grid, text="BOT STATUS", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=1, column=0, sticky="nw", padx=(0, 12), pady=(0, 8))
-        bot_status_wrap = tk.Frame(status_grid, bg=UiPalette.CARD)
-        bot_status_wrap.grid(row=1, column=1, sticky="ew", pady=(0, 8))
-        self._bot_status_badge_widget = self._badge(bot_status_wrap, self._bot_status_value.get(), self._bot_status_badge_color, UiPalette.CARD)
-        self._bot_status_badge_widget.pack(side="left")
-        self._label(bot_status_wrap, textvariable=self._bot_status_detail_value, font=("Segoe UI", 9), fg=UiPalette.TEXT, bg=UiPalette.CARD, wraplength=760, justify="left", anchor="w").pack(side="left", padx=(10, 0), fill="x", expand=True)
-
-        self._label(status_grid, text="LAST CHECK", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=2, column=0, sticky="w", padx=(0, 12), pady=(0, 8))
-        self._label(status_grid, textvariable=self._last_signal_check_value, font=("Consolas", 10), fg=UiPalette.TEXT).grid(row=2, column=1, sticky="w", pady=(0, 8))
-
-        self._label(status_grid, text="LAST SIGNAL", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=3, column=0, sticky="nw", padx=(0, 12))
-        signal_wrap = tk.Frame(status_grid, bg=UiPalette.CARD)
-        signal_wrap.grid(row=3, column=1, sticky="ew")
-        self._last_signal_badge_widget = self._badge(signal_wrap, self._last_signal_value.get(), self._last_signal_badge_color, UiPalette.CARD)
-        self._last_signal_badge_widget.pack(side="left")
-        self._label(signal_wrap, textvariable=self._last_signal_detail_value, font=("Segoe UI", 9), fg=UiPalette.TEXT, bg=UiPalette.CARD, wraplength=760, justify="left", anchor="w").pack(side="left", padx=(10, 0), fill="x", expand=True)
+        self._labeled_entry(fields, 0, 1, "TIMEFRAME", self._timeframe_value, state="readonly")
+        self._labeled_entry(fields, 0, 2, "PRESET", self._preset_value, state="readonly")
+        self._labeled_entry(fields, 0, 3, "SIDE", self._side_value, state="readonly")
+        self._labeled_entry(fields, 1, 0, "VOLUME LOT", self._volume_value)
+        self._labeled_entry(fields, 1, 1, "SL USD", self._risk_value)
+        self._labeled_entry(fields, 1, 2, "TP USD", self._reward_value)
 
         body = tk.Frame(content, bg=UiPalette.APP)
         body.pack(fill="both", expand=True)
-        body.grid_columnconfigure(0, weight=3, uniform="main")
-        body.grid_columnconfigure(1, weight=2, uniform="main")
+        body.grid_columnconfigure(0, weight=5, uniform="main")
+        body.grid_columnconfigure(1, weight=6, uniform="main")
         body.grid_rowconfigure(0, weight=1)
 
         positions_card = self._card(body, padding=0)
@@ -470,10 +400,11 @@ class RsiquiV3MonitorApp(tk.Tk):
         section = tk.Frame(positions_card, bg=UiPalette.CARD, padx=18, pady=15)
         section.pack(fill="x")
         self._label(section, text="LỆNH ĐANG MỞ", font=("Segoe UI", 11, "bold")).pack(side="left")
-        self._label(section, text="Tất cả vị thế XAUUSD • chỉ xem", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="right")
-        columns = ("ticket", "source", "side", "volume", "entry", "sl", "tp", "profit")
+        self._label(section, textvariable=self._position_day_value, font=("Segoe UI", 9, "bold"), fg=UiPalette.MUTED).pack(side="left", padx=(10, 0), pady=(1, 0))
+        self._label(section, text="Tất cả vị thế XAUUSD / BTCUSD • read-only", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="right")
+        columns = ("time", "symbol", "side", "volume", "entry", "sl", "tp", "profit")
         self.positions = ttk.Treeview(positions_card, columns=columns, show="headings", style="Monitor.Treeview", height=9)
-        specs = (("ticket", 78, "TICKET"), ("source", 94, "NGUỒN"), ("side", 58, "LOẠI"), ("volume", 56, "LOT"), ("entry", 76, "ENTRY"), ("sl", 70, "SL"), ("tp", 70, "TP"), ("profit", 76, "P/L $"))
+        specs = (("time", 62, "TIME"), ("symbol", 56, "SYMBOL"), ("side", 50, "TYPE"), ("volume", 42, "LOT"), ("entry", 72, "ENTRY"), ("sl", 66, "SL"), ("tp", 66, "TP"), ("profit", 70, "PnL"))
         for key, width, title in specs:
             self.positions.heading(key, text=title)
             self.positions.column(key, width=width, anchor="center", stretch=True)
@@ -511,7 +442,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         footer.pack(fill="x", pady=(14, 0))
         refresh = tk.Button(footer, text="↻  LÀM MỚI NGAY", command=self._refresh, font=("Segoe UI", 10, "bold"), fg="#101722", bg=UiPalette.ACCENT, activeforeground="#101722", activebackground="#E8C270", relief="flat", bd=0, padx=16, pady=9, cursor="hand2")
         refresh.pack(side="left")
-        self._label(footer, text="Không gửi lệnh MT5 • chỉ giám sát và gửi kèo Telegram khi operator bật", font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="right")
+        self._label(footer, text="Không gửi lệnh MT5 • chỉ giám sát và hiển thị signal nội bộ", font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="right")
 
     def _labeled_entry(self, parent: tk.Misc, row: int, column: int, caption: str, variable: tk.StringVar, *, state: str = "normal") -> None:
         wrap = tk.Frame(parent, bg=UiPalette.CARD)
@@ -552,6 +483,232 @@ class RsiquiV3MonitorApp(tk.Tk):
         combo.bind("<<ComboboxSelected>>", handler)
         return combo
 
+    def _show_monitor_page(self) -> None:
+        if self._history_window is not None and self._history_window.winfo_exists():
+            self._close_history_window()
+        self.lift()
+        self.focus_force()
+
+    def _history_date_range(self) -> tuple[datetime, datetime]:
+        today = date.today()
+        mode = self._history_filter_value.get().strip().lower()
+        if mode == "7 ngày qua":
+            start_date, end_date = today - timedelta(days=6), today
+        elif mode == "90 ngày qua":
+            start_date, end_date = today - timedelta(days=89), today
+        elif mode == "1 năm qua":
+            start_date, end_date = today - timedelta(days=364), today
+        elif mode == "tùy chỉnh":
+            try:
+                start_date = date.fromisoformat(self._history_start_date_value.get().strip())
+                end_date = date.fromisoformat(self._history_end_date_value.get().strip())
+            except ValueError:
+                end_date = today
+                start_date = today - timedelta(days=30)
+                self._history_start_date_value.set(start_date.isoformat())
+                self._history_end_date_value.set(end_date.isoformat())
+            if end_date < start_date:
+                start_date, end_date = end_date, start_date
+                self._history_start_date_value.set(start_date.isoformat())
+                self._history_end_date_value.set(end_date.isoformat())
+        else:
+            start_date, end_date = today - timedelta(days=29), today
+        return datetime.combine(start_date, time.min), datetime.combine(end_date + timedelta(days=1), time.min)
+
+    def _open_history_window(self) -> None:
+        if self._history_window is not None and self._history_window.winfo_exists():
+            self._history_window.lift()
+            self._history_window.focus_force()
+            return
+        window = tk.Toplevel(self)
+        self._history_window = window
+        window.title("RSIQUI V3 • Lịch sử lệnh")
+        window.geometry("1180x720")
+        window.minsize(980, 620)
+        window.configure(background=UiPalette.APP)
+        window.protocol("WM_DELETE_WINDOW", self._close_history_window)
+
+        shell = tk.Frame(window, bg=UiPalette.APP, padx=22, pady=18)
+        shell.pack(fill="both", expand=True)
+        header = tk.Frame(shell, bg=UiPalette.APP)
+        header.pack(fill="x", pady=(0, 14))
+        self._label(header, text="LỊCH SỬ LỆNH", font=("Segoe UI", 18, "bold"), bg=UiPalette.APP).pack(side="left")
+        self._label(header, text="Tài khoản MT5 đang đăng nhập • chỉ đọc history_deals_get", font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
+
+        controls = self._card(shell, padding=14)
+        controls.pack(fill="x", pady=(0, 12))
+        controls.grid_columnconfigure(0, weight=1)
+        controls.grid_columnconfigure(1, weight=1)
+        controls.grid_columnconfigure(2, weight=1)
+        controls.grid_columnconfigure(3, weight=1)
+        controls.grid_columnconfigure(4, weight=0)
+        self._labeled_combobox(
+            controls,
+            0,
+            0,
+            "KHOẢNG THỜI GIAN",
+            self._history_filter_value,
+            ["7 ngày qua", "30 ngày qua", "90 ngày qua", "1 năm qua", "Tùy chỉnh"],
+            self._on_history_filter_change,
+        )
+        self._labeled_combobox(
+            controls,
+            0,
+            1,
+            "MÃ GIAO DỊCH",
+            self._history_symbol_value,
+            ["Tất cả", "XAUUSD", "BTCUSD"],
+            self._on_history_symbol_change,
+        )
+        self._history_custom_start_wrap = tk.Frame(controls, bg=UiPalette.CARD)
+        self._history_custom_start_wrap.grid(row=0, column=2, sticky="ew", padx=6, pady=6)
+        self._label(self._history_custom_start_wrap, text="START DATE", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
+        tk.Entry(
+            self._history_custom_start_wrap,
+            textvariable=self._history_start_date_value,
+            font=("Segoe UI", 10, "bold"),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.TABLE,
+            relief="flat",
+            bd=0,
+            insertbackground=UiPalette.TEXT,
+        ).pack(fill="x", pady=(6, 0), ipady=8)
+        self._history_custom_end_wrap = tk.Frame(controls, bg=UiPalette.CARD)
+        self._history_custom_end_wrap.grid(row=0, column=3, sticky="ew", padx=6, pady=6)
+        self._label(self._history_custom_end_wrap, text="END DATE", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
+        tk.Entry(
+            self._history_custom_end_wrap,
+            textvariable=self._history_end_date_value,
+            font=("Segoe UI", 10, "bold"),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.TABLE,
+            relief="flat",
+            bd=0,
+            insertbackground=UiPalette.TEXT,
+        ).pack(fill="x", pady=(6, 0), ipady=8)
+        action_wrap = tk.Frame(controls, bg=UiPalette.CARD)
+        action_wrap.grid(row=0, column=4, sticky="sew", padx=6, pady=6)
+        refresh = tk.Button(action_wrap, text="LỌC", command=self._refresh_history, font=("Segoe UI", 9, "bold"), fg="#101722", bg=UiPalette.ACCENT, activeforeground="#101722", activebackground="#E8C270", relief="flat", bd=0, padx=18, pady=9, cursor="hand2")
+        refresh.pack(fill="x", pady=(22, 0))
+        self._set_custom_history_controls_visible()
+
+        stats = tk.Frame(shell, bg=UiPalette.APP)
+        stats.pack(fill="x", pady=(0, 12))
+        for column in range(4):
+            stats.grid_columnconfigure(column, weight=1, uniform="history_metric")
+        self._metric(stats, 0, "DEALS", self._history_deals_value, UiPalette.ACCENT)
+        self._metric(stats, 1, "WINRATE", self._history_winrate_value, UiPalette.SUCCESS)
+        self._metric(stats, 2, "MAX DD NGÀY", self._history_daily_dd_value, UiPalette.DANGER)
+        self._metric(stats, 3, "NET P/L", self._history_net_value, UiPalette.SUCCESS)
+
+        history_card = self._card(shell, padding=0)
+        history_card.pack(fill="both", expand=True)
+        history_header = tk.Frame(history_card, bg=UiPalette.CARD, padx=18, pady=12)
+        history_header.pack(fill="x")
+        self._label(history_header, text="DEAL HISTORY", font=("Segoe UI", 11, "bold")).pack(side="left")
+        self._label(history_header, textvariable=self._history_range_value, font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="right")
+
+        columns = ("time", "symbol", "side", "volume", "price", "net", "comment")
+        self._history_table = ttk.Treeview(history_card, columns=columns, show="headings", style="Monitor.Treeview", height=12)
+        specs = (("time", 154, "TIME GMT+7"), ("symbol", 108, "SYMBOL"), ("side", 64, "SIDE"), ("volume", 72, "LOT"), ("price", 92, "PRICE"), ("net", 92, "NET $"), ("comment", 300, "COMMENT"))
+        for key, width, title in specs:
+            self._history_table.heading(key, text=title)
+            self._history_table.column(key, width=width, anchor="center" if key != "comment" else "w", stretch=True)
+        self._history_table.tag_configure("profit", foreground=UiPalette.SUCCESS)
+        self._history_table.tag_configure("loss", foreground=UiPalette.DANGER)
+        self._history_table.pack(fill="both", expand=True, padx=1, pady=(0, 1))
+        self._refresh_history()
+
+    def _on_history_filter_change(self, _event=None) -> None:
+        self._set_custom_history_controls_visible()
+        if self._history_filter_value.get().strip().lower() != "tùy chỉnh":
+            self._refresh_history()
+
+    def _on_history_symbol_change(self, _event=None) -> None:
+        self._refresh_history()
+
+    def _filter_history_deals_by_symbol(self, deals: tuple, symbol_filter: str | None = None) -> tuple:
+        selected_symbol = (symbol_filter if symbol_filter is not None else self._history_symbol_value.get()).strip()
+        if not selected_symbol or selected_symbol.lower() == "tất cả":
+            return tuple(deals)
+        return tuple(deal for deal in deals if deal.symbol == selected_symbol)
+
+    def _set_custom_history_controls_visible(self) -> None:
+        show_custom = self._history_filter_value.get().strip().lower() == "tùy chỉnh"
+        for wrap in (self._history_custom_start_wrap, self._history_custom_end_wrap):
+            if wrap is None:
+                continue
+            if show_custom:
+                wrap.grid()
+            else:
+                wrap.grid_remove()
+
+    def _close_history_window(self) -> None:
+        if self._history_window is not None:
+            self._history_window.destroy()
+        self._history_window = None
+        self._history_table = None
+        self._history_custom_start_wrap = None
+        self._history_custom_end_wrap = None
+
+    def _refresh_history(self) -> None:
+        if self._history_table is None:
+            return
+        start, end = self._history_date_range()
+        self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d %H:%M}")
+        self._history_table.delete(*self._history_table.get_children())
+        try:
+            deals, stats = self.monitor.history(start, end)
+        except Exception as exc:
+            self._history_deals_value.set("0")
+            self._history_winrate_value.set("0.0%")
+            self._history_daily_dd_value.set("0.00 USD")
+            self._history_net_value.set("0.00 USD")
+            self._history_table.insert("", "end", values=("LỖI", "", "", "", "", "", str(exc)), tags=("loss",))
+            return
+        deals = self._filter_history_deals_by_symbol(deals)
+        stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=stats.raw_deals)
+        self._history_deals_value.set(str(stats.deals))
+        self._history_winrate_value.set(f"{stats.winrate:.1f}%")
+        self._history_daily_dd_value.set(f"{stats.max_daily_drawdown:,.2f} USD")
+        self._history_net_value.set(f"{stats.net_profit:+,.2f} USD")
+        if not deals:
+            selected_symbol = self._history_symbol_value.get().strip()
+            if stats.raw_deals:
+                symbol_suffix = "" if selected_symbol.lower() == "tất cả" else f" cho {selected_symbol}"
+                empty_message = f"MT5 có {stats.raw_deals} bản ghi history nhưng không có deal BUY/SELL đóng lệnh{symbol_suffix} trong khoảng này."
+            else:
+                empty_message = "MT5 không trả về deal nào trong khoảng đã chọn."
+            self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", empty_message))
+            return
+        for deal in deals:
+            tag = "profit" if deal.net_profit >= 0 else "loss"
+            self._history_table.insert(
+                "",
+                "end",
+                tags=(tag,),
+                values=(deal.time.strftime("%Y-%m-%d %H:%M:%S"), deal.symbol, deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", deal.comment),
+            )
+
+    @staticmethod
+    def _format_gmt7_timestamp(value: datetime | None) -> str:
+        if value is None:
+            return "--"
+        return value.strftime("%H:%M:%S")
+
+    @staticmethod
+    def _display_symbol(symbol: str) -> str:
+        upper = str(symbol or "").upper()
+        if upper.startswith("BTC"):
+            return "BTC"
+        if upper.startswith("XAU"):
+            return "XAU"
+        if upper.endswith("USDT"):
+            return upper[:-4]
+        if upper.endswith("USD"):
+            return upper[:-3]
+        return upper
+
     def _toggle_theme(self) -> None:
         self._theme_mode = "light" if self._theme_mode == "dark" else "dark"
         UiPalette.apply_mode(self._theme_mode)
@@ -560,7 +717,6 @@ class RsiquiV3MonitorApp(tk.Tk):
         if self.shell is not None:
             self.shell.destroy()
         self._build_ui()
-        self._update_telegram_controls()
         if self._latest_snapshot is not None:
             self._render_snapshot(self._latest_snapshot, include_log_entries=False)
         else:
@@ -572,6 +728,15 @@ class RsiquiV3MonitorApp(tk.Tk):
         card.grid(row=0, column=column, sticky="ew", padx=(0 if column == 0 else 5, 0 if column == 2 else 5))
         self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
         self._label(card, textvariable=value, font=("Segoe UI", 14, "bold"), fg=color).pack(anchor="w", pady=(5, 0))
+
+    def _account_metric(self, parent: tk.Misc, column: int) -> None:
+        card = self._card(parent, padding=14)
+        card.grid(row=0, column=column, sticky="ew", padx=(0 if column == 0 else 5, 5))
+        self._label(card, text="TÀI KHOẢN MT5", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
+        account_row = tk.Frame(card, bg=UiPalette.CARD)
+        account_row.pack(fill="x", pady=(5, 0))
+        self._label(account_row, textvariable=self._account_value, font=("Segoe UI", 14, "bold"), fg=UiPalette.TEXT, bg=UiPalette.CARD).pack(side="left")
+        self._label(account_row, textvariable=self._mt5_status_value, font=("Consolas", 9), fg=UiPalette.MUTED, bg=UiPalette.CARD, anchor="e").pack(side="right", padx=(12, 0))
 
     def _safe_float(self, value: str, fallback: float) -> float:
         try:
@@ -762,31 +927,6 @@ class RsiquiV3MonitorApp(tk.Tk):
             f"{STRATEGY_SELECTIONS[strategy_key].label} signal {side.upper()} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {entry_time.astimezone().strftime('%H:%M')}",
             badge=badge,
         )
-        self._maybe_send_signal_to_telegram(strategy_key, bar_time, side, request, str(profile["timeframe"]))
-
-    def _maybe_send_signal_to_telegram(self, strategy_key: str, bar_time: int, side: str, request: dict, timeframe: str) -> None:
-        if TELEGRAM_TEMP_DISABLED:
-            return
-        target = self._telegram_target_map.get(self._telegram_target_value.get())
-        if target is None or not self._telegram_enabled.get():
-            return
-        signal_key = (strategy_key, bar_time, side, target.key)
-        if signal_key == self._last_telegram_signal_key:
-            return
-        settings = TelegramSettings(
-            enabled=True,
-            bot_token=TelegramSettings.from_environment(enabled=True).bot_token,
-            chat_id=target.chat_id,
-            message_thread_id=target.message_thread_id,
-        )
-        notifier = TelegramNotifier(settings)
-        message = format_signal_message(symbol=self._selected_symbol(), side=side, request=request, timeframe=timeframe)
-        if notifier.send(message):
-            self._last_telegram_signal_key = signal_key
-            self._append_log(f"Đã gửi kèo {side.upper()} tới Telegram: {target.label}.", badge="INFO")
-        else:
-            self._append_log(f"Telegram chưa gửi được tới {target.label}: {notifier.last_status}", badge="INFO")
-
     def _refresh(self) -> None:
         if self._closed:
             return
@@ -794,7 +934,7 @@ class RsiquiV3MonitorApp(tk.Tk):
             self._render_snapshot(self.monitor.refresh())
             self._evaluate_signal_preview()
         except Exception as exc:
-            self._mt5_status_value.set(f"MT5 CHƯA SẴN SÀNG • {exc}")
+            self._mt5_status_value.set("MT5 OFFLINE")
             self._set_bot_status_state("ERROR", "Không cập nhật được trạng thái bot vì refresh MT5 lỗi.", UiPalette.DANGER)
             self._append_log(f"Lỗi kết nối: {exc}", badge="ERROR")
         finally:
@@ -806,13 +946,17 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._account_value.set(f"#{snapshot.login}")
         self._equity_value.set(f"{snapshot.equity:,.2f} {snapshot.currency}")
         self._position_count_value.set(str(len(snapshot.positions)))
-        self._mt5_status_value.set(f"ONLINE • {snapshot.server} • Balance {snapshot.balance:,.2f} {snapshot.currency}")
+        self._mt5_status_value.set(f"ONLINE • {snapshot.server}")
+        if snapshot.positions and snapshot.positions[0].opened_at is not None:
+            self._position_day_value.set(snapshot.positions[0].opened_at.strftime("%d/%m"))
+        else:
+            self._position_day_value.set(self.clock().strftime("%d/%m"))
         self._updated_value.set(self.clock().strftime("%H:%M:%S"))
         self._apply_bot_status(snapshot)
         self.positions.delete(*self.positions.get_children())
         for position in snapshot.positions:
             tag = "profit" if position.profit >= 0 else "loss"
-            self.positions.insert("", "end", tags=(tag,), values=(position.ticket, position.source, position.side, f"{position.volume:.2f}", f"{position.price_open:.2f}", f"{position.stop_loss:.2f}", f"{position.take_profit:.2f}", f"{position.profit:+.2f}"))
+            self.positions.insert("", "end", tags=(tag,), values=(self._format_gmt7_timestamp(position.opened_at), self._display_symbol(position.symbol), position.side, f"{position.volume:.2f}", f"{position.price_open:.2f}", f"{position.stop_loss:.2f}", f"{position.take_profit:.2f}", f"{position.profit:+.2f}"))
         if include_log_entries:
             for entry in snapshot.log_entries:
                 self._append_log(entry)
@@ -846,13 +990,14 @@ class RsiquiV3MonitorApp(tk.Tk):
     def _replay_logs(self) -> None:
         for child in self._log_rows.winfo_children():
             child.destroy()
+        message_wrap = max(560, self._log_canvas.winfo_width() - 170)
         for index, entry in enumerate(self._log_history):
             row_bg = UiPalette.TABLE if index % 2 == 0 else UiPalette.TABLE_ALT
             row = tk.Frame(self._log_rows, bg=row_bg, padx=10, pady=6)
             row.pack(fill="x", padx=0, pady=(0, 6))
             self._label(row, text=entry.timestamp, font=("Consolas", 9), fg=UiPalette.MUTED, bg=row_bg, width=9, anchor="w").pack(side="left")
             self._badge(row, entry.badge, entry.badge_color, row_bg).pack(side="left", padx=(10, 8))
-            self._label(row, text=entry.message, font=("Segoe UI", 9), bg=row_bg, justify="left", wraplength=410, anchor="w").pack(side="left", fill="x", expand=True)
+            self._label(row, text=entry.message, font=("Segoe UI", 9), bg=row_bg, justify="left", wraplength=message_wrap, anchor="w").pack(side="left", fill="x", expand=True)
         self._on_log_frame_configure(None)
         self._log_canvas.yview_moveto(0)
 
@@ -894,50 +1039,6 @@ class RsiquiV3MonitorApp(tk.Tk):
             self._update_run_button(None)
         self._append_log(f"Đã chuyển chiến lược sang {matching.label} và nạp preset TP/SL/volume mặc định.", badge="INFO")
 
-    def _on_telegram_target_change(self, _event) -> None:
-        self._update_telegram_controls()
-        if TELEGRAM_TEMP_DISABLED:
-            self._append_log("Telegram đang bị tắt tạm thời trong app.", badge="INFO")
-            return
-        target = self._telegram_target_value.get().strip()
-        if target:
-            self._append_log(f"Đã chọn đích Telegram: {target}. Bật toggle nếu muốn gửi kèo khi có signal.", badge="INFO")
-
-    def _on_telegram_toggle(self) -> None:
-        if TELEGRAM_TEMP_DISABLED:
-            self._telegram_enabled.set(False)
-            self._update_telegram_controls()
-            self._append_log("Telegram đang tắt tạm thời nên chưa thể bật gửi tin nhắn.", badge="INFO")
-            return
-        self._update_telegram_controls()
-        if self._telegram_enabled.get():
-            target = self._telegram_target_value.get().strip()
-            self._append_log(f"Telegram ON • tín hiệu mới sẽ gửi tới {target}.", badge="INFO")
-        else:
-            self._append_log("Telegram OFF • app chỉ hiển thị log nội bộ.", badge="INFO")
-
-    def _update_telegram_controls(self) -> None:
-        if TELEGRAM_TEMP_DISABLED:
-            self._telegram_enabled.set(False)
-            self._telegram_toggle_label.set("TELEGRAM TẠM TẮT")
-            self._telegram_toggle.configure(
-                state="disabled",
-                bg=UiPalette.BORDER,
-                activebackground=UiPalette.BORDER,
-                disabledforeground=UiPalette.MUTED,
-            )
-            return
-        enabled = bool(self._telegram_target_value.get().strip())
-        if not enabled:
-            self._telegram_enabled.set(False)
-        self._telegram_toggle_label.set("TELEGRAM ON" if self._telegram_enabled.get() else "TELEGRAM OFF")
-        self._telegram_toggle.configure(
-            state="normal" if enabled else "disabled",
-            bg=UiPalette.SUCCESS if enabled else UiPalette.BORDER,
-            activebackground=UiPalette.SUCCESS if enabled else UiPalette.BORDER,
-            disabledforeground=UiPalette.MUTED,
-        )
-
     def _on_close(self) -> None:
         self._closed = True
         self.monitor.stop()
@@ -946,7 +1047,7 @@ class RsiquiV3MonitorApp(tk.Tk):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Read-only GOLD Trader dashboard for RSIQUI V3 demo positions.")
-    parser.add_argument("--config", default=str(CONFIG_ROOT / "ori_m5_demo.json"), help="RSIQUI V3 JSON read for display only")
+    parser.add_argument("--config", default=str(CONFIG_ROOT / "final_m5_demo.json"), help="RSIQUI V3 JSON read for display only")
     parser.add_argument("--symbol", default="XAUUSD", help="MT5 symbol to observe")
     parser.add_argument("--refresh-seconds", type=float, default=2.0)
     args = parser.parse_args()
