@@ -19,8 +19,11 @@ from trading_lab.monitoring.rsiqui.position_monitor import MonitorSnapshot, Rsiq
 
 APP_TITLE = "RSIQUI V3 • GOLD Trader"
 REFRESH_MILLISECONDS = 2_000
-CONFIG_ROOT = Path(__file__).resolve().parents[2] / "configs" / "strategies" / "rsiqui"
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if getattr(sys, "frozen", False):
+    PROJECT_ROOT = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+else:
+    PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CONFIG_ROOT = PROJECT_ROOT / "configs" / "strategies" / "rsiqui"
 
 
 
@@ -206,6 +209,8 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._history_symbol_value = tk.StringVar(value="Tất cả")
         self._history_start_date_value = tk.StringVar(value=(date.today() - timedelta(days=30)).isoformat())
         self._history_end_date_value = tk.StringVar(value=date.today().isoformat())
+        self._history_start_time_value = tk.StringVar(value="08:00")
+        self._history_end_time_value = tk.StringVar(value="23:59")
         self._history_range_value = tk.StringVar(value="—")
         self._history_deals_value = tk.StringVar(value="0")
         self._history_winrate_value = tk.StringVar(value="0.0%")
@@ -288,13 +293,13 @@ class RsiquiV3MonitorApp(tk.Tk):
         sidebar.pack_propagate(False)
         self._label(sidebar, text="GOLD", font=("Segoe UI", 20, "bold"), fg=UiPalette.ACCENT, bg=UiPalette.SIDEBAR).pack(anchor="w")
         self._label(sidebar, text="TRADER", font=("Segoe UI", 20, "bold"), fg=UiPalette.NAV_TEXT, bg=UiPalette.SIDEBAR).pack(anchor="w", pady=(0, 6))
-        self._label(sidebar, text="RSIQUI V3 • SIGNAL DESK", font=("Segoe UI", 9, "bold"), fg=UiPalette.NAV_MUTED, bg=UiPalette.SIDEBAR).pack(anchor="w")
+        self._label(sidebar, text="DOANHHD", font=("Segoe UI", 9, "bold"), fg=UiPalette.NAV_MUTED, bg=UiPalette.SIDEBAR).pack(anchor="w")
 
         nav_line = tk.Frame(sidebar, bg=UiPalette.ACCENT, height=2)
         nav_line.pack(fill="x", pady=(26, 18))
         monitor_button = tk.Button(
             sidebar,
-            text="◉  THEO DÕI LỆNH & KÈO",
+            text="◉  THEO DÕI LỆNH",
             command=self._show_monitor_page,
             font=("Segoe UI", 10, "bold"),
             fg=UiPalette.TEXT,
@@ -353,7 +358,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         header.pack(fill="x", pady=(0, 18))
         title_group = tk.Frame(header, bg=UiPalette.APP)
         title_group.pack(side="left")
-        self._label(title_group, text="TRẠM QUAN SÁT RSIQUI V3", font=("Segoe UI", 19, "bold"), bg=UiPalette.APP).pack(anchor="w")
+        self._label(title_group, text="TRẠM QUAN SÁT DOANHHD", font=("Segoe UI", 19, "bold"), bg=UiPalette.APP).pack(anchor="w")
         self._label(title_group, text="GOLD Trader • theo dõi lệnh, preset và signal nội bộ", font=("Segoe UI", 10), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(4, 0))
         updated = tk.Frame(header, bg=UiPalette.CARD_ALT, padx=12, pady=9)
         updated.pack(side="right", anchor="s")
@@ -423,9 +428,9 @@ class RsiquiV3MonitorApp(tk.Tk):
 
         log_table_header = tk.Frame(log_card, bg=UiPalette.CARD_ALT, padx=14, pady=8)
         log_table_header.pack(fill="x")
-        self._label(log_table_header, text="GIỜ", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT, width=10, anchor="w").pack(side="left")
+        self._label(log_table_header, text="TIME", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT, width=9, anchor="w").pack(side="left")
         self._label(log_table_header, text="TAG", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT, width=9, anchor="w").pack(side="left", padx=(8, 4))
-        self._label(log_table_header, text="NỘI DUNG", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT, anchor="w").pack(side="left", fill="x", expand=True)
+        self._label(log_table_header, text="CONTENT", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT, anchor="w").pack(side="left", fill="x", expand=True)
 
         log_holder = tk.Frame(log_card, bg=UiPalette.TABLE)
         log_holder.pack(fill="both", expand=True, padx=1, pady=(0, 1))
@@ -493,7 +498,9 @@ class RsiquiV3MonitorApp(tk.Tk):
     def _history_date_range(self) -> tuple[datetime, datetime]:
         today = date.today()
         mode = self._history_filter_value.get().strip().lower()
-        if mode == "7 ngày qua":
+        if mode == "hôm nay":
+            start_date, end_date = today, today
+        elif mode == "7 ngày qua":
             start_date, end_date = today - timedelta(days=6), today
         elif mode == "90 ngày qua":
             start_date, end_date = today - timedelta(days=89), today
@@ -523,7 +530,7 @@ class RsiquiV3MonitorApp(tk.Tk):
             return
         window = tk.Toplevel(self)
         self._history_window = window
-        window.title("RSIQUI V3 • Lịch sử lệnh")
+        window.title("Lịch sử lệnh")
         window.geometry("1180x720")
         window.minsize(980, 620)
         window.configure(background=UiPalette.APP)
@@ -538,18 +545,16 @@ class RsiquiV3MonitorApp(tk.Tk):
 
         controls = self._card(shell, padding=14)
         controls.pack(fill="x", pady=(0, 12))
-        controls.grid_columnconfigure(0, weight=1)
-        controls.grid_columnconfigure(1, weight=1)
-        controls.grid_columnconfigure(2, weight=1)
-        controls.grid_columnconfigure(3, weight=1)
-        controls.grid_columnconfigure(4, weight=0)
+        for column in range(6):
+            controls.grid_columnconfigure(column, weight=1)
+        controls.grid_columnconfigure(6, weight=0)
         self._labeled_combobox(
             controls,
             0,
             0,
             "KHOẢNG THỜI GIAN",
             self._history_filter_value,
-            ["7 ngày qua", "30 ngày qua", "90 ngày qua", "1 năm qua", "Tùy chỉnh"],
+            ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua", "1 năm qua", "Tùy chỉnh"],
             self._on_history_filter_change,
         )
         self._labeled_combobox(
@@ -587,8 +592,30 @@ class RsiquiV3MonitorApp(tk.Tk):
             bd=0,
             insertbackground=UiPalette.TEXT,
         ).pack(fill="x", pady=(6, 0), ipady=8)
+        self._label(controls, text="TỪ GIỜ (GMT+7)", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=0, column=4, sticky="w", padx=6, pady=(6, 0))
+        tk.Entry(
+            controls,
+            textvariable=self._history_start_time_value,
+            font=("Segoe UI", 10, "bold"),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.TABLE,
+            relief="flat",
+            bd=0,
+            insertbackground=UiPalette.TEXT,
+        ).grid(row=0, column=4, sticky="ew", padx=6, pady=(29, 6), ipady=8)
+        self._label(controls, text="ĐẾN GIỜ (GMT+7)", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=0, column=5, sticky="w", padx=6, pady=(6, 0))
+        tk.Entry(
+            controls,
+            textvariable=self._history_end_time_value,
+            font=("Segoe UI", 10, "bold"),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.TABLE,
+            relief="flat",
+            bd=0,
+            insertbackground=UiPalette.TEXT,
+        ).grid(row=0, column=5, sticky="ew", padx=6, pady=(29, 6), ipady=8)
         action_wrap = tk.Frame(controls, bg=UiPalette.CARD)
-        action_wrap.grid(row=0, column=4, sticky="sew", padx=6, pady=6)
+        action_wrap.grid(row=0, column=6, sticky="sew", padx=6, pady=6)
         refresh = tk.Button(action_wrap, text="LỌC", command=self._refresh_history, font=("Segoe UI", 9, "bold"), fg="#101722", bg=UiPalette.ACCENT, activeforeground="#101722", activebackground="#E8C270", relief="flat", bd=0, padx=18, pady=9, cursor="hand2")
         refresh.pack(fill="x", pady=(22, 0))
         self._set_custom_history_controls_visible()
@@ -634,6 +661,24 @@ class RsiquiV3MonitorApp(tk.Tk):
             return tuple(deals)
         return tuple(deal for deal in deals if deal.symbol == selected_symbol)
 
+    def _history_time_range(self) -> tuple[time, time]:
+        defaults = (time(8, 0), time(23, 59))
+        try:
+            start = time.fromisoformat(self._history_start_time_value.get().strip())
+            end = time.fromisoformat(self._history_end_time_value.get().strip())
+        except ValueError:
+            start, end = defaults
+            self._history_start_time_value.set("08:00")
+            self._history_end_time_value.set("23:59")
+        return start.replace(second=0, microsecond=0), end.replace(second=59, microsecond=999999)
+
+    def _filter_history_deals_by_time_gmt7(self, deals: tuple) -> tuple:
+        start, end = self._history_time_range()
+        return tuple(
+            deal for deal in deals
+            if start <= deal.time.replace(tzinfo=None).time() <= end
+        )
+
     def _set_custom_history_controls_visible(self) -> None:
         show_custom = self._history_filter_value.get().strip().lower() == "tùy chỉnh"
         for wrap in (self._history_custom_start_wrap, self._history_custom_end_wrap):
@@ -656,7 +701,8 @@ class RsiquiV3MonitorApp(tk.Tk):
         if self._history_table is None:
             return
         start, end = self._history_date_range()
-        self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d %H:%M}")
+        start_time, end_time = self._history_time_range()
+        self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d} • {start_time:%H:%M}–{end_time:%H:%M} GMT+7")
         self._history_table.delete(*self._history_table.get_children())
         try:
             deals, stats = self.monitor.history(start, end)
@@ -668,6 +714,7 @@ class RsiquiV3MonitorApp(tk.Tk):
             self._history_table.insert("", "end", values=("LỖI", "", "", "", "", "", str(exc)), tags=("loss",))
             return
         deals = self._filter_history_deals_by_symbol(deals)
+        deals = self._filter_history_deals_by_time_gmt7(deals)
         stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=stats.raw_deals)
         self._history_deals_value.set(str(stats.deals))
         self._history_winrate_value.set(f"{stats.winrate:.1f}%")
@@ -688,7 +735,7 @@ class RsiquiV3MonitorApp(tk.Tk):
                 "",
                 "end",
                 tags=(tag,),
-                values=(deal.time.strftime("%Y-%m-%d %H:%M:%S"), deal.symbol, deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", deal.comment),
+                values=(deal.time.strftime("%Y-%m-%d %H:%M:%S"), self._history_display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", deal.comment),
             )
 
     @staticmethod
@@ -709,6 +756,12 @@ class RsiquiV3MonitorApp(tk.Tk):
         if upper.endswith("USD"):
             return upper[:-3]
         return upper
+
+    @staticmethod
+    def _history_display_symbol(symbol: str) -> str:
+        """Keep broker suffixes internal while showing one GOLD family label."""
+        upper = str(symbol or "").upper()
+        return "XAUUSD" if upper.startswith("XAUUSD") else upper
 
     def _toggle_theme(self) -> None:
         self._theme_mode = "light" if self._theme_mode == "dark" else "dark"
@@ -904,13 +957,6 @@ class RsiquiV3MonitorApp(tk.Tk):
         mt5 = self.monitor.mt5
         strategy_key, profile, config, prepare_frame, evaluate_signal = self._selected_strategy_runtime_config()
         self._last_signal_check_value.set(f"{self.clock():%H:%M:%S}")
-        if self._has_open_position_for_selected_symbol():
-            self._set_last_signal_state(
-                "WAIT",
-                f"{STRATEGY_SELECTIONS[strategy_key].label}: đang có vị thế {self._selected_symbol()} mở; tạm dừng signal preview để khớp one-position guard.",
-                UiPalette.WARNING,
-            )
-            return
         timeframe = getattr(mt5, f"TIMEFRAME_{profile['timeframe']}")
         rates = mt5.copy_rates_from_pos(self._selected_symbol(), timeframe, 0, 200)
         if rates is None or len(rates) < 121:
@@ -928,6 +974,20 @@ class RsiquiV3MonitorApp(tk.Tk):
             self._set_last_signal_state("NONE", f"{STRATEGY_SELECTIONS[strategy_key].label}: chưa có signal mới ở nến đã đóng gần nhất.", UiPalette.INFO)
             return
         bar_time = int(row["time"])
+        if self._has_open_position_for_selected_symbol():
+            plan = side.upper()
+            if self._last_signal_bar_by_strategy.get(strategy_key) != bar_time:
+                self._last_signal_bar_by_strategy[strategy_key] = bar_time
+                self._append_log(
+                    f"{STRATEGY_SELECTIONS[strategy_key].label} plan {plan} blocked: position {self._selected_symbol()} running; one-position guard.",
+                    badge="INFO",
+                )
+            self._set_last_signal_state(
+                "WAIT",
+                f"{STRATEGY_SELECTIONS[strategy_key].label}: plan {plan} blocked because {self._selected_symbol()} position running.",
+                UiPalette.WARNING,
+            )
+            return
         if self._last_signal_bar_by_strategy.get(strategy_key) == bar_time:
             return
         self._last_signal_bar_by_strategy[strategy_key] = bar_time

@@ -3,6 +3,7 @@
   "preset": "gold-loose",
   "side": "both",
   "timeframe": "5m",
+  "entry_mode": "immediate_signal",
   "dataset_id": "022eea2471fd39b7",
   "feature_set_id": "698a2dda21e251f7",
   "initial_equity": 500,

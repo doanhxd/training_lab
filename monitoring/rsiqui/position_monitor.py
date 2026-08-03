@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Callable, Iterable
 
 
-RSIQUI_V3_COMMENT = "RSIQUI V3"
+RSIQUI_V3_COMMENT = "DoanhHD - RSIQUI V3"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
 RUNNER_IDENTIFIERS = {
     "rsiqui_v3_ori": ("rsiqui_ori_demo.py", "trading_lab.runners.mt5.rsiqui_ori_demo", "rsiqui_ori_demo"),
@@ -248,7 +248,7 @@ class RsiquiV3PositionMonitor:
     def _position_view(self, position: Any) -> PositionView:
         side = "BUY" if position.type == self.mt5.POSITION_TYPE_BUY else "SELL"
         comment = str(getattr(position, "comment", "") or "").upper()
-        source = "RSIQUI V3" if RSIQUI_V3_COMMENT in comment else "THỦ CÔNG"
+        source = "DoanhHD_GOLD" if RSIQUI_V3_COMMENT in comment else "TAY"
         timestamp = int(getattr(position, "time", 0) or 0)
         opened_at = self._mt5_timestamp_to_gmt7(timestamp)
         return PositionView(

@@ -275,8 +275,9 @@ class DemoOnlyRsiquiMt5Runner:
                 return True
         return False
 
-    def _waiting_open_position_status(self) -> str:
-        return "waiting: an XAUUSD position is already open; runner staying alive until the position closes"
+    def _waiting_open_position_status(self, planned_side: str | None = None) -> str:
+        plan = f" plan {planned_side.upper()} blocked by one-position guard;" if planned_side else ""
+        return f"waiting: an XAUUSD position is already open;{plan} runner staying alive until the position closes"
 
     @staticmethod
     def _floor_volume(raw: float, minimum: float, maximum: float, step: float) -> float:
@@ -364,12 +365,12 @@ class DemoOnlyRsiquiMt5Runner:
             if self._last_immediate_attempt_bar == bar_time:
                 self.last_status = "blocked: duplicate immediate signal attempt for this bar"
                 return False
-            if self._open_positions_exist():
-                self.last_status = self._waiting_open_position_status()
-                return False
             side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
             if side is None or evaluated_bar is None:
                 self.last_status = "no immediate RSIQUI V3 FINAL signal" if not self.last_status.startswith("blocked:") else self.last_status
+                return False
+            if self._open_positions_exist():
+                self.last_status = self._waiting_open_position_status(side)
                 return False
             self._last_immediate_attempt_bar = evaluated_bar
             if self._is_gmt7_entry_blackout(evaluated_bar):
@@ -406,12 +407,12 @@ class DemoOnlyRsiquiMt5Runner:
                 return False
             self._last_evaluated_bar = bar_time
             self._pending_preclose_signal = None
-            if self._open_positions_exist():
-                self.last_status = self._waiting_open_position_status()
-                return False
             side, evaluated_bar = self.evaluate_preclose_bar(bar_time)
             if side is None or evaluated_bar is None:
                 self.last_status = "no pre-close preview RSIQUI V3 FINAL signal" if not self.last_status.startswith("blocked:") else self.last_status
+                return False
+            if self._open_positions_exist():
+                self.last_status = self._waiting_open_position_status(side)
                 return False
             self._pending_preclose_signal = (evaluated_bar, side)
             self.last_status = f"preview only: {side} {self.config.timeframe} bar {evaluated_bar}; waiting for candle close confirmation"
@@ -433,7 +434,7 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = "blocked: no matching pre-close preview for the just-closed bar"
             return False
         if self._open_positions_exist():
-            self.last_status = self._waiting_open_position_status()
+            self.last_status = self._waiting_open_position_status(pending[1])
             return False
         close_side, evaluated_bar = self.evaluate_confirmed_close_bar(closed_bar)
         if close_side is None or evaluated_bar is None:

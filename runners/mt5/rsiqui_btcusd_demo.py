@@ -20,6 +20,7 @@ class Mt5DemoConfig:
     symbol: str = "XAUUSD"
     symbol_base: str = "BTCUSD"
     symbol_candidates: tuple[str, ...] = ()
+    entry_mode: str = "close_confirm"
     timeframe: str = "M5"
     preset: str = "gold-loose"
     trade_side: str = "both"
@@ -59,6 +60,7 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
     equity_risk_cap_pct = None if cap_payload is None else float(cap_payload)
     return Mt5DemoConfig(
         timeframe=timeframe,
+        entry_mode=str(payload.get("entry_mode", "close_confirm")),
         symbol=str(payload.get("symbol", "BTCUSD")),
         symbol_base=str(payload.get("symbol_base", "BTCUSD")),
         symbol_candidates=tuple(str(symbol) for symbol in payload.get("symbol_candidates", ())),
@@ -93,12 +95,13 @@ class DemoOnlyRsiquiMt5Runner:
         self._account_equity: float | None = None
         self._last_status_log_at: float | None = None
         self._resolved_symbol = config.symbol
+        self._last_immediate_attempt_bar: int | None = None
 
     def _active_symbol(self, now: datetime | None = None) -> str:
         return self._resolved_symbol
 
     def _symbol_candidates(self) -> tuple[str, ...]:
-        ordered = [*self.config.symbol_candidates, self.config.symbol]
+        ordered = [self.config.symbol, *self.config.symbol_candidates]
         seen: set[str] = set()
         result: list[str] = []
         for symbol in ordered:
@@ -360,6 +363,46 @@ class DemoOnlyRsiquiMt5Runner:
         # which makes the runner appear stuck at the same seconds-since-open and
         # can miss the M5 close-confirm windows entirely.
         now_utc = datetime.now(tz=UTC) if now_utc is None else now_utc.astimezone(UTC)
+
+        if self.config.entry_mode == "immediate_signal":
+            bar_time = self._bar_open_timestamp(now_utc)
+            if self._last_immediate_attempt_bar == bar_time:
+                self.last_status = "blocked: duplicate immediate signal attempt for this bar"
+                return False
+            side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
+            if side is None or evaluated_bar is None:
+                self.last_status = "no immediate RSIQUI V3 BTCUSD signal" if not self.last_status.startswith("blocked:") else self.last_status
+                return False
+            if self._open_positions_exist():
+                self.last_status = self._waiting_open_position_status()
+                return False
+            self._last_immediate_attempt_bar = evaluated_bar
+            if self._is_gmt7_entry_blackout(evaluated_bar):
+                local_time = self._entry_time_from_signal_bar(evaluated_bar)
+                self.last_status = f"blocked: GMT+7 blackout at {local_time:%H:%M}"
+                return False
+            if evaluated_bar == self._last_submitted_bar:
+                self.last_status = "blocked: duplicate immediate signal setup"
+                return False
+            request = self._build_request(side)
+            if request is None:
+                return False
+            result = self.mt5.order_send(request)
+            if result is None or result.retcode != self.mt5.TRADE_RETCODE_DONE:
+                self.last_status = f"order rejected: {None if result is None else result.retcode}"
+                return False
+            self._last_submitted_bar = evaluated_bar
+            self.last_status = f"order filled: {side} ticket {getattr(result, 'order', '?')} immediate signal bar {evaluated_bar}"
+            message = format_filled_order_message(
+                symbol=str(request.get("symbol", self.config.symbol)),
+                side=side,
+                request=request,
+                ticket=getattr(result, "order", "?"),
+                timeframe=self.config.timeframe,
+            )
+            if not self.notifier.send(message) and self.config.telegram_enabled:
+                self.last_status += f"; {self.notifier.last_status}"
+            return True
 
         if self._is_preclose_entry_window(now_utc):
             bar_time = self._bar_open_timestamp(now_utc)
