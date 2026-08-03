@@ -96,6 +96,7 @@ class DemoOnlyRsiquiMt5Runner:
         self._last_status_log_at: float | None = None
         self._resolved_symbol = config.symbol
         self._last_immediate_attempt_bar: int | None = None
+        self._last_immediate_attempt_side: str | None = None
 
     def _active_symbol(self, now: datetime | None = None) -> str:
         return self._resolved_symbol
@@ -363,7 +364,8 @@ class DemoOnlyRsiquiMt5Runner:
         if self.config.entry_mode == "immediate_signal":
             bar_time = self._bar_open_timestamp(now_utc)
             if self._last_immediate_attempt_bar == bar_time:
-                self.last_status = "blocked: duplicate immediate signal attempt for this bar"
+                side_label = (self._last_immediate_attempt_side or "unknown").capitalize()
+                self.last_status = f"blocked: duplicate immediate {side_label} signal attempt for this bar"
                 return False
             side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
             if side is None or evaluated_bar is None:
@@ -373,12 +375,13 @@ class DemoOnlyRsiquiMt5Runner:
                 self.last_status = self._waiting_open_position_status(side)
                 return False
             self._last_immediate_attempt_bar = evaluated_bar
+            self._last_immediate_attempt_side = side
             if self._is_gmt7_entry_blackout(evaluated_bar):
                 local_time = self._entry_time_from_signal_bar(evaluated_bar)
                 self.last_status = f"blocked: GMT+7 blackout at {local_time:%H:%M}"
                 return False
             if evaluated_bar == self._last_submitted_bar:
-                self.last_status = "blocked: duplicate immediate signal setup"
+                self.last_status = f"blocked: duplicate immediate {side.capitalize()} signal setup"
                 return False
             request = self._build_request(side)
             if request is None:
@@ -388,7 +391,7 @@ class DemoOnlyRsiquiMt5Runner:
                 self.last_status = f"order rejected: {None if result is None else result.retcode}"
                 return False
             self._last_submitted_bar = evaluated_bar
-            self.last_status = f"order filled: {side} ticket {getattr(result, 'order', '?')} immediate signal bar {evaluated_bar}"
+            self.last_status = f"OF: {side} ticket {getattr(result, 'order', '?')} immediate signal bar {evaluated_bar}"
             message = format_filled_order_message(
                 symbol=str(request.get("symbol", self.config.symbol)),
                 side=side,
@@ -460,7 +463,7 @@ class DemoOnlyRsiquiMt5Runner:
             return False
         self._last_submitted_bar = evaluated_bar
         self._pending_preclose_signal = None
-        self.last_status = f"order filled: {close_side} ticket {getattr(result, 'order', '?')} after {self.config.timeframe} candle close {evaluated_bar}"
+        self.last_status = f"OF: {close_side} ticket {getattr(result, 'order', '?')} after {self.config.timeframe} candle close {evaluated_bar}"
         message = format_filled_order_message(
             symbol=str(request.get("symbol", self.config.symbol)),
             side=close_side,
@@ -475,7 +478,7 @@ class DemoOnlyRsiquiMt5Runner:
     def should_print_status(self, now: float | None = None) -> bool:
         """Rate-limit repetitive terminal output while preserving order-fill evidence."""
         now = time.monotonic() if now is None else now
-        urgent = self.last_status.startswith(("order filled:", "order rejected:"))
+        urgent = self.last_status.startswith(("OF:", "order rejected:"))
         if urgent or self._last_status_log_at is None or now - self._last_status_log_at >= self.config.status_log_interval_seconds:
             self._last_status_log_at = now
             return True

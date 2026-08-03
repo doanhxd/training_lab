@@ -205,7 +205,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._risk_value = tk.StringVar(value="5.00")
         self._reward_value = tk.StringVar(value="5.00")
         self._run_button_label = tk.StringVar(value="RUN")
-        self._history_filter_value = tk.StringVar(value="30 ngày qua")
+        self._history_filter_value = tk.StringVar(value="Hôm nay")
         self._history_symbol_value = tk.StringVar(value="Tất cả")
         self._history_start_date_value = tk.StringVar(value=(date.today() - timedelta(days=30)).isoformat())
         self._history_end_date_value = tk.StringVar(value=date.today().isoformat())
@@ -659,7 +659,11 @@ class RsiquiV3MonitorApp(tk.Tk):
         selected_symbol = (symbol_filter if symbol_filter is not None else self._history_symbol_value.get()).strip()
         if not selected_symbol or selected_symbol.lower() == "tất cả":
             return tuple(deals)
-        return tuple(deal for deal in deals if deal.symbol == selected_symbol)
+        selected_base = selected_symbol.upper()
+        return tuple(
+            deal for deal in deals
+            if str(getattr(deal, "symbol", "")).upper().startswith(selected_base)
+        )
 
     def _history_time_range(self) -> tuple[time, time]:
         defaults = (time(8, 0), time(23, 59))
@@ -761,7 +765,11 @@ class RsiquiV3MonitorApp(tk.Tk):
     def _history_display_symbol(symbol: str) -> str:
         """Keep broker suffixes internal while showing one GOLD family label."""
         upper = str(symbol or "").upper()
-        return "XAUUSD" if upper.startswith("XAUUSD") else upper
+        if upper.startswith("XAUUSD"):
+            return "XAUUSD"
+        if upper.startswith("BTCUSD"):
+            return "BTCUSD"
+        return upper
 
     def _toggle_theme(self) -> None:
         self._theme_mode = "light" if self._theme_mode == "dark" else "dark"

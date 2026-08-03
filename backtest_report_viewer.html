@@ -206,11 +206,11 @@
     }
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
     }
     .metric-card {
-      padding: 16px 18px;
+      padding: 11px 13px;
       min-width: 0;
     }
     .metric-card .label {
@@ -220,8 +220,8 @@
       letter-spacing: .02em;
     }
     .metric-card .value {
-      margin-top: 9px;
-      font-size: clamp(20px, 2.1vw, 30px);
+      margin-top: 6px;
+      font-size: clamp(18px, 1.8vw, 25px);
       font-weight: 850;
       color: var(--accent);
       line-height: 1.06;
@@ -230,8 +230,8 @@
       text-overflow: clip;
     }
     .metric-card .subvalue {
-      margin-top: 8px;
-      font-size: 12px;
+      margin-top: 5px;
+      font-size: 10px;
       color: var(--muted);
     }
     .metric-card.danger .value { color: var(--bad); }
@@ -241,6 +241,38 @@
       font-size: clamp(15px, 1.55vw, 22px);
       line-height: 1.2;
       white-space: normal;
+    }
+    .summary-layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+    .summary-layout > .card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .summary-layout > .card-grid .metric-card {
+      padding: 9px 10px;
+    }
+    .summary-layout > .card-grid .metric-card .value {
+      font-size: clamp(17px, 1.35vw, 21px);
+    }
+    .summary-details {
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+      gap: 8px;
+      width: 100%;
+      justify-self: start;
+    }
+    .summary-details .table-panel {
+      padding: 8px 10px;
+    }
+    .summary-details table {
+      font-size: 11px;
+    }
+    .summary-details th,
+    .summary-details td {
+      padding: 5px 5px;
     }
 
     .daily-ledger-grid {
@@ -285,10 +317,25 @@
     }
     .twocol {
       display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
-      gap: 14px;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+      gap: 10px;
     }
     .twocol > div { min-width: 0; }
+    .twocol > .table-panel table {
+      table-layout: fixed;
+    }
+    .twocol > .table-panel table td:first-child {
+      width: 38%;
+    }
+    .monthly-section {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .monthly-section .monthly-detail-panel {
+      width: min(360px, 100%);
+      margin-top: 10px;
+      padding: 10px 12px;
+    }
     .month-bar {
       border-radius: 10px;
       transition: background .15s ease, box-shadow .15s ease, outline-color .15s ease;
@@ -371,8 +418,8 @@
     .weekend-day { color: #ffcf75 !important; }
     code { color: #d9f7e1; }
     @media (max-width: 1080px) {
-      .hero-grid, .twocol, .daily-ledger-grid { grid-template-columns: 1fr; }
-      .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-grid, .twocol, .daily-ledger-grid, .summary-layout { grid-template-columns: 1fr; }
+      .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .controls { position: static; }
       .controls section { grid-template-columns: 1fr; }
     }
@@ -421,10 +468,10 @@
           </div>
         </section>
 
+        <section class="summary-layout">
         <section class="card-grid">
-          <div class="panel metric-card"><div class="label">Vốn đầu</div><div class="value" id="initialEquity">—</div><div class="subvalue" id="initialEquitySub">from backtest config</div></div>
-          <div class="panel metric-card"><div class="label">Lãi ròng</div><div class="value" id="netPnl">—</div><div class="subvalue" id="netReturn">net return —</div></div>
           <div class="panel metric-card"><div class="label">Vốn cuối</div><div class="value" id="finalEquity">—</div><div class="subvalue">ending equity</div></div>
+          <div class="panel metric-card"><div class="label">Tổng lãi</div><div class="value" id="totalProfit">—</div><div class="subvalue">End equity kỳ cuối</div></div>
           <div class="panel metric-card info"><div class="label">Win rate</div><div class="value" id="winRateValue">—</div><div class="subvalue" id="winRateSub">wins / total trades</div></div>
           <div class="panel metric-card danger"><div class="label">Max DD</div><div class="value" id="maxDdValue">—</div><div class="subvalue" id="drawdownSub">overall equity peak-to-trough</div></div>
           <div class="panel metric-card warnmetric"><div class="label">Max Daily DD</div><div class="value" id="maxDailyDdValue">—</div><div class="subvalue" id="maxDailyDdSub">worst day</div></div>
@@ -432,7 +479,7 @@
         </section>
 
 
-        <section class="twocol">
+        <section class="twocol summary-details">
           <div class="panel table-panel">
             <h2 class="section-title">Contract & Validation</h2>
             <table id="contractTable"></table>
@@ -442,6 +489,7 @@
             <table id="signalTable"></table>
           </div>
         </section>
+        </section>
 
         <section class="panel chart-panel">
           <h2 class="section-title">Equity Curve</h2>
@@ -449,14 +497,14 @@
           <div class="legend"><span><span class="swatch" style="background:#87e7a5"></span>Equity</span></div>
         </section>
 
-        <section class="twocol">
+        <section class="twocol monthly-section">
           <div class="panel chart-panel">
             <h2 class="section-title">Monthly Net P&amp;L</h2>
             <div id="monthlyChartWrap" class="empty">Nạp <code>trades.csv</code> để dựng monthly chart.</div>
-          </div>
-          <div class="panel table-panel">
-            <h2 class="section-title">Selected Month Detail</h2>
-            <table id="monthDetailTable"></table>
+            <div class="panel table-panel monthly-detail-panel">
+              <h2 class="section-title">Selected Month Detail</h2>
+              <table id="monthDetailTable"></table>
+            </div>
           </div>
         </section>
 
@@ -725,10 +773,9 @@
       const initial = deriveInitialEquity();
       const pnl = deriveNetPnl(metrics);
       const finalEquity = Number.isFinite(initial) && Number.isFinite(pnl) ? initial + pnl : NaN;
-      $('initialEquity').textContent = fmtMoney(initial);
-      $('netPnl').textContent = fmtMoney(pnl);
-      $('netReturn').textContent = `net return ${fmtPct(metrics.net_return)}`;
       $('finalEquity').textContent = fmtMoney(finalEquity);
+      const latestMonthlyEndEquity = state.monthly.length ? Number(state.monthly[state.monthly.length - 1].endEquity) : NaN;
+      $('totalProfit').textContent = fmtMoney(latestMonthlyEndEquity);
       $('winRateValue').textContent = fmtPct(metrics.win_rate);
       $('winRateSub').textContent = `${fmtInt(metrics.total_trades * Number(metrics.win_rate || 0))} wins / ${fmtInt(metrics.total_trades)} trades`;
       $('maxDdValue').textContent = fmtPct(metrics.max_drawdown);

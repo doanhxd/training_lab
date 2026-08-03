@@ -327,7 +327,7 @@ class DemoOnlyRsiquiRunnerTests(unittest.TestCase):
         runner = DemoOnlyRsiquiMt5Runner(Mt5DemoConfig(status_log_interval_seconds=300), mt5=FakeMt5())
         runner.last_status = "no pre-close RSIQUI V3 signal"
         self.assertTrue(runner.should_print_status(now=0))
-        runner.last_status = "order filled: long ticket 123 on M5 pre-close bar 1700100000"
+        runner.last_status = "OF: long ticket 123 on M5 pre-close bar 1700100000"
         self.assertTrue(runner.should_print_status(now=1))
 
     def test_caps_trade_risk_at_quarter_percent_of_demo_equity(self) -> None:

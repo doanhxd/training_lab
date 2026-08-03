@@ -352,7 +352,7 @@ class DemoOnlyRsiquiMt5Runner:
             return False
         self._last_submitted_bar = evaluated_bar
         self._pending_preclose_signal = None
-        self.last_status = f"order filled: {close_side} ticket {getattr(result, 'order', '?')} after {self.config.timeframe} candle close {evaluated_bar}"
+        self.last_status = f"OF: {close_side} ticket {getattr(result, 'order', '?')} after {self.config.timeframe} candle close {evaluated_bar}"
         message = format_filled_order_message(
             symbol=str(request.get("symbol", self.config.symbol)),
             side=close_side,
@@ -367,7 +367,7 @@ class DemoOnlyRsiquiMt5Runner:
     def should_print_status(self, now: float | None = None) -> bool:
         """Rate-limit repetitive terminal output while preserving order-fill evidence."""
         now = time.monotonic() if now is None else now
-        urgent = self.last_status.startswith(("order filled:", "order rejected:"))
+        urgent = self.last_status.startswith(("OF:", "order rejected:"))
         if urgent or self._last_status_log_at is None or now - self._last_status_log_at >= self.config.status_log_interval_seconds:
             self._last_status_log_at = now
             return True
