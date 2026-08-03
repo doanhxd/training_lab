@@ -328,13 +328,13 @@
       width: 38%;
     }
     .monthly-section {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
       gap: 10px;
     }
-    .monthly-section .monthly-detail-panel {
-      width: min(360px, 100%);
-      margin-top: 10px;
+    .monthly-section > .table-panel {
+      width: 100%;
       padding: 10px 12px;
+      align-self: start;
     }
     .month-bar {
       border-radius: 10px;
@@ -501,10 +501,10 @@
           <div class="panel chart-panel">
             <h2 class="section-title">Monthly Net P&amp;L</h2>
             <div id="monthlyChartWrap" class="empty">Nạp <code>trades.csv</code> để dựng monthly chart.</div>
-            <div class="panel table-panel monthly-detail-panel">
-              <h2 class="section-title">Selected Month Detail</h2>
-              <table id="monthDetailTable"></table>
-            </div>
+          </div>
+          <div class="panel table-panel">
+            <h2 class="section-title">Selected Month Detail</h2>
+            <table id="monthDetailTable"></table>
           </div>
         </section>
 
@@ -797,16 +797,16 @@
       renderTable($('contractTable'), [
         ['Initial equity', fmtMoney(Number(cfg.initial_equity))],
         ['Backtest period (UTC)', `${esc(formatCoverageDate(getBacktestCoverage().start))} → ${esc(formatCoverageDate(getBacktestCoverage().end))}`],
-        ['Risk / Reward USD', `${fmtMoney(Number(cfg.risk_usd))} / ${fmtMoney(Number(cfg.reward_usd))}`],
+        // ['', fmtNum(Number(cfg.volume_lots), 2)],
+        ['Risk / Reward USD (Volume lots)', `${fmtMoney(Number(cfg.risk_usd))} / ${fmtMoney(Number(cfg.reward_usd))} (${fmtNum(Number(cfg.volume_lots), 2)} lot)`],
         ['R:R ratio', deriveRiskRewardRatio()],
         ['Daily DD latest ($ / %)', dd.latest_daily_drawdown != null ? `${fmtMoney(Number(dd.latest_daily_drawdown_usd))} / ${fmtPct(Number(dd.latest_daily_drawdown))} · ${esc(dd.latest_day || '—')}` : '—'],
         ['Max Daily DD ($ / %)', dd.max_daily_drawdown != null ? `${fmtMoney(Number(dd.max_daily_drawdown_usd))} / ${fmtPct(Number(dd.max_daily_drawdown))} · worst ${esc(dd.worst_day || '—')}` : '—'],
-        ['Volume lots', fmtNum(Number(cfg.volume_lots), 2)],
         ['Preset bias params', `RSI<${esc(cfg.rsi_entry_long)} / RSI>${esc(cfg.rsi_entry_short)} · gradient ${esc(cfg.gradient_periods)}`],
         ['Spread / Slippage / Commission', `${fmtNum(Number(cfg.max_spread), 3)} / ${fmtNum(Number(cfg.slippage_per_side), 3)} / ${fmtMoney(Number(cfg.commission_per_trade_usd))}`],
-        ['Trade side / Session', `${esc(cfg.trade_side || '—')} / ${esc(cfg.session_filter || '—')}`],
-        ['Validation', `<span class="${val.passed ? 'good' : 'bad'}">${val.passed ? 'PASSED' : 'FAILED'}</span>`],
-        ['Rejection reasons', esc((val.reasons || []).join('; ') || 'none')],
+        // ['Trade side / Session', `${esc(cfg.trade_side || '—')} / ${esc(cfg.session_filter || '—')}`],
+        // ['Validation', `<span class="${val.passed ? 'good' : 'bad'}">${val.passed ? 'PASSED' : 'FAILED'}</span>`],
+        // ['Rejection reasons', esc((val.reasons || []).join('; ') || 'none')],
       ]);
       renderTable($('signalTable'), [
         ['Long signals', fmtInt(signalCounts.long_signal)],
@@ -1007,11 +1007,11 @@
       }
       renderTable($('monthDetailTable'), [
         ['Month', esc(month.month)],
-        ['Trades (Win / Losses)', `${fmtInt(month.trades)} (${fmtInt(month.wins)} / ${fmtInt(month.losses)})`],
+        ['Trades (W/L)', `${fmtInt(month.trades)} (${fmtInt(month.wins)} / ${fmtInt(month.losses)})`],
         ['Win rate', fmtPct(month.winRate)],
         ['Net P&L', fmtMoney(month.pnl)],
         ['Profit factor', Number.isFinite(month.profitFactor) ? fmtNum(month.profitFactor, 3) : '∞'],
-        ['Average bars held', fmtNum(month.avgBars, 2)],
+        ['AVG bars held', fmtNum(month.avgBars, 2)],
         ['DD', `${fmtMoney(month.drawdownUsd)} / ${fmtPct(month.drawdownPct)}`],
         ['Max DD', `${fmtMoney(month.maxDailyDrawdownUsd)}${month.worstDay ? ` (${esc(month.worstDay)})` : ''} / ${fmtPct(month.maxDailyDrawdownPct)}`],
         ['End equity', fmtMoney(month.endEquity)],
