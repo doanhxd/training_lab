@@ -18,6 +18,9 @@ from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, fo
 @dataclass(frozen=True)
 class Mt5DemoConfig:
     symbol: str = "XAUUSD"
+    symbol_base: str = "XAUUSD"
+    symbol_candidates: tuple[str, ...] = ()
+    entry_mode: str = "close_confirm"
     timeframe: str = "M5"
     preset: str = "gold-loose"
     trade_side: str = "both"
@@ -56,6 +59,10 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
     cap_payload = payload.get("equity_risk_cap_pct", 0.0025)
     equity_risk_cap_pct = None if cap_payload is None else float(cap_payload)
     return Mt5DemoConfig(
+        symbol=str(payload.get("symbol", "XAUUSD")),
+        symbol_base=str(payload.get("symbol_base", "XAUUSD")),
+        symbol_candidates=tuple(str(symbol) for symbol in payload.get("symbol_candidates", ())),
+        entry_mode=str(payload.get("entry_mode", "close_confirm")),
         timeframe=timeframe,
         preset=str(payload["preset"]),
         trade_side=str(payload["side"]),
@@ -87,12 +94,41 @@ class DemoOnlyRsiquiMt5Runner:
         self._effective_risk_usd = config.risk_usd
         self._account_equity: float | None = None
         self._last_status_log_at: float | None = None
+        self._resolved_symbol = config.symbol
+        self._last_immediate_attempt_bar: int | None = None
 
     def _active_symbol(self, now: datetime | None = None) -> str:
-        return self.config.symbol
+        return self._resolved_symbol
+
+    def _symbol_candidates(self) -> tuple[str, ...]:
+        ordered = [self.config.symbol, *self.config.symbol_candidates]
+        seen: set[str] = set()
+        return tuple(symbol for symbol in ordered if symbol and not (symbol in seen or seen.add(symbol)))
+
+    def _resolve_symbol(self) -> str | None:
+        for candidate in self._symbol_candidates():
+            if self.mt5.symbol_info(candidate) is not None:
+                return candidate
+        symbols_get = getattr(self.mt5, "symbols_get", None)
+        if symbols_get is None:
+            return None
+        try:
+            available = symbols_get() or ()
+        except Exception:
+            return None
+        base = self.config.symbol_base.upper()
+        names = []
+        for item in available:
+            name = str(getattr(item, "name", ""))
+            upper = name.upper()
+            if upper.startswith(base) and "." not in name and "24-7" not in upper:
+                names.append(name)
+        preferred = {name.upper(): index for index, name in enumerate(self._symbol_candidates())}
+        names.sort(key=lambda name: (preferred.get(name.upper(), len(preferred)), name.upper()))
+        return names[0] if names else None
 
     def _symbols_to_guard(self) -> tuple[str, ...]:
-        return (self.config.symbol,)
+        return (self._active_symbol(),)
 
     def _max_spread_price_for_symbol(self, symbol: str) -> float:
         return float(self.config.max_spread_price)
@@ -111,7 +147,7 @@ class DemoOnlyRsiquiMt5Runner:
         return min(float(risk_usd), float(self._account_equity) * self.config.equity_risk_cap_pct)
 
     def _symbols_required_for_start(self) -> tuple[str, ...]:
-        return (self.config.symbol,)
+        return (self._active_symbol(),)
 
     def start(self) -> bool:
         if not self.mt5.initialize():
@@ -122,6 +158,12 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = "blocked: MT5 account information unavailable"
             self.mt5.shutdown()
             return False
+        resolved_symbol = self._resolve_symbol()
+        if resolved_symbol is None:
+            self.last_status = f"blocked: no available symbol variant for {self.config.symbol_base}"
+            self.mt5.shutdown()
+            return False
+        self._resolved_symbol = resolved_symbol
         self._account_equity = float(account.equity)
         active_symbol = self._active_symbol()
         _, active_risk_usd, _ = self._money_contract_for_symbol(active_symbol)
@@ -317,6 +359,46 @@ class DemoOnlyRsiquiMt5Runner:
         # can miss the M5 close-confirm windows entirely.
         now_utc = datetime.now(tz=UTC) if now_utc is None else now_utc.astimezone(UTC)
 
+        if self.config.entry_mode == "immediate_signal":
+            bar_time = self._bar_open_timestamp(now_utc)
+            if self._last_immediate_attempt_bar == bar_time:
+                self.last_status = "blocked: duplicate immediate signal attempt for this bar"
+                return False
+            if self._open_positions_exist():
+                self.last_status = self._waiting_open_position_status()
+                return False
+            side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
+            if side is None or evaluated_bar is None:
+                self.last_status = "no immediate RSIQUI V3 FINAL signal" if not self.last_status.startswith("blocked:") else self.last_status
+                return False
+            self._last_immediate_attempt_bar = evaluated_bar
+            if self._is_gmt7_entry_blackout(evaluated_bar):
+                local_time = self._entry_time_from_signal_bar(evaluated_bar)
+                self.last_status = f"blocked: GMT+7 blackout at {local_time:%H:%M}"
+                return False
+            if evaluated_bar == self._last_submitted_bar:
+                self.last_status = "blocked: duplicate immediate signal setup"
+                return False
+            request = self._build_request(side)
+            if request is None:
+                return False
+            result = self.mt5.order_send(request)
+            if result is None or result.retcode != self.mt5.TRADE_RETCODE_DONE:
+                self.last_status = f"order rejected: {None if result is None else result.retcode}"
+                return False
+            self._last_submitted_bar = evaluated_bar
+            self.last_status = f"order filled: {side} ticket {getattr(result, 'order', '?')} immediate signal bar {evaluated_bar}"
+            message = format_filled_order_message(
+                symbol=str(request.get("symbol", self.config.symbol)),
+                side=side,
+                request=request,
+                ticket=getattr(result, "order", "?"),
+                timeframe=self.config.timeframe,
+            )
+            if not self.notifier.send(message) and self.config.telegram_enabled:
+                self.last_status += f"; {self.notifier.last_status}"
+            return True
+
         if self._is_preclose_entry_window(now_utc):
             bar_time = self._bar_open_timestamp(now_utc)
             if bar_time == self._last_evaluated_bar:
@@ -419,12 +501,14 @@ class DemoOnlyRsiquiMt5Runner:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run RSIQUI V3 FINAL on the currently logged-in MT5 account.")
     parser.add_argument("--config", default="final_m5_demo.json")
-    parser.add_argument("--symbol", default="XAUUSD")
+    parser.add_argument("--symbol", default=None)
     parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--status-log-interval-seconds", type=float, default=None)
     args = parser.parse_args()
     config = load_demo_config(args.config)
-    overrides = {"symbol": args.symbol, "poll_seconds": args.poll_seconds}
+    overrides = {"poll_seconds": args.poll_seconds}
+    if args.symbol is not None:
+        overrides["symbol"] = args.symbol
     if args.status_log_interval_seconds is not None:
         overrides["status_log_interval_seconds"] = args.status_log_interval_seconds
     config = Mt5DemoConfig(**(config.__dict__ | overrides))

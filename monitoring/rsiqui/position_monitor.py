@@ -85,6 +85,7 @@ class RsiquiV3PositionMonitor:
     def __init__(self, *, symbol: str, mt5: Any, process_iter: Callable[[], Iterable[Any]] | None = None, extra_symbols: Iterable[str] = ("BTCUSD",)) -> None:
         self.symbol = symbol
         self.symbols = self._normalize_symbols((symbol, *tuple(extra_symbols)))
+        self._symbol_prefixes = self._normalize_symbol_prefixes(self.symbols)
         self.mt5 = mt5
         self._connected = False
         self._previous_positions: dict[int, PositionView] = {}
@@ -105,11 +106,47 @@ class RsiquiV3PositionMonitor:
             normalized.append(value)
         return tuple(normalized)
 
+    @staticmethod
+    def _normalize_symbol_prefixes(symbols: Iterable[str]) -> tuple[str, ...]:
+        """Build broker-independent roots for symbols with suffixes."""
+        prefixes: list[str] = []
+        seen: set[str] = set()
+        for symbol in symbols:
+            value = str(symbol or "").strip().upper()
+            if not value:
+                continue
+            for known_root in ("XAUUSD", "BTCUSD"):
+                if value.startswith(known_root):
+                    value = known_root
+                    break
+            if value.casefold() not in seen:
+                seen.add(value.casefold())
+                prefixes.append(value)
+        return tuple(prefixes)
+
     def _position_matches_observed_symbol(self, position: Any) -> bool:
         if not self.symbols:
             return True
-        symbol = str(getattr(position, "symbol", "") or "").casefold()
-        return bool(symbol) and symbol in {item.casefold() for item in self.symbols}
+        symbol = str(getattr(position, "symbol", "") or "").strip().upper()
+        return bool(symbol) and any(symbol.startswith(prefix) for prefix in self._symbol_prefixes)
+
+    def _broker_symbol_variants(self) -> tuple[str, ...]:
+        """Discover suffix variants when MT5 requires positions_get(symbol=...)."""
+        symbols_get = getattr(self.mt5, "symbols_get", None)
+        if not callable(symbols_get):
+            return self.symbols
+        try:
+            broker_symbols = symbols_get() or ()
+        except Exception:
+            return self.symbols
+        variants = list(self.symbols)
+        seen = {item.casefold() for item in variants}
+        for item in broker_symbols:
+            name = str(getattr(item, "name", item) or "").strip()
+            if name and any(name.upper().startswith(prefix) for prefix in self._symbol_prefixes) and name.casefold() not in seen:
+                variants.append(name)
+                seen.add(name.casefold())
+        return tuple(variants)
 
     def _read_positions(self) -> tuple[Any, ...]:
         try:
@@ -120,7 +157,7 @@ class RsiquiV3PositionMonitor:
             return tuple(position for position in raw_positions if self._position_matches_observed_symbol(position))
         collected: list[Any] = []
         seen_tickets: set[int] = set()
-        for symbol in self.symbols or (self.symbol,):
+        for symbol in self._broker_symbol_variants() or (self.symbol,):
             for position in self.mt5.positions_get(symbol=symbol) or ():
                 ticket = int(getattr(position, "ticket", 0) or 0)
                 if ticket in seen_tickets:

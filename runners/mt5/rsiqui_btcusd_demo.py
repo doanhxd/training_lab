@@ -18,6 +18,8 @@ from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, fo
 @dataclass(frozen=True)
 class Mt5DemoConfig:
     symbol: str = "XAUUSD"
+    symbol_base: str = "BTCUSD"
+    symbol_candidates: tuple[str, ...] = ()
     timeframe: str = "M5"
     preset: str = "gold-loose"
     trade_side: str = "both"
@@ -58,6 +60,8 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
     return Mt5DemoConfig(
         timeframe=timeframe,
         symbol=str(payload.get("symbol", "BTCUSD")),
+        symbol_base=str(payload.get("symbol_base", "BTCUSD")),
+        symbol_candidates=tuple(str(symbol) for symbol in payload.get("symbol_candidates", ())),
         preset=str(payload["preset"]),
         trade_side=str(payload["side"]),
         volume_lots=float(payload["volume"]),
@@ -88,12 +92,45 @@ class DemoOnlyRsiquiMt5Runner:
         self._effective_risk_usd = config.risk_usd
         self._account_equity: float | None = None
         self._last_status_log_at: float | None = None
+        self._resolved_symbol = config.symbol
 
     def _active_symbol(self, now: datetime | None = None) -> str:
-        return self.config.symbol
+        return self._resolved_symbol
+
+    def _symbol_candidates(self) -> tuple[str, ...]:
+        ordered = [*self.config.symbol_candidates, self.config.symbol]
+        seen: set[str] = set()
+        result: list[str] = []
+        for symbol in ordered:
+            if symbol and symbol not in seen:
+                seen.add(symbol)
+                result.append(symbol)
+        return tuple(result)
+
+    def _resolve_symbol(self) -> str | None:
+        for candidate in self._symbol_candidates():
+            if self.mt5.symbol_info(candidate) is not None:
+                return candidate
+        symbols_get = getattr(self.mt5, "symbols_get", None)
+        if symbols_get is None:
+            return None
+        try:
+            available = symbols_get() or ()
+        except Exception:
+            return None
+        base = self.config.symbol_base.upper()
+        names = []
+        for item in available:
+            name = str(getattr(item, "name", ""))
+            upper = name.upper()
+            if upper.startswith(base) and "." not in name:
+                names.append(name)
+        preferred = {name.upper(): index for index, name in enumerate(self._symbol_candidates())}
+        names.sort(key=lambda name: (preferred.get(name.upper(), len(preferred)), name.upper()))
+        return names[0] if names else None
 
     def _symbols_to_guard(self) -> tuple[str, ...]:
-        return (self.config.symbol,)
+        return (self._active_symbol(),)
 
     def _max_spread_price_for_symbol(self, symbol: str) -> float:
         return float(self.config.max_spread_price)
@@ -112,11 +149,7 @@ class DemoOnlyRsiquiMt5Runner:
         return min(float(risk_usd), float(self._account_equity) * self.config.equity_risk_cap_pct)
 
     def _symbols_required_for_start(self) -> tuple[str, ...]:
-        symbols = [self.config.symbol]
-        active_symbol = self._active_symbol()
-        if active_symbol not in symbols:
-            symbols.append(active_symbol)
-        return tuple(symbols)
+        return (self._active_symbol(),)
 
     def start(self) -> bool:
         if not self.mt5.initialize():
@@ -127,6 +160,12 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = "blocked: a DEMO MT5 account is required"
             self.mt5.shutdown()
             return False
+        resolved_symbol = self._resolve_symbol()
+        if resolved_symbol is None:
+            self.last_status = f"blocked: no available symbol variant for {self.config.symbol_base}"
+            self.mt5.shutdown()
+            return False
+        self._resolved_symbol = resolved_symbol
         self._account_equity = float(account.equity)
         active_symbol = self._active_symbol()
         _, active_risk_usd, _ = self._money_contract_for_symbol(active_symbol)

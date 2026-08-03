@@ -26,5 +26,12 @@
   "telegram_enabled": false,
   "status_log_interval_seconds": 300,
   "symbol": "BTCUSD",
-  "profile_name": "BTCUSD negative-R SL15 TP5"
+  "profile_name": "BTCUSD negative-R SL15 TP5",
+  "symbol_base": "BTCUSD",
+  "symbol_candidates": [
+    "BTCUSDm",
+    "BTCUSDc",
+    "BTCUSDr",
+    "BTCUSD"
+  ]
 }

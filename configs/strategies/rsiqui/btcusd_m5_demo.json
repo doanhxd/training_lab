@@ -25,5 +25,12 @@
   ],
   "telegram_enabled": false,
   "status_log_interval_seconds": 300,
-  "symbol": "BTCUSD"
+  "symbol": "BTCUSD",
+  "symbol_base": "BTCUSD",
+  "symbol_candidates": [
+    "BTCUSDm",
+    "BTCUSDc",
+    "BTCUSDr",
+    "BTCUSD"
+  ]
 }

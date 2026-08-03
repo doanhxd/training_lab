@@ -21,6 +21,7 @@ class FakeMt5:
         self.shutdown_called = False
         self.positions = ()
         self.positions_by_symbol: dict[str, tuple] = {}
+        self.broker_symbols = ()
         self.deals = ()
         self.history_args = None
         self.account = SimpleNamespace(login=7123456, server="Demo-Server", balance=10_000.0, equity=10_012.5, currency="USD")
@@ -42,6 +43,9 @@ class FakeMt5:
         if symbol is None:
             return self.positions
         return self.positions_by_symbol.get(symbol, ())
+
+    def symbols_get(self):
+        return self.broker_symbols
 
     def history_deals_get(self, start: datetime, end: datetime):
         self.history_args = (start, end)
@@ -141,6 +145,41 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
         snapshot = monitor.refresh()
 
         self.assertEqual(["XAUUSD", "BTCUSD"], [item.symbol for item in snapshot.positions])
+
+    def test_refresh_includes_broker_symbol_suffixes(self) -> None:
+        mt5 = FakeMt5()
+        mt5.positions = (
+            position(ticket=1111, side=mt5.POSITION_TYPE_BUY, comment="gold", profit=1.0, symbol="XAUUSDm"),
+            position(ticket=1112, side=mt5.POSITION_TYPE_SELL, comment="gold", profit=-1.0, symbol="XAUUSD.c"),
+            position(ticket=1113, side=mt5.POSITION_TYPE_BUY, comment="btc", profit=2.0, symbol="BTCUSDm"),
+            position(ticket=1114, side=mt5.POSITION_TYPE_BUY, comment="other", profit=2.0, symbol="EURUSD"),
+        )
+        monitor = RsiquiV3PositionMonitor(symbol="XAUUSD", mt5=mt5, process_iter=lambda: ())
+
+        snapshot = monitor.refresh()
+
+        self.assertEqual(["XAUUSDm", "XAUUSD.c", "BTCUSDm"], [item.symbol for item in snapshot.positions])
+
+    def test_fallback_discovers_suffixes_from_broker_symbol_catalog(self) -> None:
+        mt5 = FakeMt5()
+        mt5.positions = None
+        mt5.broker_symbols = (SimpleNamespace(name="XAUUSDm"), SimpleNamespace(name="BTCUSD.r"))
+        mt5.positions_by_symbol = {
+            "XAUUSDm": (position(ticket=1121, side=mt5.POSITION_TYPE_BUY, comment="gold", profit=1.0, symbol="XAUUSDm"),),
+            "BTCUSD.r": (position(ticket=1122, side=mt5.POSITION_TYPE_BUY, comment="btc", profit=2.0, symbol="BTCUSD.r"),),
+        }
+
+        def positions_get(symbol: str | None = None):
+            if symbol is None:
+                raise TypeError("symbol required")
+            return mt5.positions_by_symbol.get(symbol, ())
+
+        mt5.positions_get = positions_get
+        monitor = RsiquiV3PositionMonitor(symbol="XAUUSD", mt5=mt5, process_iter=lambda: ())
+
+        snapshot = monitor.refresh()
+
+        self.assertEqual(["XAUUSDm", "BTCUSD.r"], [item.symbol for item in snapshot.positions])
 
     def test_detects_running_rsiqui_runner_processes(self) -> None:
         mt5 = FakeMt5()

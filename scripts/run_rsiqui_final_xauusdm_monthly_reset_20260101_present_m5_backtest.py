@@ -24,7 +24,7 @@ from trading_lab.strategies.builtins.rsiqui.final import (
     rsiqui_v3_config_for_preset,
 )
 
-RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "XAUUSD_M5_202501012300_202607312345.csv"
+RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "XAUUSDm_M5_202501012305_202608030115.csv"
 CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "final_m5_demo.json"
 SYMBOL = "XAUUSD"
 TIMEFRAME = "5m"
@@ -165,7 +165,7 @@ def main() -> None:
         "monthly_reset_day": MONTHLY_RESET_DAY,
     }
     config_hash = hashlib.sha256(json.dumps(config_payload, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:16]
-    strategy_name = "builtin_rsiqui-v3-final_gold-loose_both_vol0.03_risk30_reward30_closeconfirm_no_blackout_monthly_reset_M5_20260101_present"
+    strategy_name = "builtin_rsiqui-v3-final_gold-loose_both_vol0.03_risk30_reward7.5_closeconfirm_no_blackout_monthly_reset_XAUUSDm_M5_20260101_present"
     run_id = run_id_for(strategy_name, dataset_id, config_hash)
 
     data = prepare_rsiqui_v3_frame(normalized, config)
