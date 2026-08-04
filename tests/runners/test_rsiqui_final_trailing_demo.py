@@ -65,7 +65,7 @@ class FinalTrailingTests(unittest.TestCase):
         config = load_demo_config("configs/strategies/rsiqui/final_trailing_m5_demo.json")
         self.assertEqual("0.03", f"{config.volume_lots:.2f}")
         self.assertEqual(8.0, config.reward_usd)
-        self.assertEqual("XAUUSDm", config.symbol)
+        self.assertEqual("XAUUSD", config.symbol)
         self.assertEqual(573504, config.magic)
 
         self.assertEqual(6.0, config.trailing_activation_profit_usd)

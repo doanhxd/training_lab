@@ -2,12 +2,9 @@
   "strategy": "rsiqui-v3-final",
   "preset": "gold-loose",
   "side": "both",
-  "symbol": "XAUUSDm",
+  "symbol": "XAUUSD",
   "symbol_base": "XAUUSD",
   "symbol_candidates": [
-    "XAUUSDm",
-    "XAUUSDc",
-    "XAUUSDr",
     "XAUUSD"
   ],
   "entry_mode": "immediate_signal",
