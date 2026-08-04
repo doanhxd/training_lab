@@ -99,7 +99,13 @@ def main() -> None:
         "tick_coverage_utc": [str(pd.to_datetime(tick_times[0], unit="ns", utc=True)) if len(tick_times) else None, str(pd.to_datetime(tick_times[-1], unit="ns", utc=True)) if len(tick_times) else None],
     }
     config_hash = hashlib.sha256(json.dumps(config_payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
-    strategy_name = "builtin_rsiqui-v3-final-trailing_gold-loose_both_vol0.03_risk36_reward15_activation2_lock4_step0.5_blackout_gmt7_M5_20260101_present"
+    strategy_name = (
+        "builtin_rsiqui-v3-final-trailing_gold-loose_both_"
+        f"vol{float(payload['volume']):.2f}_risk{float(payload['risk_usd']):g}_"
+        f"reward{float(payload['reward_usd']):g}_activation{float(payload['trailing_activation_price_distance']):g}_"
+        f"lock{float(payload['trailing_locked_profit_usd']):g}_step{float(payload['trailing_step_price']):g}_"
+        f"blackout_gmt7_M5_20260101_present"
+    )
     run_id = run_id_for(strategy_name, dataset_id, config_hash)
 
     data = prepare_rsiqui_v3_frame(normalized, config)

@@ -245,8 +245,10 @@
       const pnl = deriveNetPnl(metrics);
       const finalEquity = Number.isFinite(initial) && Number.isFinite(pnl) ? initial + pnl : NaN;
       $('finalEquity').textContent = fmtMoney(finalEquity);
-      const latestMonthlyEndEquity = state.monthly.length ? Number(state.monthly[state.monthly.length - 1].endEquity) : NaN;
-      $('totalProfit').textContent = fmtMoney(latestMonthlyEndEquity);
+      const totalProfit = state.monthly.length
+        ? state.monthly.reduce((sum, month) => sum + (Number.isFinite(Number(month.pnl)) ? Number(month.pnl) : 0), 0)
+        : NaN;
+      $('totalProfit').textContent = fmtMoney(totalProfit);
       $('winRateValue').textContent = fmtPct(metrics.win_rate);
       $('winRateSub').textContent = `${fmtInt(metrics.total_trades * Number(metrics.win_rate || 0))} wins / ${fmtInt(metrics.total_trades)} trades`;
       $('maxDdValue').textContent = fmtPct(metrics.max_drawdown);

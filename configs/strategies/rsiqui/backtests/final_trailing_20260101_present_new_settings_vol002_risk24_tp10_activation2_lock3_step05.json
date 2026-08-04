@@ -1,13 +1,12 @@
 {
   "strategy": "rsiqui-v3-final-trailing",
+  "variant": "FINAL_TRAILING_NEW_SETTINGS",
   "preset": "gold-loose",
   "side": "both",
   "symbol": "XAUUSD",
   "symbol_base": "XAUUSD",
-  "symbol_candidates": [
-    "XAUUSD"
-  ],
-  "entry_mode": "immediate_signal",
+  "symbol_candidates": ["XAUUSD"],
+  "entry_mode": "close_confirm_ohlc_proxy",
   "timeframe": "5m",
   "initial_equity": 500,
   "volume": 0.02,
@@ -21,15 +20,16 @@
   "slippage_per_side": 0.5,
   "commission_per_trade_usd": 0.12,
   "blocked_entry_hours_gmt7": [20, 21],
-  "blackout_start_gmt7": "03:00",
-  "blackout_until_gmt7": "08:29",
-
   "trailing_activation_price_distance": 2.0,
   "trailing_locked_profit_usd": 3.0,
   "trailing_step_price": 0.5,
+  "take_profit_hard_cap": true,
+  "take_profit_remains_enabled": true,
   "monthly_equity_reset": true,
   "monthly_reset_day": 1,
   "magic": 573504,
   "telegram_enabled": false,
-  "status_log_interval_seconds": 300
+  "status_log_interval_seconds": 300,
+  "source_csv": "data/raw/mt5_exports/XAUUSD_M5_202601020105_202608041330.csv",
+  "requested_period_utc": "2026-01-01T00:00:00Z..2026-08-04T13:30:00Z"
 }

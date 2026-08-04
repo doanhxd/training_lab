@@ -63,9 +63,9 @@ class FakeMt5:
 class FinalTrailingTests(unittest.TestCase):
     def test_config_is_distinct_and_has_requested_contract(self) -> None:
         config = load_demo_config("configs/strategies/rsiqui/final_trailing_m5_demo.json")
-        self.assertEqual("0.03", f"{config.volume_lots:.2f}")
-        self.assertEqual(36.0, config.risk_usd)
-        self.assertEqual(15.0, config.reward_usd)
+        self.assertEqual("0.02", f"{config.volume_lots:.2f}")
+        self.assertEqual(24.0, config.risk_usd)
+        self.assertEqual(10.0, config.reward_usd)
         self.assertEqual("XAUUSD", config.symbol)
         self.assertEqual(573504, config.magic)
 

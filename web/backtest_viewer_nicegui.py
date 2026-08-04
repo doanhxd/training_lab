@@ -146,9 +146,10 @@ def create_app() -> None:
             signals = run.get('signal_counts') or {}
             monthly = run.get('monthly') or []
             final_equity = metrics.get('final_equity') or metrics.get('ending_equity') or (monthly[-1].get('endEquity') if monthly else None)
+            total_profit = sum(float(row.get('pnl') or 0) for row in monthly)
             with metrics_grid:
                 metric_card('Vốn cuối', money(final_equity), 'ending equity')
-                metric_card('Tổng lãi', money(final_equity), 'End equity kỳ cuối')
+                metric_card('Tổng lãi', money(total_profit), 'Tổng P&L toàn kỳ')
                 metric_card('Win rate', pct(metrics.get('win_rate')), f"{metrics.get('wins', '—')} wins / {metrics.get('total_trades', '—')} trades")
                 metric_card('Max DD', pct(metrics.get('max_drawdown_pct', metrics.get('max_drawdown'))), 'overall max DD', 'text-red-300')
                 metric_card('Max Daily DD', pct(run.get('daily_drawdown', {}).get('max_daily_drawdown')), f"worst {run.get('daily_drawdown', {}).get('worst_day', '—')}", 'text-amber-300')

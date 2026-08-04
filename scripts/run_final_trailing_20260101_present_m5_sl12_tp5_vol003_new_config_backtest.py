@@ -66,7 +66,7 @@ def main() -> None:
         "source_config_file": str(CONFIG_PATH), "requested_period_utc": "2026-01-01T00:00:00Z..now",
         "monthly_equity_reset": bool(payload.get("monthly_equity_reset", False)),
         "monthly_reset_day": int(payload.get("monthly_reset_day", 1)),
-        "trailing_policy": {"activation_price_distance": float(payload["trailing_activation_price_distance"]), "locked_profit_usd": float(payload["trailing_locked_profit_usd"]), "step_price": float(payload["trailing_step_price"]), "contract": "strictly above activation; lock +$4 then ratchet +0.5 price per favorable 0.5 price"},
+        "trailing_policy": {"activation_price_distance": float(payload["trailing_activation_price_distance"]), "locked_profit_usd": float(payload["trailing_locked_profit_usd"]), "step_price": float(payload["trailing_step_price"]), "take_profit_hard_cap": True, "take_profit_remains_enabled": True, "contract": "price-distance activation and step; trailing ratchets only toward the exact TP price and never replaces, disables, or exceeds TP"},
         "blocked_entry_hours_gmt7": list(blocked_hours),
         "blackout_policy": "entry proxy timestamp converted from UTC to GMT+7; blocks new entries only",
         "entry_timing_contract": "close-confirm M5; preview and confirmed canonical signal must both be non-empty and match; OHLC proxy uses row close and row timestamp plus 5 minutes",
@@ -103,11 +103,14 @@ def main() -> None:
             favorable_distance = max(0.0, (float(row["high"]) - active["entry_price"]) if active["side"] == "long" else (active["entry_price"] - float(row["low"])))
             activation_distance = float(payload["trailing_activation_price_distance"])
             step_price = max(float(payload["trailing_step_price"]), 1e-12)
-            if favorable_distance > activation_distance:
+            if favorable_distance >= activation_distance:
                 steps = max(0, int((favorable_distance - activation_distance) / step_price + 1e-12))
                 locked_profit = float(payload["trailing_locked_profit_usd"])
                 lock_distance = locked_profit / active["quantity"] + steps * step_price
-                candidate_sl = active["entry_price"] + lock_distance if active["side"] == "long" else active["entry_price"] - lock_distance
+                raw_candidate_sl = active["entry_price"] + lock_distance if active["side"] == "long" else active["entry_price"] - lock_distance
+                # TP remains a hard price cap: trailing may ratchet toward TP,
+                # but it must never replace or move beyond the configured TP.
+                candidate_sl = min(raw_candidate_sl, active["take_profit_price"]) if active["side"] == "long" else max(raw_candidate_sl, active["take_profit_price"])
                 if not active.get("trailing_activated", False):
                     active["trailing_activated"] = True
                     signal_counts["trailing_activated"] += 1

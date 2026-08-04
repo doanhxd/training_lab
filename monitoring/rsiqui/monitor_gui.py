@@ -1286,7 +1286,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         badge = self._badge(parent, entry.badge, entry.badge_color, parent.cget("bg"))
         badge.configure(cursor="hand2")
         badge.bind("<Button-1>", lambda _event, message=entry.telegram_message: self._confirm_telegram_signal(message))
-        badge.bind("<Enter>", lambda _event: (badge.itemconfigure("badge_text", text="Tele"), badge.itemconfigure("badge_fill", fill=UiPalette.TELEGRAM_BLUE, outline=UiPalette.TELEGRAM_BLUE)))
+        badge.bind("<Enter>", lambda _event: (badge.itemconfigure("badge_text", text="TELE"), badge.itemconfigure("badge_fill", fill=UiPalette.TELEGRAM_BLUE, outline=UiPalette.TELEGRAM_BLUE)))
         badge.bind("<Leave>", lambda _event: (badge.itemconfigure("badge_text", text=entry.badge), badge.itemconfigure("badge_fill", fill=entry.badge_color, outline=entry.badge_color)))
         return badge
 
