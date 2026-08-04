@@ -108,7 +108,7 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
         self.assertEqual(3, len(snapshot.positions))
         self.assertEqual("BUY", snapshot.positions[0].side)
         self.assertEqual("2026-08-01 13:30:00", snapshot.positions[0].opened_at.strftime("%Y-%m-%d %H:%M:%S"))
-        self.assertEqual("DoanhHD_GOLD", snapshot.positions[0].source)
+        self.assertEqual("XAU_DoanhHD_R", snapshot.positions[0].source)
         self.assertEqual("TAY", snapshot.positions[1].source)
         self.assertEqual("BTCUSD", snapshot.positions[2].symbol)
         self.assertEqual([], [entry for entry in snapshot.log_entries if "order_send" in entry])

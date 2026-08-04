@@ -39,6 +39,9 @@ class Mt5DemoConfig:
     preclose_check_min_seconds: int = 1
     preclose_check_max_seconds: int = 5
     postclose_confirm_max_seconds: int = 5
+    trailing_activation_profit_usd: float = 5.0
+    trailing_locked_profit_usd: float = 4.0
+    trailing_step_profit_usd: float = 0.5
 
 
 def load_demo_config(path: str | Path) -> Mt5DemoConfig:
@@ -76,11 +79,14 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
         blocked_entry_hours_gmt7=tuple(int(hour) for hour in payload.get("blocked_entry_hours_gmt7", ())),
         telegram_enabled=bool(payload.get("telegram_enabled", False)),
         status_log_interval_seconds=float(payload.get("status_log_interval_seconds", 300.0)),
+        trailing_activation_profit_usd=float(payload.get("trailing_activation_profit_usd", 5.0)),
+        trailing_locked_profit_usd=float(payload.get("trailing_locked_profit_usd", 4.0)),
+        trailing_step_profit_usd=float(payload.get("trailing_step_profit_usd", 0.5)),
     )
 
 
 class DemoOnlyRsiquiMt5Runner:
-    """Closed-bar M15 RSIQUI V3 executor guarded for MT5 demo accounts only."""
+    """Closed-bar BTCUSD RSIQUI V3 executor for the active MT5 account."""
 
     def __init__(self, config: Mt5DemoConfig, *, mt5: Any, notifier: TelegramNotifier | None = None) -> None:
         self.config = config
@@ -161,8 +167,8 @@ class DemoOnlyRsiquiMt5Runner:
             self.last_status = f"MT5 initialize failed: {self.mt5.last_error()}"
             return False
         account = self.mt5.account_info()
-        if account is None or account.trade_mode != self.mt5.ACCOUNT_TRADE_MODE_DEMO:
-            self.last_status = "BLOCKED: a DEMO MT5 account is required"
+        if account is None:
+            self.last_status = "BLOCKED: MT5 account information unavailable"
             self.mt5.shutdown()
             return False
         resolved_symbol = self._resolve_symbol()
@@ -176,7 +182,7 @@ class DemoOnlyRsiquiMt5Runner:
         _, active_risk_usd, _ = self._money_contract_for_symbol(active_symbol)
         self._effective_risk_usd = self._effective_risk_for(active_risk_usd)
         if self._effective_risk_usd <= 0:
-            self.last_status = "BLOCKED: Non-positive demo equity/risk cap"
+            self.last_status = "BLOCKED: Non-positive account equity/risk cap"
             self.mt5.shutdown()
             return False
         for symbol in self._symbols_required_for_start():
@@ -189,7 +195,7 @@ class DemoOnlyRsiquiMt5Runner:
                 self.mt5.shutdown()
                 return False
         self._started = True
-        self.last_status = f"ready: DEMO {self._active_symbol()} {self.config.timeframe} close-confirm RSIQUI V3 BTCUSD ({self.config.preset})"
+        self.last_status = f"READY: {self._active_symbol()} {self.config.timeframe} RSIQUI V3 BTCUSD ({self.config.preset})"
         return True
 
     def stop(self) -> None:
@@ -216,7 +222,7 @@ class DemoOnlyRsiquiMt5Runner:
         timeframe = getattr(self.mt5, f"TIMEFRAME_{self.config.timeframe}")
         rates = self.mt5.copy_rates_from_pos(symbol, timeframe, 0, 200)
         if rates is None or len(rates) < 121:
-            self.last_status = f"BLOCKED: insufficient {self.config.timeframe} history for {symbol}"
+            self.last_status = f"BLOCKED: Insufficient {self.config.timeframe} history for {symbol}"
             return None, None
         frame = pd.DataFrame(rates)
         frame = frame[frame["time"] <= bar_time]
@@ -285,6 +291,76 @@ class DemoOnlyRsiquiMt5Runner:
     def _waiting_open_position_status(self) -> str:
         return "waiting: a BTCUSD position is already open; runner staying alive until the position closes"
 
+    def _trailing_price_distance(self, profit_usd: float, volume_lots: float) -> float:
+        return profit_usd / max(volume_lots * self.config.price_value_per_lot, 1e-12)
+
+    def _trail_open_position(self) -> bool:
+        """Move BTCUSD SL into profit after $5, ratcheting every $0.50."""
+        positions_get = getattr(self.mt5, "positions_get", None)
+        if positions_get is None:
+            return False
+        positions = positions_get(symbol=self._active_symbol()) or ()
+        positions = tuple(
+            position for position in positions
+            if int(getattr(position, "magic", self.config.magic)) == int(self.config.magic)
+        )
+        if not positions:
+            return False
+        position = positions[0]
+        if not all(hasattr(position, field) for field in ("type", "price_open", "ticket")):
+            return False
+        tick = self.mt5.symbol_info_tick(self._active_symbol())
+        info = self.mt5.symbol_info(self._active_symbol())
+        if tick is None or info is None:
+            return False
+
+        is_long = int(position.type) == int(self.mt5.ORDER_TYPE_BUY)
+        entry = float(position.price_open)
+        volume = float(getattr(position, "volume", self.config.volume_lots))
+        favorable_price = float(tick.bid if is_long else tick.ask)
+        direction = 1.0 if is_long else -1.0
+        profit_usd = (favorable_price - entry) * volume * self.config.price_value_per_lot * direction
+        activation = float(self.config.trailing_activation_profit_usd)
+        if profit_usd <= activation:
+            return False
+
+        step_profit = max(float(self.config.trailing_step_profit_usd), 1e-12)
+        locked_profit = float(self.config.trailing_locked_profit_usd) + math.floor(
+            (profit_usd - activation) / step_profit + 1e-12
+        ) * step_profit
+        lock_distance = self._trailing_price_distance(locked_profit, volume)
+        minimum_stop_distance = max(
+            float(getattr(info, "trade_stops_level", 0)) * float(info.point),
+            float(info.trade_tick_size),
+        )
+        current_sl = float(getattr(position, "sl", 0.0) or 0.0)
+        if is_long:
+            candidate_sl = entry + lock_distance
+            if current_sl > 0 and candidate_sl <= current_sl + float(info.trade_tick_size) / 2:
+                return False
+        else:
+            candidate_sl = entry - lock_distance
+            if current_sl > 0 and candidate_sl >= current_sl - float(info.trade_tick_size) / 2:
+                return False
+
+        if abs(favorable_price - candidate_sl) < minimum_stop_distance:
+            self.last_status = "blocked: BTCUSD trailing SL is below broker minimum stop distance"
+            return False
+        candidate_sl = round(candidate_sl, int(info.digits))
+        request = {
+            "action": self.mt5.TRADE_ACTION_SLTP,
+            "symbol": self._active_symbol(),
+            "position": int(position.ticket),
+            "sl": candidate_sl,
+            "tp": float(getattr(position, "tp", 0.0) or 0.0),
+        }
+        result = self.mt5.order_send(request)
+        if result is None or result.retcode != self.mt5.TRADE_RETCODE_DONE:
+            self.last_status = f"trailing BTCUSD SL rejected: {None if result is None else result.retcode}"
+            return False
+        self.last_status = f"trailing BTCUSD SL moved to {candidate_sl:.2f} (locked ${locked_profit:.2f})"
+        return True
+
     @staticmethod
     def _floor_volume(raw: float, minimum: float, maximum: float, step: float) -> float:
         if raw < minimum or step <= 0:
@@ -344,7 +420,7 @@ class DemoOnlyRsiquiMt5Runner:
             "tp": round(entry + reward_distance if is_long else entry - reward_distance, digits),
             "deviation": self.config.deviation_points,
             "magic": self.config.magic,
-            "comment": "DoanhHD_BTC",
+            "comment": "BTC_DoanhHD",
             "type_time": self.mt5.ORDER_TIME_GTC,
             "type_filling": filling,
         }
@@ -360,6 +436,7 @@ class DemoOnlyRsiquiMt5Runner:
         if not self._started:
             self.last_status = "BLOCKED: runner not started"
             return False
+        self._trail_open_position()
         # Scheduling must follow the wall clock, not the broker tick timestamp.
         # During quiet/stale ticks MT5 can keep symbol_info_tick().time frozen,
         # which makes the runner appear stuck at the same seconds-since-open and
@@ -370,7 +447,7 @@ class DemoOnlyRsiquiMt5Runner:
             bar_time = self._bar_open_timestamp(now_utc)
             if self._last_immediate_attempt_bar == bar_time:
                 side_label = (self._last_immediate_attempt_side or "unknown").capitalize()
-                self.last_status = f"BLOCKED: Duplicate immediate {side_label} signal attempt for this bar"
+                self.last_status = f"WAITING: {side_label} signal already handled for bar {bar_time}; no duplicate order"
                 return False
             side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
             if side is None or evaluated_bar is None:
@@ -508,7 +585,7 @@ class DemoOnlyRsiquiMt5Runner:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run RSIQUI V3 BTCUSD on a currently logged-in MT5 DEMO account only.")
+    parser = argparse.ArgumentParser(description="Run RSIQUI V3 BTCUSD on the currently logged-in MT5 account.")
     parser.add_argument("--config", default="btcusd_m5_demo.json")
     parser.add_argument("--symbol", default="BTCUSD")
     parser.add_argument("--poll-seconds", type=float, default=1.0)

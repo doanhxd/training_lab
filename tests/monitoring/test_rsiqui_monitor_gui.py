@@ -4,7 +4,11 @@ from pathlib import Path
 import inspect
 import unittest
 
-from trading_lab.monitoring.rsiqui.monitor_gui import RsiquiV3MonitorApp, load_read_only_profile
+from trading_lab.monitoring.rsiqui.monitor_gui import (
+    RsiquiV3MonitorApp,
+    format_telegram_signal_message,
+    load_read_only_profile,
+)
 from trading_lab.monitoring.rsiqui.position_monitor import RunnerView
 
 
@@ -54,6 +58,78 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertEqual("LONG", long_badge[0])
         self.assertEqual("SHORT", short_badge[0])
         self.assertEqual("ERROR", error_badge[0])
+
+    def test_telegram_signal_message_uses_the_log_eta_and_trade_prices(self) -> None:
+        message = format_telegram_signal_message(
+            symbol="XAUUSD",
+            timeframe="M5",
+            eta="16:05",
+            side="short",
+            request={"price": 4071.53, "sl": 4076.53, "tp": 4066.53},
+        )
+
+        self.assertEqual(
+            "XAUUSD | Next M5 (16:05) | SHORT 🔴\n"
+            "Entry: 4071.53\n"
+            "SL: 4076.53\n"
+            "TP: 4066.53",
+            message,
+        )
+
+    def test_blocked_signal_message_keeps_the_signal_payload_without_a_blocked_prefix(self) -> None:
+        message = format_telegram_signal_message(
+            symbol="XAUUSD",
+            timeframe="M5",
+            eta="16:05",
+            side="long",
+            request={"price": 4071.53, "sl": 4066.53, "tp": 4076.53},
+            blocked=True,
+        )
+
+        self.assertEqual(
+            "XAUUSD | Next M5 (16:05) | LONG 🟢\n"
+            "Entry: 4071.53\n"
+            "SL: 4066.53\n"
+            "TP: 4076.53",
+            message,
+        )
+
+    def test_confirmation_and_history_windows_use_shared_screen_centering(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn("def _center_window", source)
+        self.assertIn("window.winfo_screenwidth()", source)
+        self.assertIn("window.winfo_screenheight()", source)
+        self.assertIn("self._center_window(window)", source)
+        self.assertIn("self._center_window(popup)", source)
+
+    def test_signal_logs_render_a_hoverable_tele_action_inside_long_short_badges(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+        badge_start = source.index("    def _signal_badge")
+        badge_block = source[badge_start:source.index("    def _confirm_telegram_signal", badge_start)]
+
+        self.assertIn("def _signal_badge", source)
+        self.assertIn("<Enter>", source)
+        self.assertIn('text="Tele"', source)
+        self.assertIn("def _confirm_telegram_signal", source)
+        self.assertIn('text="Send"', source)
+        self.assertIn('text="Cancel"', source)
+        self.assertIn("telegram_message=telegram_message", source)
+        self.assertIn("badge = self._badge(parent, entry.badge", badge_block)
+        self.assertIn('badge.itemconfigure("badge_text", text="Tele")', badge_block)
+        self.assertIn('badge.itemconfigure("badge_text", text=entry.badge)', badge_block)
+        self.assertIn('tags=("badge_text",)', source)
+        self.assertNotIn('text="✈"', badge_block)
+        self.assertNotIn("self._label(badge", badge_block)
+        self.assertNotIn("tk.Button(", badge_block)
+
+    def test_one_position_blocked_signal_keeps_long_short_badge_and_tele_action(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn('f"Blocked Signal {plan}', source)
+        self.assertIn("blocked=True", source)
+        self.assertIn("telegram_message=blocked_telegram_message", source)
+        self.assertIn("badge=plan", source)
 
     def test_bot_status_summary_distinguishes_running_and_stopped(self) -> None:
         running = RsiquiV3MonitorApp._summarize_bot_status(
@@ -150,7 +226,7 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertIn("WINRATE", source)
         self.assertIn("NET P/L", source)
 
-    def test_monitor_source_mentions_strategy_selector_without_trade_or_telegram_actions(self) -> None:
+    def test_monitor_source_keeps_order_submission_out_of_the_dashboard(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
         self.assertIn("class UiPalette", source)
@@ -174,10 +250,6 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertNotIn('text="BOT STATUS"', source)
         self.assertNotIn('text="LAST CHECK"', source)
         self.assertNotIn('text="LAST SIGNAL"', source)
-        self.assertNotIn("GỬI KÈO TELEGRAM", source)
-        self.assertNotIn("TELEGRAM TẠM TẮT", source)
-        self.assertNotIn("TelegramNotifier", source)
-        self.assertNotIn("TelegramSettings", source)
         self.assertNotIn("order_send(", source)
         self.assertNotIn("TRADE_ACTION_DEAL", source)
         self.assertNotIn("login(", source)

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import json
 import os
 from typing import Callable
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
@@ -104,6 +104,16 @@ class TelegramNotifier:
                 if not 200 <= int(status) < 300:
                     self.last_status = f"Telegram rejected notification: HTTP {status}"
                     return False
+        except HTTPError as exc:
+            description = ""
+            try:
+                body = exc.read().decode("utf-8", errors="replace")
+                description = str(json.loads(body).get("description", "")).strip()
+            except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError):
+                description = str(exc.reason or "").strip()
+            suffix = f" — {description[:240]}" if description else ""
+            self.last_status = f"Telegram rejected notification: HTTP {exc.code}{suffix}"
+            return False
         except (OSError, URLError, ValueError) as exc:
             self.last_status = f"Telegram notification failed: {type(exc).__name__}"
             return False

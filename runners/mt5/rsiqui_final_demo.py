@@ -348,7 +348,7 @@ class DemoOnlyRsiquiMt5Runner:
             "tp": round(entry + reward_distance if is_long else entry - reward_distance, digits),
             "deviation": self.config.deviation_points,
             "magic": self.config.magic,
-            "comment": "DoanhHD_GOLD",
+            "comment": "XAU_DoanhHD_R",
             "type_time": self.mt5.ORDER_TIME_GTC,
             "type_filling": filling,
         }
@@ -393,7 +393,7 @@ class DemoOnlyRsiquiMt5Runner:
             bar_time = self._bar_open_timestamp(now_utc)
             if self._last_immediate_attempt_bar == bar_time:
                 side_label = (self._last_immediate_attempt_side or "unknown").capitalize()
-                self.last_status = f"BLOCKED: Duplicate immediate {side_label} signal attempt for this bar"
+                self.last_status = f"WAITING: {side_label} signal already handled for bar {bar_time}; no duplicate order"
                 return False
             side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
             if side is None or evaluated_bar is None:

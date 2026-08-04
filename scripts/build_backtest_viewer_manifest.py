@@ -17,7 +17,7 @@ def fmt_iso(ts: float) -> str:
     return datetime.fromtimestamp(ts, tz=UTC).isoformat().replace("+00:00", "Z")
 
 
-def compute_monthly(trades: pd.DataFrame, initial_equity: float) -> list[dict]:
+def compute_monthly(trades: pd.DataFrame, initial_equity: float, monthly_reset: bool = False) -> list[dict]:
     if trades.empty:
         return []
     work = trades.copy()
@@ -31,6 +31,8 @@ def compute_monthly(trades: pd.DataFrame, initial_equity: float) -> list[dict]:
     rows: list[dict] = []
     running = float(initial_equity)
     for month, group in work.groupby("month", sort=True):
+        if monthly_reset:
+            running = float(initial_equity)
         pnl = float(group["pnl"].sum())
         wins = int((group["pnl"] >= 0).sum())
         losses = int((group["pnl"] < 0).sum())
@@ -54,7 +56,7 @@ def compute_monthly(trades: pd.DataFrame, initial_equity: float) -> list[dict]:
     return rows
 
 
-def compute_daily_drawdown_stats(trades: pd.DataFrame, initial_equity: float) -> dict:
+def compute_daily_drawdown_stats(trades: pd.DataFrame, initial_equity: float, monthly_reset: bool = False) -> dict:
     if trades.empty:
         return {}
     work = trades.copy()
@@ -68,6 +70,8 @@ def compute_daily_drawdown_stats(trades: pd.DataFrame, initial_equity: float) ->
     running = float(initial_equity)
     rows: list[dict] = []
     for day, group in work.groupby(work["exit_time"].dt.strftime("%Y-%m-%d"), sort=True):
+        if monthly_reset and (not rows or day[:7] != rows[-1]["day"][:7]):
+            running = float(initial_equity)
         day_start = running
         intraday_equity = day_start
         intraday_min = day_start
@@ -203,9 +207,10 @@ def main() -> None:
         trades_df = pd.read_csv(trades_path) if trades_path.exists() else pd.DataFrame()
         equity_df = pd.read_csv(equity_path) if equity_path.exists() else pd.DataFrame()
         initial_equity = float(report.get("backtest_config", {}).get("initial_equity", 0.0) or 0.0)
-        daily_drawdown = compute_daily_drawdown_stats(trades_df, initial_equity)
+        monthly_reset = bool(report.get("monthly_equity_reset", {}).get("enabled", False))
+        daily_drawdown = compute_daily_drawdown_stats(trades_df, initial_equity, monthly_reset)
         monthly = attach_monthly_drawdown(
-            compute_monthly(trades_df, initial_equity),
+            compute_monthly(trades_df, initial_equity, monthly_reset),
             daily_drawdown.get("daily_rows", []),
         )
         metrics = report.get("metrics_summary", {})

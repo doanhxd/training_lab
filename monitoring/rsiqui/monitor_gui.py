@@ -14,6 +14,7 @@ from typing import Callable
 import pandas as pd
 
 from trading_lab.monitoring.rsiqui.position_monitor import MonitorSnapshot, RsiquiV3PositionMonitor, RunnerView
+from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_signal_message
 
 
 
@@ -24,7 +25,7 @@ if getattr(sys, "frozen", False):
 else:
     PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_ROOT = PROJECT_ROOT / "configs" / "strategies" / "rsiqui"
-GMT_PLUS_7 = timezone(timedelta(hours=7))
+GMT_PLUS_7 = timezone(timedelta(hours=4))
 
 
 
@@ -71,6 +72,26 @@ class LogEntry:
     badge: str
     message: str
     badge_color: str
+    telegram_message: str | None = None
+
+
+def format_telegram_signal_message(
+    *,
+    symbol: str,
+    timeframe: str,
+    eta: str,
+    side: str,
+    request: dict,
+    blocked: bool = False,
+) -> str:
+    """Format the operator-approved Telegram alert from one immutable signal preview."""
+    message = format_signal_message(
+        symbol=symbol,
+        side=side,
+        request=request,
+        timeframe=f"Next {timeframe} ({eta})",
+    )
+    return message
 
 
 STRATEGY_SELECTIONS = {
@@ -167,11 +188,14 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._latest_snapshot: MonitorSnapshot | None = None
         self._log_history: list[LogEntry] = []
         self._last_signal_bar_by_strategy: dict[str, int] = {}
+        self._telegram_notifier = TelegramNotifier(TelegramSettings.from_environment(enabled=True))
         self.shell: tk.Frame | None = None
         self._strategy_profiles = {key: load_read_only_profile(selection.config_path) for key, selection in STRATEGY_SELECTIONS.items()}
         current_strategy_key = str(profile.get("strategy_key", "rsiqui_v3_final_trailing"))
         if current_strategy_key not in self._strategy_profiles:
             current_strategy_key = "rsiqui_v3_final_trailing"
+        self._selected_strategy_keys: list[str] = [current_strategy_key]
+        self._profile_menu_vars: dict[str, tk.BooleanVar] = {}
 
         self._account_value = tk.StringVar(value="—")
         self._equity_value = tk.StringVar(value="—")
@@ -257,12 +281,22 @@ class RsiquiV3MonitorApp(tk.Tk):
         card.configure(padx=padding, pady=padding)
         return card
 
+    @staticmethod
+    def _center_window(window: tk.Toplevel) -> None:
+        """Place a fully laid-out dialog at the center of the current screen."""
+        window.update_idletasks()
+        width = window.winfo_width()
+        height = window.winfo_height()
+        x = max(0, (window.winfo_screenwidth() - width) // 2)
+        y = max(0, (window.winfo_screenheight() - height) // 2)
+        window.geometry(f"{width}x{height}+{x}+{y}")
+
     def _current_profile(self) -> dict[str, str | float]:
         return self._strategy_profiles[self._strategy_choice.get()]
 
     def _apply_strategy_profile(self, strategy_key: str) -> None:
         profile = self._strategy_profiles[strategy_key]
-        self._profile_choice.set(STRATEGY_SELECTIONS[strategy_key].label)
+        self._refresh_profile_selector_label()
         self._timeframe_value.set(str(profile["timeframe"]))
         self._preset_value.set(str(profile["preset"]))
         self._side_value.set(str(profile["side"]))
@@ -270,8 +304,35 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._risk_value.set(f"{float(profile['risk_usd']):.2f}")
         self._reward_value.set(f"{float(profile['reward_usd']):.2f}")
         self._profile_line_value.set(
-            f"{STRATEGY_SELECTIONS[strategy_key].label.upper()}  /  {profile['symbol']} {profile['timeframe']}  /  PRESET {str(profile['preset']).upper()}  /  {str(profile['side']).upper()}"
+            f"{self._selected_profile_labels().upper()}  /  PRIMARY {STRATEGY_SELECTIONS[strategy_key].label.upper()}  /  {profile['symbol']} {profile['timeframe']}  /  PRESET {str(profile['preset']).upper()}  /  {str(profile['side']).upper()}"
         )
+
+    def _selected_profile_labels(self) -> str:
+        keys = self._selected_strategy_keys or [self._strategy_choice.get()]
+        return " + ".join(STRATEGY_SELECTIONS[key].label for key in keys)
+
+    def _refresh_profile_selector_label(self) -> None:
+        self._profile_choice.set(self._selected_profile_labels())
+
+    def _set_profile_menu_state(self, strategy_key: str, selected: bool) -> None:
+        if selected:
+            if strategy_key not in self._selected_strategy_keys:
+                self._selected_strategy_keys.append(strategy_key)
+        else:
+            if len(self._selected_strategy_keys) <= 1:
+                self._profile_menu_vars[strategy_key].set(True)
+                return
+            self._selected_strategy_keys = [key for key in self._selected_strategy_keys if key != strategy_key]
+        if self._strategy_choice.get() not in self._selected_strategy_keys:
+            self._strategy_choice.set(self._selected_strategy_keys[0])
+        self._refresh_profile_selector_label()
+        self._apply_strategy_profile(self._strategy_choice.get())
+        self._set_last_signal_state("NONE", f"Đang theo dõi: {self._selected_profile_labels()}.", UiPalette.INFO)
+        if self._latest_snapshot is not None:
+            self._apply_bot_status(self._latest_snapshot)
+        else:
+            self._update_run_button(None)
+        self._append_log(f"Đã cập nhật profile theo dõi: {self._selected_profile_labels()}.", badge="INFO")
 
     def _build_ui(self) -> None:
         shell = tk.Frame(self, bg=UiPalette.APP)
@@ -377,14 +438,12 @@ class RsiquiV3MonitorApp(tk.Tk):
         fields.pack(fill="x")
         for column in range(5):
             fields.grid_columnconfigure(column, weight=1, uniform="settings")
-        self._labeled_combobox(
+        self._labeled_multi_profile_selector(
             fields,
             0,
             0,
             "PROFILE THEO DÕI",
             self._profile_choice,
-            [selection.label for selection in STRATEGY_SELECTIONS.values()],
-            self._on_strategy_selection,
         )
         self._labeled_entry(fields, 0, 1, "TIMEFRAME", self._timeframe_value)
         self._labeled_entry(fields, 0, 2, "VOLUME LOT", self._volume_value)
@@ -484,6 +543,47 @@ class RsiquiV3MonitorApp(tk.Tk):
         combo.pack(fill="x", pady=(6, 0), ipady=5)
         combo.bind("<<ComboboxSelected>>", handler)
         return combo
+
+    def _labeled_multi_profile_selector(
+        self,
+        parent: tk.Misc,
+        row: int,
+        column: int,
+        caption: str,
+        variable: tk.StringVar,
+    ) -> tk.Menubutton:
+        wrap = tk.Frame(parent, bg=UiPalette.CARD)
+        wrap.grid(row=row, column=column, sticky="ew", padx=6, pady=6)
+        self._label(wrap, text=caption, font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
+        button = tk.Menubutton(
+            wrap,
+            textvariable=variable,
+            indicatoron=True,
+            anchor="w",
+            font=("Segoe UI", 10),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.TABLE,
+            activeforeground=UiPalette.TEXT,
+            activebackground=UiPalette.TABLE_ALT,
+            relief="flat",
+            bd=0,
+            padx=8,
+            pady=6,
+        )
+        menu = tk.Menu(button, tearoff=False, bg=UiPalette.TABLE, fg=UiPalette.TEXT, activebackground=UiPalette.ACCENT, activeforeground="#101722")
+        self._profile_menu_vars.clear()
+        for strategy_key, selection in STRATEGY_SELECTIONS.items():
+            variable_for_key = tk.BooleanVar(value=strategy_key in self._selected_strategy_keys)
+            self._profile_menu_vars[strategy_key] = variable_for_key
+            menu.add_checkbutton(
+                label=selection.label,
+                variable=variable_for_key,
+                command=lambda key=strategy_key, var=variable_for_key: self._set_profile_menu_state(key, var.get()),
+            )
+        button.configure(menu=menu)
+        button.pack(fill="x", pady=(6, 0), ipady=3)
+        self._refresh_profile_selector_label()
+        return button
 
     def _show_monitor_page(self) -> None:
         if self._history_window is not None and self._history_window.winfo_exists():
@@ -642,6 +742,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._history_table.tag_configure("loss", foreground=UiPalette.DANGER)
         self._history_table.pack(fill="both", expand=True, padx=1, pady=(0, 1))
         self._refresh_history()
+        self._center_window(window)
 
     def _on_history_filter_change(self, _event=None) -> None:
         self._set_custom_history_controls_visible()
@@ -873,6 +974,23 @@ class RsiquiV3MonitorApp(tk.Tk):
             return "STOPPED", UiPalette.WARNING, f"Chưa thấy {selected_label} chạy. Runner đang thấy: {other_labels}"
         return "STOPPED", UiPalette.WARNING, f"Chưa thấy runner {selected_label} đang chạy."
 
+    @staticmethod
+    def _summarize_selected_bot_status(selected_strategy_keys: tuple[str, ...], runner_detection_available: bool, running_runners: tuple[RunnerView, ...]) -> tuple[str, str, str]:
+        if not selected_strategy_keys:
+            return "STOPPED", UiPalette.WARNING, "Chưa chọn profile theo dõi."
+        if not runner_detection_available:
+            return "UNKNOWN", UiPalette.WARNING, "Không dò được process runner trên máy này."
+        selected = set(selected_strategy_keys)
+        matching = [runner for runner in running_runners if runner.strategy_key in selected]
+        labels = ", ".join(STRATEGY_SELECTIONS[key].label for key in selected_strategy_keys)
+        if matching:
+            pids = ", ".join(str(runner.pid) for runner in matching)
+            return "RUNNING", UiPalette.SUCCESS, f"Đang chạy: {labels} • PID {pids}"
+        if running_runners:
+            other_labels = ", ".join(sorted({runner.label for runner in running_runners}))
+            return "STOPPED", UiPalette.WARNING, f"Chưa thấy {labels} chạy. Runner đang thấy: {other_labels}"
+        return "STOPPED", UiPalette.WARNING, f"Chưa thấy runner: {labels}."
+
     def _set_last_signal_state(self, badge: str, detail: str, color: str) -> None:
         self._last_signal_value.set(badge)
         self._last_signal_detail_value.set(detail)
@@ -899,7 +1017,7 @@ class RsiquiV3MonitorApp(tk.Tk):
             self._bot_status_badge_widget.pack(side="left", before=parent.winfo_children()[0] if parent.winfo_children() else None)
 
     def _apply_bot_status(self, snapshot: MonitorSnapshot) -> None:
-        status_text, color, detail = self._summarize_bot_status(self._strategy_choice.get(), snapshot.runner_detection_available, snapshot.running_runners)
+        status_text, color, detail = self._summarize_selected_bot_status(tuple(self._selected_strategy_keys), snapshot.runner_detection_available, snapshot.running_runners)
         self._set_bot_status_state(status_text, detail, color)
         self._update_run_button(snapshot)
 
@@ -907,10 +1025,10 @@ class RsiquiV3MonitorApp(tk.Tk):
         if self._run_button is None:
             return
         snapshot = snapshot or self._latest_snapshot
-        strategy_key = self._strategy_choice.get()
+        selected_strategy_keys = set(self._selected_strategy_keys)
         running = False
         if snapshot is not None and snapshot.runner_detection_available:
-            running = any(runner.strategy_key == strategy_key for runner in snapshot.running_runners)
+            running = any(runner.strategy_key in selected_strategy_keys for runner in snapshot.running_runners)
         self._run_button_label.set("RUNNING" if running else "RUN")
         self._run_button.configure(
             state="disabled" if running else "normal",
@@ -999,10 +1117,28 @@ class RsiquiV3MonitorApp(tk.Tk):
             plan = side.upper()
             if self._last_signal_bar_by_strategy.get(strategy_key) != bar_time:
                 self._last_signal_bar_by_strategy[strategy_key] = bar_time
-                self._append_log(
-                    f"{STRATEGY_SELECTIONS[strategy_key].label} plan {plan} blocked: position {self._selected_symbol()} running; one-position guard.",
-                    badge="INFO",
-                )
+                request = self._build_signal_preview_request(side, config)
+                if request is not None:
+                    entry_time = datetime.fromtimestamp(bar_time, tz=UTC) + timedelta(minutes=5 if str(profile["timeframe"]) == "M5" else 15)
+                    eta = entry_time.astimezone(GMT_PLUS_7).strftime("%H:%M")
+                    blocked_telegram_message = format_telegram_signal_message(
+                        symbol=self._selected_symbol(),
+                        timeframe=str(profile["timeframe"]),
+                        eta=eta,
+                        side=side,
+                        request=request,
+                        blocked=True,
+                    )
+                    self._append_log(
+                        f"Blocked Signal {plan} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {eta} • position {self._selected_symbol()} running; one-position guard.",
+                        badge=plan,
+                        telegram_message=blocked_telegram_message,
+                    )
+                else:
+                    self._append_log(
+                        f"Blocked Signal {plan} • position {self._selected_symbol()} running; one-position guard.",
+                        badge="INFO",
+                    )
             self._set_last_signal_state(
                 "WAIT",
                 f"{STRATEGY_SELECTIONS[strategy_key].label}: plan {plan} blocked because {self._selected_symbol()} position running.",
@@ -1021,9 +1157,17 @@ class RsiquiV3MonitorApp(tk.Tk):
         badge = "LONG" if side == "long" else "SHORT"
         self._set_last_signal_state(badge, f"{STRATEGY_SELECTIONS[strategy_key].label} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {eta}", UiPalette.SUCCESS if badge == "LONG" else UiPalette.DANGER)
         # {STRATEGY_SELECTIONS[strategy_key].label}
+        telegram_message = format_telegram_signal_message(
+            symbol=self._selected_symbol(),
+            timeframe=str(profile["timeframe"]),
+            eta=eta,
+            side=side,
+            request=request,
+        )
         self._append_log(
             f"Signal {side.upper()} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {eta}",
             badge=badge,
+            telegram_message=telegram_message,
         )
     def _refresh(self) -> None:
         if self._closed:
@@ -1082,9 +1226,15 @@ class RsiquiV3MonitorApp(tk.Tk):
             return "ERROR", UiPalette.DANGER
         return "INFO", UiPalette.INFO
 
-    def _append_log(self, message: str, *, badge: str | None = None) -> None:
+    def _append_log(self, message: str, *, badge: str | None = None, telegram_message: str | None = None) -> None:
         badge_text, badge_color = self._classify_log_badge(message, badge)
-        entry = LogEntry(timestamp=f"{self._clock_gmt7():%H:%M:%S}", badge=badge_text, message=message, badge_color=badge_color)
+        entry = LogEntry(
+            timestamp=f"{self._clock_gmt7():%H:%M:%S}",
+            badge=badge_text,
+            message=message,
+            badge_color=badge_color,
+            telegram_message=telegram_message,
+        )
         self._log_history.insert(0, entry)
         self._log_history = self._log_history[:500]
         self._replay_logs()
@@ -1098,7 +1248,12 @@ class RsiquiV3MonitorApp(tk.Tk):
             row = tk.Frame(self._log_rows, bg=row_bg, padx=10, pady=6)
             row.pack(fill="x", padx=0, pady=(0, 6))
             self._label(row, text=entry.timestamp, font=("Consolas", 9), fg=UiPalette.MUTED, bg=row_bg, width=9, anchor="w").pack(side="left")
-            self._badge(row, entry.badge, entry.badge_color, row_bg).pack(side="left", padx=(10, 8))
+            badge = (
+                self._signal_badge(row, entry)
+                if entry.telegram_message and entry.badge in {"LONG", "SHORT"}
+                else self._badge(row, entry.badge, entry.badge_color, row_bg)
+            )
+            badge.pack(side="left", padx=(10, 8))
             self._label(row, text=entry.message, font=("Segoe UI", 9), bg=row_bg, justify="left", wraplength=message_wrap, anchor="w").pack(side="left", fill="x", expand=True)
         self._on_log_frame_configure(None)
         self._log_canvas.yview_moveto(0)
@@ -1114,8 +1269,90 @@ class RsiquiV3MonitorApp(tk.Tk):
         canvas.create_oval(x2 - radius * 2, y1, x2, y1 + radius * 2, fill=fill, outline=fill)
         canvas.create_oval(x1, y2 - radius * 2, x1 + radius * 2, y2, fill=fill, outline=fill)
         canvas.create_oval(x2 - radius * 2, y2 - radius * 2, x2, y2, fill=fill, outline=fill)
-        canvas.create_text(width / 2, 12, text=text, fill=UiPalette.BADGE_FG, font=("Segoe UI", 8, "bold"))
+        canvas.create_text(
+            width / 2,
+            12,
+            text=text,
+            fill=UiPalette.BADGE_FG,
+            font=("Segoe UI", 8, "bold"),
+            tags=("badge_text",),
+        )
         return canvas
+
+    def _signal_badge(self, parent: tk.Misc, entry: LogEntry) -> tk.Canvas:
+        """One compact directional badge that becomes the Tele action on hover."""
+        badge = self._badge(parent, entry.badge, entry.badge_color, parent.cget("bg"))
+        badge.configure(cursor="hand2")
+        badge.bind("<Button-1>", lambda _event, message=entry.telegram_message: self._confirm_telegram_signal(message))
+        badge.bind("<Enter>", lambda _event: badge.itemconfigure("badge_text", text="Tele"))
+        badge.bind("<Leave>", lambda _event: badge.itemconfigure("badge_text", text=entry.badge))
+        return badge
+
+    def _confirm_telegram_signal(self, telegram_message: str | None) -> None:
+        if not telegram_message:
+            return
+        popup = tk.Toplevel(self)
+        popup.title("Xác nhận gửi Telegram")
+        popup.transient(self)
+        popup.grab_set()
+        popup.configure(background=UiPalette.CARD)
+        popup.resizable(False, False)
+        shell = tk.Frame(popup, bg=UiPalette.CARD, padx=18, pady=16)
+        shell.pack(fill="both", expand=True)
+        self._label(shell, text="Gửi signal này qua Telegram?", font=("Segoe UI", 11, "bold"), bg=UiPalette.CARD).pack(anchor="w")
+        preview = tk.Label(
+            shell,
+            text=telegram_message,
+            font=("Consolas", 10),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.TABLE,
+            justify="left",
+            anchor="w",
+            padx=12,
+            pady=10,
+        )
+        preview.pack(fill="x", pady=(12, 14))
+        actions = tk.Frame(shell, bg=UiPalette.CARD)
+        actions.pack(fill="x")
+        tk.Button(
+            actions,
+            text="Cancel",
+            command=popup.destroy,
+            font=("Segoe UI", 9, "bold"),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.CARD_ALT,
+            activeforeground=UiPalette.TEXT,
+            activebackground=UiPalette.BORDER,
+            relief="flat",
+            bd=0,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(side="right")
+        tk.Button(
+            actions,
+            text="Send",
+            command=lambda: self._send_telegram_signal(popup, telegram_message),
+            font=("Segoe UI", 9, "bold"),
+            fg="#101722",
+            bg=UiPalette.ACCENT,
+            activeforeground="#101722",
+            activebackground="#E8C270",
+            relief="flat",
+            bd=0,
+            padx=14,
+            pady=6,
+            cursor="hand2",
+        ).pack(side="right", padx=(0, 8))
+        self._center_window(popup)
+
+    def _send_telegram_signal(self, popup: tk.Toplevel, telegram_message: str) -> None:
+        sent = self._telegram_notifier.send(telegram_message)
+        popup.destroy()
+        self._append_log(
+            "Đã gửi signal Telegram." if sent else self._telegram_notifier.last_status,
+            badge="INFO" if sent else "ERROR",
+        )
 
     def _on_log_frame_configure(self, _event) -> None:
         self._log_canvas.configure(scrollregion=self._log_canvas.bbox("all"))

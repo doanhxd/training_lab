@@ -12,6 +12,7 @@ class FakeMt5:
     ACCOUNT_TRADE_MODE_DEMO = 0
     TIMEFRAME_M5 = 5
     TRADE_ACTION_DEAL = 1
+    TRADE_ACTION_SLTP = 2
     ORDER_TYPE_BUY = 0
     ORDER_TYPE_SELL = 1
     ORDER_TIME_GTC = 0
@@ -88,11 +89,11 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertEqual("M5", config.timeframe)
         self.assertEqual("gold-loose", config.preset)
         self.assertEqual("immediate_signal", config.entry_mode)
-        self.assertEqual(0.13, config.volume_lots)
+        self.assertEqual(0.08, config.volume_lots)
         self.assertEqual(1.0, config.price_value_per_lot)
         self.assertEqual(10.0, config.risk_usd)
         self.assertEqual(10.0, config.reward_usd)
-        self.assertEqual(10.0, config.max_spread_price)
+        self.assertEqual(25.0, config.max_spread_price)
         self.assertIsNone(config.equity_risk_cap_pct)
         self.assertFalse(config.telegram_enabled)
 
@@ -122,15 +123,15 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertIsNotNone(request)
         assert request is not None
         self.assertEqual("BTCUSD", request["symbol"])
-        self.assertEqual(0.13, request["volume"])
-        self.assertAlmostEqual(76.92, request["price"] - request["sl"], places=2)
-        self.assertAlmostEqual(76.92, request["tp"] - request["price"], places=2)
-        self.assertEqual("DoanhHD_BTC", request["comment"])
-        self.assertEqual(0.13, strategy_config.volume_lots)
+        self.assertEqual(0.08, request["volume"])
+        self.assertAlmostEqual(125.0, request["price"] - request["sl"], places=2)
+        self.assertAlmostEqual(125.0, request["tp"] - request["price"], places=2)
+        self.assertEqual("BTC_DoanhHD", request["comment"])
+        self.assertEqual(0.08, strategy_config.volume_lots)
         self.assertEqual(1.0, strategy_config.price_value_per_lot)
         self.assertEqual(10.0, strategy_config.risk_usd)
         self.assertEqual(10.0, strategy_config.reward_usd)
-        self.assertEqual(10.0, strategy_config.max_spread)
+        self.assertEqual(25.0, strategy_config.max_spread)
         self.assertEqual([], mt5.sent_orders)
 
     def test_poll_once_waits_until_m5_preclose_window(self) -> None:
@@ -145,7 +146,7 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         filled = runner.poll_once(datetime(2026, 8, 2, 8, 24, 54, tzinfo=UTC))
 
         self.assertFalse(filled)
-        self.assertIn("outside M5 close-confirm windows", runner.last_status)
+        self.assertIn("Outside M5 close-confirm windows", runner.last_status)
         self.assertEqual([], mt5.sent_orders)
 
     def test_poll_once_previews_then_submits_after_candle_close(self) -> None:
@@ -163,7 +164,7 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertFalse(runner.poll_once(datetime(2026, 8, 2, 8, 25, 2, tzinfo=UTC)))
 
         self.assertEqual(1, len(mt5.sent_orders))
-        self.assertIn("duplicate close confirmation", runner.last_status)
+        self.assertIn("Duplicate close confirmation", runner.last_status)
 
     def test_open_position_skips_the_current_preclose_bar(self) -> None:
         config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
@@ -181,6 +182,44 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
 
         self.assertEqual([], mt5.sent_orders)
         self.assertIn("duplicate pre-close preview", runner.last_status)
+
+    def test_btcusd_trailing_contract(self) -> None:
+        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+
+        class TrailingMt5(FakeMt5):
+            TRADE_ACTION_SLTP = 2
+
+            def __init__(self) -> None:
+                super().__init__()
+                self.bid = 100.0 + 5.10 / (config.volume_lots * config.price_value_per_lot)
+                self.position = SimpleNamespace(
+                    ticket=987, type=self.ORDER_TYPE_BUY, price_open=100.0,
+                    volume=config.volume_lots, sl=90.0, tp=120.0, magic=config.magic,
+                )
+
+            def symbol_info_tick(self, symbol: str):
+                return SimpleNamespace(bid=self.bid, ask=self.bid + 0.1)
+
+            def positions_get(self, symbol: str):
+                return (self.position,)
+
+            def order_send(self, request: dict):
+                self.sent_orders.append(request)
+                self.position.sl = request["sl"]
+                return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE)
+
+        mt5 = TrailingMt5()
+        runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
+        self.assertTrue(runner.start())
+        self.assertTrue(runner._trail_open_position())
+        self.assertAlmostEqual(100.0 + 4.0 / (config.volume_lots * config.price_value_per_lot), mt5.position.sl, places=2)
+
+        mt5.bid = 100.0 + 5.60 / (config.volume_lots * config.price_value_per_lot)
+        self.assertTrue(runner._trail_open_position())
+        self.assertAlmostEqual(100.0 + 4.5 / (config.volume_lots * config.price_value_per_lot), mt5.position.sl, places=2)
+
+        mt5.bid = 100.0 + 5.20 / (config.volume_lots * config.price_value_per_lot)
+        self.assertFalse(runner._trail_open_position())
 
 
 if __name__ == "__main__":

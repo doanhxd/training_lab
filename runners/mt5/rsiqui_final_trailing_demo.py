@@ -18,10 +18,9 @@ DEFAULT_CONFIG = ROOT / "configs" / "strategies" / "rsiqui" / "final_trailing_m5
 
 @dataclass(frozen=True)
 class FinalTrailingConfig(Mt5DemoConfig):
-    trailing_activation_profit_usd: float = 6.0
-    trailing_locked_profit_usd: float = 5.0
-    trailing_gap_profit_usd: float = 0.5
-    trailing_step_profit_usd: float = 0.5
+    trailing_activation_price_distance: float = 2.0
+    trailing_locked_profit_usd: float = 4.0
+    trailing_step_price: float = 0.5
 
 
 def _resolve_config_path(path: str | Path) -> Path:
@@ -63,22 +62,33 @@ def load_demo_config(path: str | Path = DEFAULT_CONFIG) -> Mt5DemoConfig:
         telegram_enabled=bool(payload.get("telegram_enabled", False)),
         status_log_interval_seconds=float(payload.get("status_log_interval_seconds", 300.0)),
         magic=int(payload.get("magic", 573504)),
-        trailing_activation_profit_usd=float(payload.get("trailing_activation_profit_usd", 6.0)),
-        trailing_locked_profit_usd=float(payload.get("trailing_locked_profit_usd", 5.0)),
-        trailing_gap_profit_usd=float(payload.get("trailing_gap_profit_usd", 0.5)),
-        trailing_step_profit_usd=float(payload.get("trailing_step_profit_usd", 0.5)),
+        trailing_activation_price_distance=float(
+            payload.get(
+                "trailing_activation_price_distance",
+                float(payload.get("trailing_activation_profit_usd", 6.0))
+                / max(float(payload["volume"]) * float(payload["price_value_per_lot"]), 1e-12),
+            )
+        ),
+        trailing_locked_profit_usd=float(payload.get("trailing_locked_profit_usd", 4.0)),
+        trailing_step_price=float(
+            payload.get(
+                "trailing_step_price",
+                float(payload.get("trailing_step_profit_usd", 0.5))
+                / max(float(payload["volume"]) * float(payload["price_value_per_lot"]), 1e-12),
+            )
+        ),
     )
     return config
 
 
 class DemoOnlyRsiquiFinalTrailingMt5Runner(FinalRunner):
-    """FINAL replacement with trigger $6, lock $5, gap $1; no breakeven step."""
+    """FINAL replacement with +2.0 price activation, +$4 lock, 0.5-price steps."""
 
     def __init__(self, config: Mt5DemoConfig, *, mt5: Any, notifier: Any = None) -> None:
         super().__init__(config, mt5=mt5, notifier=notifier)
-        self.trailing_activation_profit_usd = config.trailing_activation_profit_usd
+        self.trailing_activation_price_distance = config.trailing_activation_price_distance
         self.trailing_locked_profit_usd = config.trailing_locked_profit_usd
-        self.trailing_gap_profit_usd = config.trailing_gap_profit_usd
+        self.trailing_step_price = config.trailing_step_price
 
     def _trailing_price_distance(self, profit_usd: float, volume_lots: float) -> float:
         return profit_usd / max(volume_lots * self.config.price_value_per_lot, 1e-12)
@@ -105,15 +115,15 @@ class DemoOnlyRsiquiFinalTrailingMt5Runner(FinalRunner):
         volume = float(getattr(position, "volume", self.config.volume_lots))
         favorable_price = float(tick.bid if is_long else tick.ask)
         direction = 1.0 if is_long else -1.0
-        profit_usd = (favorable_price - entry) * volume * self.config.price_value_per_lot * direction
-        if profit_usd <= self.trailing_activation_profit_usd:
+        favorable_distance = (favorable_price - entry) * direction
+        if favorable_distance <= self.trailing_activation_price_distance:
             return False
 
-        step_profit = max(float(self.config.trailing_step_profit_usd), 1e-12)
-        locked_profit = self.trailing_locked_profit_usd + math.floor(
-            (profit_usd - self.trailing_activation_profit_usd) / step_profit + 1e-12
-        ) * step_profit
-        lock_distance = self._trailing_price_distance(locked_profit, volume)
+        step_price = max(float(self.config.trailing_step_price), 1e-12)
+        steps = math.floor(
+            (favorable_distance - self.trailing_activation_price_distance) / step_price + 1e-12
+        )
+        lock_distance = self._trailing_price_distance(self.trailing_locked_profit_usd, volume) + steps * step_price
         minimum_stop_distance = max(
             float(getattr(info, "trade_stops_level", 0)) * float(info.point),
             float(info.trade_tick_size),
@@ -153,7 +163,7 @@ class DemoOnlyRsiquiFinalTrailingMt5Runner(FinalRunner):
     def _build_request(self, side: str) -> dict | None:
         request = super()._build_request(side)
         if request is not None:
-            request["comment"] = "DoanhHD_GOLT"
+            request["comment"] = "XAU_DoanhHD"
         return request
 
     def poll_once(self, now_utc=None) -> bool:
