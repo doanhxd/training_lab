@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 import unittest
 
@@ -40,6 +41,8 @@ class FakeMt5:
         return True
 
     def symbol_info(self, symbol: str):
+        if symbol == "XAUUSD":
+            return None
         return SimpleNamespace(
             point=0.01,
             digits=2,
@@ -47,6 +50,9 @@ class FakeMt5:
             trade_tick_value=1.0,
             trade_stops_level=0,
         )
+
+    def symbols_get(self):
+        return (SimpleNamespace(name="XAUUSDc"),)
 
     def symbol_info_tick(self, symbol: str):
         return SimpleNamespace(bid=self.bid, ask=self.bid + 0.1)
@@ -66,27 +72,38 @@ class FinalTrailingTests(unittest.TestCase):
         self.assertEqual("0.02", f"{config.volume_lots:.2f}")
         self.assertEqual(24.0, config.risk_usd)
         self.assertEqual(10.0, config.reward_usd)
-        self.assertEqual("XAUUSD", config.symbol)
+        self.assertEqual("XAUUSDc", config.symbol)
+        self.assertEqual(("XAUUSDc", "XAUUSD"), config.symbol_candidates)
         self.assertEqual(573504, config.magic)
 
         self.assertEqual(2.0, config.trailing_activation_price_distance)
-        self.assertEqual(4.0, config.trailing_locked_profit_usd)
+        self.assertEqual(3.0, config.trailing_locked_profit_usd)
         self.assertEqual(0.5, config.trailing_step_price)
 
-    def test_trigger_locks_4_and_ratchets_by_half_price_steps(self) -> None:
+    def test_c_symbol_fallback_resolves_and_trails_on_xauusdc(self) -> None:
+        config = replace(load_demo_config(), symbol="XAUUSD", symbol_candidates=("XAUUSD",))
+        mt5 = FakeMt5(bid=2302.01)
+        runner = DemoOnlyRsiquiFinalTrailingMt5Runner(config, mt5=mt5)
+
+        self.assertTrue(runner.start())
+        self.assertEqual("XAUUSDc", runner._active_symbol())
+        self.assertTrue(runner._trail_open_position())
+        self.assertEqual("XAUUSDc", mt5.orders[0]["symbol"])
+
+    def test_trigger_locks_3_and_ratchets_by_half_price_steps(self) -> None:
         mt5 = FakeMt5(bid=2302.01)  # just above +2.0 price / +$6.00
         runner = DemoOnlyRsiquiFinalTrailingMt5Runner(load_demo_config(), mt5=mt5)
         self.assertTrue(runner.start())
 
         self.assertTrue(runner._trail_open_position())
         self.assertEqual(1, len(mt5.orders))
-        self.assertAlmostEqual(2301.33, mt5.orders[0]["sl"], places=2)
+        self.assertAlmostEqual(2301.00, mt5.orders[0]["sl"], places=2)
         self.assertGreater(mt5.orders[0]["sl"], mt5.position.price_open)
 
         mt5.bid = 2302.51  # one additional 0.5-price trailing step
         self.assertTrue(runner._trail_open_position())
         raised_sl = mt5.position.sl
-        self.assertAlmostEqual(2301.83, raised_sl, places=2)
+        self.assertAlmostEqual(2301.50, raised_sl, places=2)
 
         mt5.bid = 2302.40
         self.assertFalse(runner._trail_open_position())

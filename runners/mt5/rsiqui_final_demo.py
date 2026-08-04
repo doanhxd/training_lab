@@ -287,7 +287,7 @@ class DemoOnlyRsiquiMt5Runner:
 
     def _waiting_open_position_status(self, planned_side: str | None = None) -> str:
         plan = f" plan {planned_side.upper()} blocked by one-position guard;" if planned_side else ""
-        return f"WAITING: An XAUUSD position is already open;{plan} runner staying alive until the position closes"
+        return f"WAITING: An {self._active_symbol()} position is already open;{plan} runner staying alive until the position closes"
 
     @staticmethod
     def _floor_volume(raw: float, minimum: float, maximum: float, step: float) -> float:
@@ -397,7 +397,7 @@ class DemoOnlyRsiquiMt5Runner:
                 return False
             side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
             if side is None or evaluated_bar is None:
-                self.last_status = "No immediate XAUUSD signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
+                self.last_status = f"No immediate {self._active_symbol()} signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
                 return False
             if self._open_positions_exist():
                 self.last_status = self._waiting_open_position_status(side)
@@ -440,7 +440,7 @@ class DemoOnlyRsiquiMt5Runner:
             self._pending_preclose_signal = None
             side, evaluated_bar = self.evaluate_preclose_bar(bar_time)
             if side is None or evaluated_bar is None:
-                self.last_status = "No pre-close preview XAUUSD signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
+                self.last_status = f"No pre-close preview {self._active_symbol()} signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
                 return False
             if self._open_positions_exist():
                 self.last_status = self._waiting_open_position_status(side)
@@ -469,7 +469,7 @@ class DemoOnlyRsiquiMt5Runner:
             return False
         close_side, evaluated_bar = self.evaluate_confirmed_close_bar(closed_bar)
         if close_side is None or evaluated_bar is None:
-            self.last_status = "BLOCKED: Closed candle no longer has XAUUSD signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
+            self.last_status = f"BLOCKED: Closed candle no longer has {self._active_symbol()} signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
             return False
         preview_side = pending[1]
         if evaluated_bar != closed_bar or close_side != preview_side:

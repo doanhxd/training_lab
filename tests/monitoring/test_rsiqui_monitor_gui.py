@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import inspect
 import unittest
 
@@ -36,13 +37,26 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
 
         self.assertEqual("", signature.parameters["text"].default)
 
+    def test_gui_aliases_broker_gold_suffix_and_cent_currency(self) -> None:
+        self.assertEqual("XAUUSD", RsiquiV3MonitorApp._display_symbol("XAUUSDc"))
+        self.assertEqual("XAUUSD", RsiquiV3MonitorApp._display_symbol("XAUUSDm"))
+        self.assertEqual("USD", RsiquiV3MonitorApp._display_currency("USC"))
+        self.assertEqual("USD", RsiquiV3MonitorApp._display_currency("USD"))
+
     def test_read_only_profile_loader_supports_final_trailing_final_and_btcusd_aliases(self) -> None:
         final = load_read_only_profile("configs/strategies/rsiqui/final_m5_demo.json")
         final_tr = load_read_only_profile("configs/strategies/rsiqui/final_trailing_m5_demo.json")
+        final_tr_c = load_read_only_profile("configs/strategies/rsiqui/final_trailing_c_m5_demo.json")
         btcusd = load_read_only_profile("configs/strategies/rsiqui/btcusd_m5_demo.json")
 
         self.assertEqual("rsiqui_v3_final", final["strategy_key"])
         self.assertEqual("rsiqui_v3_final_trailing", final_tr["strategy_key"])
+        self.assertEqual("rsiqui_v3_final_trailing_c", final_tr_c["strategy_key"])
+        self.assertEqual("XAUUSDc", final_tr_c["symbol"])
+        self.assertEqual(0.20, final_tr_c["volume"])
+        self.assertEqual(240.0, final_tr_c["risk_usd"])
+        self.assertEqual(100.0, final_tr_c["reward_usd"])
+        self.assertEqual(5000.0, json.loads(Path("configs/strategies/rsiqui/final_trailing_c_m5_demo.json").read_text(encoding="utf-8"))["initial_equity"])
         self.assertEqual("immediate_signal", final_tr["entry_mode"])
         self.assertEqual("rsiqui_v3_btcusd", btcusd["strategy_key"])
         self.assertEqual(0.03, final["volume"])

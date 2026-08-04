@@ -99,18 +99,21 @@ def format_telegram_signal_message(
 STRATEGY_SELECTIONS = {
     "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "F Root", CONFIG_ROOT / "final_m5_demo.json"),
     "rsiqui_v3_final_trailing": StrategySelection("rsiqui_v3_final_trailing", "F Trailing", CONFIG_ROOT / "final_trailing_m5_demo.json"),
+    "rsiqui_v3_final_trailing_c": StrategySelection("rsiqui_v3_final_trailing_c", "F Trailing X · $5K", CONFIG_ROOT / "final_trailing_c_m5_demo.json"),
     "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "BTC", CONFIG_ROOT / "btcusd_m5_demo.json"),
 }
 
 RUNNER_SCRIPT_BY_STRATEGY = {
     "rsiqui_v3_final": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_demo.py",
     "rsiqui_v3_final_trailing": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing_demo.py",
+    "rsiqui_v3_final_trailing_c": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing_demo.py",
     "rsiqui_v3_btcusd": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_btcusd_demo.py",
 }
 
 RUNNER_MODULE_BY_STRATEGY = {
     "rsiqui_v3_final": "trading_lab.runners.mt5.rsiqui_final_demo",
     "rsiqui_v3_final_trailing": "trading_lab.runners.mt5.rsiqui_final_trailing_demo",
+    "rsiqui_v3_final_trailing_c": "trading_lab.runners.mt5.rsiqui_final_trailing_demo",
     "rsiqui_v3_btcusd": "trading_lab.runners.mt5.rsiqui_btcusd_demo",
 }
 
@@ -126,10 +129,10 @@ def _strategy_loader_for_payload(payload: dict):
         from trading_lab.runners.mt5.rsiqui_final_demo import load_demo_config
 
         return "rsiqui_v3_final", load_demo_config
-    if strategy == "rsiqui-v3-final-trailing":
+    if strategy in {"rsiqui-v3-final-trailing", "rsiqui-v3-final-trailing-c"}:
         from trading_lab.runners.mt5.rsiqui_final_trailing_demo import load_demo_config
 
-        return "rsiqui_v3_final_trailing", load_demo_config
+        return ("rsiqui_v3_final_trailing_c" if strategy.endswith("-c") else "rsiqui_v3_final_trailing"), load_demo_config
     if strategy == "rsiqui-v3-btcusd":
         from trading_lab.runners.mt5.rsiqui_btcusd_demo import load_demo_config
 
@@ -138,7 +141,7 @@ def _strategy_loader_for_payload(payload: dict):
 
 
 def _strategy_runtime(strategy_key: str):
-    if strategy_key in {"rsiqui_v3_final", "rsiqui_v3_final_trailing"}:
+    if strategy_key in {"rsiqui_v3_final", "rsiqui_v3_final_trailing", "rsiqui_v3_final_trailing_c"}:
         from trading_lab.strategies.builtins.rsiqui.final import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
@@ -306,7 +309,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._risk_value.set(f"{float(profile['risk_usd']):.2f}")
         self._reward_value.set(f"{float(profile['reward_usd']):.2f}")
         self._profile_line_value.set(
-            f"{self._selected_profile_labels().upper()}  /  PRIMARY {STRATEGY_SELECTIONS[strategy_key].label.upper()}  /  {profile['symbol']} {profile['timeframe']}  /  PRESET {str(profile['preset']).upper()}  /  {str(profile['side']).upper()}"
+            f"{self._selected_profile_labels().upper()}  /  PRIMARY {STRATEGY_SELECTIONS[strategy_key].label.upper()}  /  {self._display_symbol(str(profile['symbol']))} {profile['timeframe']}  /  PRESET {str(profile['preset']).upper()}  /  {str(profile['side']).upper()}"
         )
 
     def _selected_profile_labels(self) -> str:
@@ -877,6 +880,11 @@ class RsiquiV3MonitorApp(tk.Tk):
         return upper
 
     @staticmethod
+    def _display_currency(currency: str) -> str:
+        upper = str(currency or "").upper()
+        return "USD" if upper == "USC" else upper
+
+    @staticmethod
     def _history_display_symbol(symbol: str) -> str:
         """Keep broker suffixes internal while showing one GOLD family label."""
         upper = str(symbol or "").upper()
@@ -1188,7 +1196,7 @@ class RsiquiV3MonitorApp(tk.Tk):
     def _render_snapshot(self, snapshot: MonitorSnapshot, *, include_log_entries: bool = True) -> None:
         self._latest_snapshot = snapshot
         self._account_value.set(f"#{snapshot.login}")
-        self._equity_value.set(f"{snapshot.equity:,.2f} {snapshot.currency}")
+        self._equity_value.set(f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency)}")
         self._position_count_value.set(str(len(snapshot.positions)))
         self._mt5_status_value.set(f"ONLINE • {snapshot.server}")
         if snapshot.positions and snapshot.positions[0].opened_at is not None:

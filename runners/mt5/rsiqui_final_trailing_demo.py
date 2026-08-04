@@ -34,8 +34,8 @@ def _resolve_config_path(path: str | Path) -> Path:
 def load_demo_config(path: str | Path = DEFAULT_CONFIG) -> Mt5DemoConfig:
     config_path = _resolve_config_path(path)
     payload = json.loads(config_path.read_text(encoding="utf-8"))
-    if payload.get("strategy") != "rsiqui-v3-final-trailing":
-        raise ValueError("runner accepts only strategy rsiqui-v3-final-trailing")
+    if payload.get("strategy") not in {"rsiqui-v3-final-trailing", "rsiqui-v3-final-trailing-c"}:
+        raise ValueError("runner accepts only strategy rsiqui-v3-final-trailing or rsiqui-v3-final-trailing-c")
     timeframe = str(payload["timeframe"]).upper()
     timeframe = {"5M": "M5", "15M": "M15"}.get(timeframe, timeframe)
     if timeframe not in {"M5", "M15"}:

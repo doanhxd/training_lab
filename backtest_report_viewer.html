@@ -3,117 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Portfolio Management Viewer</title>
+  <meta name="theme-color" content="#0b0f14">
+  <title>Gold Quanter · Backtest Control Room</title>
   <link rel="stylesheet" href="./backtest_report_viewer.css">
 </head>
 <body>
-  <main>
-    <div class="eyebrow">Portfolio Management Monitor Surface</div>
-    <h1>Portfolio Management Viewer</h1>
-    <!-- <div class="sub">
-      Một form HTML thống nhất để mở report sau mỗi lần backtest. Chỉ cần chọn <b>report JSON</b> để xem summary ngay.
-      Nếu muốn xem equity curve, monthly ledger và trade sample thì nạp thêm <b>trades.csv</b> và <b>equity_curve.csv</b> từ cùng run đó.
-    </div> -->
-
-    <div class="layout">
-      <aside class="panel controls">
-        <div class="stack">
-          <section>
-            <h2 class="section-title">Chọn Portfolio History</h2>
-            <div class="field">
-              <label for="runSelect">Selectbox runs từ outputs · mới nhất ở trên</label>
-              <select id="runSelect" title="Chọn history report">
-                <option value="">-- đang tải manifest --</option>
-              </select>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">GQ</span><div><strong>Gold Quanter</strong><span>Backtest Control Room</span></div></div>
+      <div class="top-actions"><span id="manifestStatus" class="status-pill">Loading manifest…</span><button id="themeBtn" class="icon-btn" title="Đổi theme">◐</button></div>
+    </header>
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-head"><div><span class="kicker">RESEARCH DESK</span><h1>Runs</h1></div><span id="runCount" class="count-badge">0</span></div>
+        <label class="search"><span>⌕</span><input id="runSearch" placeholder="Tìm run, strategy, period…"></label>
+        <div class="filter-row"><select id="sortRuns" aria-label="Sắp xếp"><option value="newest">Mới nhất</option><option value="net">Net PnL</option><option value="pf">Profit Factor</option><option value="dd">Drawdown thấp</option></select><button id="compareBtn" class="small-btn">Compare</button></div>
+        <div id="runList" class="run-list"></div>
+        <div class="sidebar-foot"><span class="live-dot"></span><span id="dataStamp">Embedded snapshot</span></div>
+      </aside>
+      <main class="main" id="main">
+        <section id="emptyState" class="empty-state"><span class="empty-glyph">◎</span><h2>Chọn một backtest run</h2><p>Chọn run bên trái để xem contract, PnL, drawdown, equity và trade ledger.</p></section>
+        <div id="runView" hidden>
+          <section class="run-header">
+            <div><span class="kicker">SELECTED RUN</span><h2 id="runTitle">—</h2><p id="runSubtitle">—</p></div>
+            <div class="header-badges"><span id="executionBadge" class="badge">—</span><span id="coverageBadge" class="badge">—</span></div>
+          </section>
+          <section id="compareStrip" class="compare-strip" hidden></section>
+          <section class="metric-grid">
+            <article class="metric hero-metric"><span>TOTAL PROFIT</span><strong id="mNet">—</strong><small id="mGross">full-period P&amp;L —</small></article>
+            <article class="metric"><span>PROFIT FACTOR</span><strong id="mPf">—</strong><small id="mTrades">— trades</small></article>
+            <article class="metric"><span>MAX DRAWDOWN</span><strong id="mDd">—</strong><small id="mDdPct">—</small></article>
+            <article class="metric"><span>WIN RATE</span><strong id="mWr">—</strong><small id="mWins">—</small></article>
+            <article class="metric"><span>ENDING EQUITY</span><strong id="mEquity">—</strong><small id="mInitial">initial —</small></article>
+          </section>
+          <section class="grid-two">
+                      <article class="panel chart-panel"><div class="panel-head"><div><span class="kicker">PERFORMANCE</span><div class="chart-title-row"><h3>Equity curve</h3><span id="initialBalanceMeta" class="initial-balance">Init balance —</span></div></div><span id="equityMeta" class="muted">—</span></div><div id="equityChart" class="chart"></div></article>
+            <article class="panel contract-panel"><div class="panel-head"><div><span class="kicker">STRATEGY CONTRACT</span><h3>Execution model</h3></div><span class="contract-lock">READ ONLY</span></div><div id="contractGrid" class="contract-grid"></div></article>
+          </section>
+          <section class="panel monthly-panel">
+            <div class="panel-head"><div><span class="kicker">MONTHLY LEDGER</span><h3>Net PnL by month</h3></div></div>
+            <div class="monthly-top-grid">
+              <div id="monthlyChart" class="monthly-chart"></div>
+              <div id="monthDetail" class="month-detail"></div>
             </div>
           </section>
+          <section class="panel daily-panel">
+            <div class="panel-head"><div><span class="kicker">DAILY LEDGER</span><h3>Daily PnL &amp; drawdown</h3></div><span id="dailyFilterLabel" class="muted">All days</span></div>
+            <div class="daily-grid">
+              <div><div id="dailyChart" class="daily-chart"></div><div class="daily-hint">Click a day to inspect the selected-day detail.</div></div>
+              <div id="dailyDetail" class="daily-detail"></div>
+            </div>
+            <div id="dailyTable" class="table-scroll daily-table"></div>
+          </section>
+          <section class="panel trades-panel"><div class="panel-head"><div><span class="kicker">TRADE INSPECTOR</span><h3>Trade ledger</h3></div><div class="trade-tools"><select id="sideFilter"><option value="all">All sides</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select><select id="exitFilter"><option value="all">All exits</option><option value="tp">TP</option><option value="sl">SL</option><option value="trailing_sl">Trailing</option></select><input id="tradeSearch" placeholder="Search time / exit…"></div></div><div id="tradeMeta" class="muted trade-meta">—</div><div id="tradeTable" class="table-scroll"></div></section>
         </div>
-      </aside>
-
-      <section class="content">
-        <section class="panel hero">
-          <div class="eyebrow">Loaded Run</div>
-          <div class="hero-title-row">
-            <h2 id="heroTitle" style="font-size:28px;">Chưa nạp report</h2>
-            <div id="heroPeriod" class="hero-period"><span class="period-label">Portfolio (UTC)</span><span>—</span></div>
-          </div>
-          <div id="heroSub" class="sub">Hãy chọn report JSON để bắt đầu.</div>
-          <div class="hero-grid">
-            <div id="heroMeta" class="muted-box">Report metadata sẽ hiện ở đây.</div>
-            <div id="heroWarning" class="warn-box">Lưu ý: nếu chỉ nạp report JSON, viewer vẫn hiện summary được nhưng chưa có monthly ledger / equity chart.</div>
-          </div>
-        </section>
-
-        <section class="summary-layout">
-        <section class="card-grid">
-          <div class="panel metric-card"><div class="label">Last balance</div><div class="value" id="finalEquity">—</div><div class="subvalue">ending equity</div></div>
-          <div class="panel metric-card"><div class="label">Total profit</div><div class="value" id="totalProfit">—</div><div class="subvalue">Tổng P&amp;L toàn kỳ</div></div>
-          <div class="panel metric-card info"><div class="label">Win rate</div><div class="value" id="winRateValue">—</div><div class="subvalue" id="winRateSub">wins / total trades</div></div>
-          <div class="panel metric-card danger"><div class="label">Max DD</div><div class="value" id="maxDdValue">—</div><div class="subvalue" id="drawdownSub">overall equity peak-to-trough</div></div>
-          <div class="panel metric-card warnmetric"><div class="label">Max Daily DD</div><div class="value" id="maxDailyDdValue">—</div><div class="subvalue money-detail" id="maxDailyDdSub">worst day</div></div>
-          <div class="panel metric-card"><div class="label">Total trades</div><div class="value" id="tradeCount">—</div><div class="subvalue" id="pfSub">profit factor —</div></div>
-        </section>
-
-
-        <section class="twocol summary-details">
-          <div class="panel table-panel">
-            <h2 class="section-title">Contract & Validation</h2>
-            <table id="contractTable"></table>
-          </div>
-          <div class="panel table-panel">
-            <h2 class="section-title">Signal / Execution Stats</h2>
-            <table id="signalTable"></table>
-          </div>
-        </section>
-        </section>
-
-        <section class="panel chart-panel">
-          <h2 class="section-title">Equity Curve</h2>
-          <div id="equityWrap" class="empty">Nạp <code>equity_curve.csv</code> để xem equity curve.</div>
-          <div class="legend"><span><span class="swatch" style="background:#87e7a5"></span>Equity</span></div>
-        </section>
-
-        <section class="twocol monthly-section">
-          <div class="panel chart-panel">
-            <h2 class="section-title">Monthly Net P&amp;L</h2>
-            <div id="monthlyChartWrap" class="empty">Nạp <code>trades.csv</code> để dựng monthly chart.</div>
-          </div>
-          <div class="panel table-panel">
-            <h2 class="section-title">Selected Month Detail</h2>
-            <table id="monthDetailTable"></table>
-          </div>
-        </section>
-
-        <section class="panel table-panel">
-          <h2 class="section-title">Daily Ledger Report <span id="dailyFilterLabel" class="small"></span></h2>
-          <div class="hint" style="margin-bottom:12px;">Dùng cho các portfolio history ngắn trong vòng khoảng 1 tháng: xem từng ngày, P&amp;L, WR, PF, DD $/% và long/short.</div>
-          <div class="daily-ledger-grid">
-            <div>
-              <h3 class="section-title" style="margin-top:0;">Daily Net P&amp;L</h3>
-              <div id="dailyChartWrap" class="empty">Daily chart sẽ hiện khi manifest có daily ledger.</div>
-            </div>
-            <div>
-              <h3 class="section-title" style="margin-top:0;">Selected Day Detail</h3>
-              <div id="dailyDetailWrap" class="empty">Chọn một ngày để xem chi tiết.</div>
-            </div>
-          </div>
-          <h3 class="section-title" style="margin-top:18px;">Daily Ledger Statistics</h3>
-          <div id="dailyTableWrap" class="empty">Daily ledger sẽ hiện khi manifest có dữ liệu ngày.</div>
-        </section>
-
-        <section class="panel table-panel">
-          <h2 class="section-title">Monthly Ledger</h2>
-          <div id="monthlyTableWrap" class="empty">Monthly ledger sẽ hiện khi có <code>trades.csv</code>.</div>
-        </section>
-
-        <section class="panel table-panel">
-          <h2 class="section-title">Trade Sample</h2>
-          <div id="tradeSampleWrap" class="empty">Trade sample sẽ hiện khi có <code>trades.csv</code>.</div>
-        </section>
-      </section>
+      </main>
     </div>
-  </main>
-
+  </div>
   <script src="./backtest_report_manifest.js"></script>
   <script src="./backtest_report_viewer.js" defer></script>
 </body>
