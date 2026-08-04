@@ -22,6 +22,7 @@
   "spread_multiplier": 1,
   "slippage_per_side": 0.5,
   "commission_per_trade_usd": 0.12,
+  "magic": 573503,
   "blocked_entry_hours_gmt7": [],
   "blackout_start_gmt7": "02:00",
   "blackout_until_gmt7": "08:29",

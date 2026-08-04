@@ -15,6 +15,7 @@
   "spread_multiplier": 1,
   "slippage_per_side": 0.5,
   "commission_per_trade_usd": 0,
+  "magic": 573502,
   "blocked_entry_hours_gmt7": [
     5,
     6,

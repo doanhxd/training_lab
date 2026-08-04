@@ -251,7 +251,7 @@
       $('winRateSub').textContent = `${fmtInt(metrics.total_trades * Number(metrics.win_rate || 0))} wins / ${fmtInt(metrics.total_trades)} trades`;
       $('maxDdValue').textContent = fmtPct(metrics.max_drawdown);
       const maxDdUsd = deriveMaxDrawdownUsd();
-      $('drawdownSub').textContent = Number.isFinite(maxDdUsd) ? `${fmtMoney(maxDdUsd)} peak-to-trough` : 'Overall Max DD';
+      $('drawdownSub').textContent = 'Overall Max DD';
       const dd = getDailyDrawdownInfo();
       $('maxDailyDdValue').textContent = fmtPct(Number(dd.max_daily_drawdown));
       $('maxDailyDdSub').textContent = Number.isFinite(Number(dd.max_daily_drawdown_usd))

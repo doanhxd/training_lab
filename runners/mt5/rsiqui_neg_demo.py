@@ -61,6 +61,7 @@ def load_demo_config(path: str | Path) -> Mt5DemoConfig:
         risk_usd=float(payload["risk_usd"]),
         reward_usd=float(payload["reward_usd"]),
         max_spread_price=float(payload["max_spread"]),
+        magic=int(payload.get("magic", 573502)),
         blocked_entry_hours_gmt7=tuple(int(hour) for hour in payload.get("blocked_entry_hours_gmt7", ())),
         telegram_enabled=bool(payload.get("telegram_enabled", False)),
         status_log_interval_seconds=float(payload.get("status_log_interval_seconds", 300.0)),
