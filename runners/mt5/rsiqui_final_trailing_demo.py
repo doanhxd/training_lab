@@ -20,7 +20,8 @@ DEFAULT_CONFIG = ROOT / "configs" / "strategies" / "rsiqui" / "final_trailing_m5
 class FinalTrailingConfig(Mt5DemoConfig):
     trailing_activation_profit_usd: float = 6.0
     trailing_locked_profit_usd: float = 5.0
-    trailing_gap_profit_usd: float = 1.0
+    trailing_gap_profit_usd: float = 0.5
+    trailing_step_profit_usd: float = 0.5
 
 
 def _resolve_config_path(path: str | Path) -> Path:
@@ -57,12 +58,15 @@ def load_demo_config(path: str | Path = DEFAULT_CONFIG) -> Mt5DemoConfig:
         equity_risk_cap_pct=cap,
         max_spread_price=float(payload["max_spread"]),
         blocked_entry_hours_gmt7=tuple(int(hour) for hour in payload.get("blocked_entry_hours_gmt7", ())),
+        blackout_start_gmt7=(str(payload["blackout_start_gmt7"]) if payload.get("blackout_start_gmt7") else None),
+        blackout_until_gmt7=(str(payload["blackout_until_gmt7"]) if payload.get("blackout_until_gmt7") else None),
         telegram_enabled=bool(payload.get("telegram_enabled", False)),
         status_log_interval_seconds=float(payload.get("status_log_interval_seconds", 300.0)),
         magic=int(payload.get("magic", 573504)),
         trailing_activation_profit_usd=float(payload.get("trailing_activation_profit_usd", 6.0)),
         trailing_locked_profit_usd=float(payload.get("trailing_locked_profit_usd", 5.0)),
-        trailing_gap_profit_usd=float(payload.get("trailing_gap_profit_usd", 1.0)),
+        trailing_gap_profit_usd=float(payload.get("trailing_gap_profit_usd", 0.5)),
+        trailing_step_profit_usd=float(payload.get("trailing_step_profit_usd", 0.5)),
     )
     return config
 
@@ -105,21 +109,24 @@ class DemoOnlyRsiquiFinalTrailingMt5Runner(FinalRunner):
         if profit_usd <= self.trailing_activation_profit_usd:
             return False
 
-        lock_distance = self._trailing_price_distance(self.trailing_locked_profit_usd, volume)
-        gap_distance = self._trailing_price_distance(self.trailing_gap_profit_usd, volume)
+        step_profit = max(float(self.config.trailing_step_profit_usd), 1e-12)
+        locked_profit = self.trailing_locked_profit_usd + math.floor(
+            (profit_usd - self.trailing_activation_profit_usd) / step_profit + 1e-12
+        ) * step_profit
+        lock_distance = self._trailing_price_distance(locked_profit, volume)
         minimum_stop_distance = max(
             float(getattr(info, "trade_stops_level", 0)) * float(info.point),
             float(info.trade_tick_size),
         )
         if is_long:
             minimum_lock_sl = entry + lock_distance
-            candidate_sl = max(minimum_lock_sl, favorable_price - gap_distance)
+            candidate_sl = minimum_lock_sl
             current_sl = float(getattr(position, "sl", 0.0) or 0.0)
             if current_sl > 0 and candidate_sl <= current_sl + float(info.trade_tick_size) / 2:
                 return False
         else:
             minimum_lock_sl = entry - lock_distance
-            candidate_sl = min(minimum_lock_sl, favorable_price + gap_distance)
+            candidate_sl = minimum_lock_sl
             current_sl = float(getattr(position, "sl", 0.0) or 0.0)
             if current_sl > 0 and candidate_sl >= current_sl - float(info.trade_tick_size) / 2:
                 return False

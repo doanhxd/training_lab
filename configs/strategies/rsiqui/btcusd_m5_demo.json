@@ -17,13 +17,7 @@
   "spread_multiplier": 1,
   "slippage_per_side": 0.5,
   "commission_per_trade_usd": 0,
-  "blocked_entry_hours_gmt7": [
-    5,
-    6,
-    7,
-    20,
-    21
-  ],
+  "blocked_entry_hours_gmt7": [],
   "telegram_enabled": false,
   "status_log_interval_seconds": 300,
   "symbol": "BTCUSD",

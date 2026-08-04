@@ -161,12 +161,12 @@ class DemoOnlyRsiquiMt5Runner:
             return False
         account = self.mt5.account_info()
         if account is None or account.trade_mode != self.mt5.ACCOUNT_TRADE_MODE_DEMO:
-            self.last_status = "blocked: a DEMO MT5 account is required"
+            self.last_status = "BLOCKED: a DEMO MT5 account is required"
             self.mt5.shutdown()
             return False
         resolved_symbol = self._resolve_symbol()
         if resolved_symbol is None:
-            self.last_status = f"blocked: no available symbol variant for {self.config.symbol_base}"
+            self.last_status = f"BLOCKED: No available symbol variant for {self.config.symbol_base}"
             self.mt5.shutdown()
             return False
         self._resolved_symbol = resolved_symbol
@@ -175,16 +175,16 @@ class DemoOnlyRsiquiMt5Runner:
         _, active_risk_usd, _ = self._money_contract_for_symbol(active_symbol)
         self._effective_risk_usd = self._effective_risk_for(active_risk_usd)
         if self._effective_risk_usd <= 0:
-            self.last_status = "blocked: non-positive demo equity/risk cap"
+            self.last_status = "BLOCKED: Non-positive demo equity/risk cap"
             self.mt5.shutdown()
             return False
         for symbol in self._symbols_required_for_start():
             if not self.mt5.symbol_select(symbol, True):
-                self.last_status = f"blocked: cannot select symbol {symbol}"
+                self.last_status = f"BLOCKED: Cannot select symbol {symbol}"
                 self.mt5.shutdown()
                 return False
             if self.mt5.symbol_info(symbol) is None:
-                self.last_status = f"blocked: unavailable symbol {symbol}"
+                self.last_status = f"BLOCKED: Unavailable symbol {symbol}"
                 self.mt5.shutdown()
                 return False
         self._started = True
@@ -215,13 +215,13 @@ class DemoOnlyRsiquiMt5Runner:
         timeframe = getattr(self.mt5, f"TIMEFRAME_{self.config.timeframe}")
         rates = self.mt5.copy_rates_from_pos(symbol, timeframe, 0, 200)
         if rates is None or len(rates) < 121:
-            self.last_status = f"blocked: insufficient {self.config.timeframe} history for {symbol}"
+            self.last_status = f"BLOCKED: insufficient {self.config.timeframe} history for {symbol}"
             return None, None
         frame = pd.DataFrame(rates)
         frame = frame[frame["time"] <= bar_time]
         if frame.empty or int(frame.iloc[-1]["time"]) != bar_time:
             kind = "active" if active else "closed"
-            self.last_status = f"blocked: {kind} {self.config.timeframe} bar {bar_time} is unavailable"
+            self.last_status = f"BLOCKED: {kind} {self.config.timeframe} bar {bar_time} is unavailable"
             return None, None
         frame["timestamp"] = pd.to_datetime(frame["time"], unit="s", utc=True)
         frame["spread"] = frame["spread"] * float(self.mt5.symbol_info(symbol).point)
@@ -296,12 +296,12 @@ class DemoOnlyRsiquiMt5Runner:
         info = self.mt5.symbol_info(symbol)
         tick = self.mt5.symbol_info_tick(symbol)
         if info is None or tick is None or info.trade_tick_size <= 0 or info.trade_tick_value <= 0:
-            self.last_status = "blocked: incomplete symbol/tick metadata"
+            self.last_status = "BLOCKED: Incomplete symbol/tick metadata"
             return None
         spread = float(tick.ask - tick.bid)
         max_spread_price = self._max_spread_price_for_symbol(symbol)
         if spread > max_spread_price:
-            self.last_status = f"blocked: {symbol} spread {spread:.3f} > cap {max_spread_price:.3f}"
+            self.last_status = f"BLOCKED: {symbol} spread {spread:.3f} > cap {max_spread_price:.3f}"
             return None
         entry = float(tick.ask if side == "long" else tick.bid)
         configured_volume_lots, configured_risk_usd, configured_reward_usd = self._money_contract_for_symbol(symbol)
@@ -315,11 +315,11 @@ class DemoOnlyRsiquiMt5Runner:
         risk_volume_cap = effective_risk_usd / loss_per_lot
         volume = self._floor_volume(min(configured_volume_lots, risk_volume_cap), float(info.volume_min), float(info.volume_max), float(info.volume_step))
         if volume <= 0:
-            self.last_status = "blocked: broker minimum volume exceeds effective risk cap"
+            self.last_status = "BLOCKED: broker minimum volume exceeds effective risk cap"
             return None
         actual_risk = stop_distance / float(info.trade_tick_size) * float(info.trade_tick_value) * volume
         if actual_risk > effective_risk_usd + 1e-9:
-            self.last_status = "blocked: rounded volume exceeds configured risk cap"
+            self.last_status = "BLOCKED: rounded volume exceeds configured risk cap"
             return None
         reward_ratio = configured_reward_usd / max(configured_risk_usd, 1e-12)
         reward_distance = stop_distance * reward_ratio
@@ -329,7 +329,7 @@ class DemoOnlyRsiquiMt5Runner:
         elif filling_mode & 2:  # SYMBOL_FILLING_IOC
             filling = self.mt5.ORDER_FILLING_IOC
         else:
-            self.last_status = "blocked: broker exposes no supported FOK/IOC filling mode"
+            self.last_status = "BLOCKED: broker exposes no supported FOK/IOC filling mode"
             return None
         digits = int(info.digits)
         is_long = side == "long"
@@ -357,7 +357,7 @@ class DemoOnlyRsiquiMt5Runner:
 
     def poll_once(self, now_utc: datetime | None = None) -> bool:
         if not self._started:
-            self.last_status = "blocked: runner not started"
+            self.last_status = "BLOCKED: runner not started"
             return False
         # Scheduling must follow the wall clock, not the broker tick timestamp.
         # During quiet/stale ticks MT5 can keep symbol_info_tick().time frozen,
@@ -369,11 +369,11 @@ class DemoOnlyRsiquiMt5Runner:
             bar_time = self._bar_open_timestamp(now_utc)
             if self._last_immediate_attempt_bar == bar_time:
                 side_label = (self._last_immediate_attempt_side or "unknown").capitalize()
-                self.last_status = f"blocked: duplicate immediate {side_label} signal attempt for this bar"
+                self.last_status = f"BLOCKED: Duplicate immediate {side_label} signal attempt for this bar"
                 return False
             side, evaluated_bar = self._evaluate_signal_bar(bar_time, active=True)
             if side is None or evaluated_bar is None:
-                self.last_status = "no immediate RSIQUI V3 BTCUSD signal" if not self.last_status.startswith("blocked:") else self.last_status
+                self.last_status = "No immediate BTCUSD signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
                 return False
             if self._open_positions_exist():
                 self.last_status = self._waiting_open_position_status()
@@ -382,17 +382,17 @@ class DemoOnlyRsiquiMt5Runner:
             self._last_immediate_attempt_side = side
             if self._is_gmt7_entry_blackout(evaluated_bar):
                 local_time = self._entry_time_from_signal_bar(evaluated_bar)
-                self.last_status = f"blocked: GMT+7 blackout at {local_time:%H:%M}"
+                self.last_status = f"BLOCKED: GMT+7 blackout at {local_time:%H:%M}"
                 return False
             if evaluated_bar == self._last_submitted_bar:
-                self.last_status = f"blocked: duplicate immediate {side.capitalize()} signal setup"
+                self.last_status = f"BLOCKED: Duplicate immediate {side.capitalize()} signal setup"
                 return False
             request = self._build_request(side)
             if request is None:
                 return False
             result = self.mt5.order_send(request)
             if result is None or result.retcode != self.mt5.TRADE_RETCODE_DONE:
-                self.last_status = f"order rejected: {None if result is None else result.retcode}"
+                self.last_status = f"OR: {None if result is None else result.retcode}"
                 return False
             self._last_submitted_bar = evaluated_bar
             self.last_status = f"OF: {side} ticket {getattr(result, 'order', '?')} immediate signal bar {evaluated_bar}"
@@ -410,7 +410,7 @@ class DemoOnlyRsiquiMt5Runner:
         if self._is_preclose_entry_window(now_utc):
             bar_time = self._bar_open_timestamp(now_utc)
             if bar_time == self._last_evaluated_bar:
-                self.last_status = "blocked: duplicate pre-close preview for this bar"
+                self.last_status = "BLOCKED: duplicate pre-close preview for this bar"
                 return False
             self._last_evaluated_bar = bar_time
             self._pending_preclose_signal = None
@@ -419,51 +419,51 @@ class DemoOnlyRsiquiMt5Runner:
                 return False
             side, evaluated_bar = self.evaluate_preclose_bar(bar_time)
             if side is None or evaluated_bar is None:
-                self.last_status = "no pre-close preview RSIQUI V3 BTCUSD signal" if not self.last_status.startswith("blocked:") else self.last_status
+                self.last_status = "No pre-close preview BTCUSD signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
                 return False
             self._pending_preclose_signal = (evaluated_bar, side)
-            self.last_status = f"preview only: {side} {self.config.timeframe} bar {evaluated_bar}; waiting for candle close confirmation"
+            self.last_status = f"PREVIEW: {side} {self.config.timeframe} bar {evaluated_bar}; waiting for candle close confirmation"
             return False
 
         if not self._is_postclose_confirm_window(now_utc):
             remaining = self._seconds_until_bar_close(now_utc)
             elapsed = self._seconds_since_bar_open(now_utc)
-            self.last_status = f"waiting: outside {self.config.timeframe} close-confirm windows ({elapsed:.1f}s since open, {remaining:.1f}s to close)"
+            self.last_status = f"WAITING: Outside {self.config.timeframe} close-confirm windows ({elapsed:.1f}s since open, {remaining:.1f}s to close)"
             return False
 
         closed_bar = self._last_closed_bar_timestamp(now_utc)
         if closed_bar == self._last_confirmed_bar:
-            self.last_status = "blocked: duplicate close confirmation for this bar"
+            self.last_status = "BLOCKED: Duplicate close confirmation for this bar"
             return False
         self._last_confirmed_bar = closed_bar
         pending = self._pending_preclose_signal
         if pending is None or pending[0] != closed_bar:
-            self.last_status = "blocked: no matching pre-close preview for the just-closed bar"
+            self.last_status = "BLOCKED: No matching pre-close preview for the just-closed bar"
             return False
         if self._open_positions_exist():
             self.last_status = self._waiting_open_position_status()
             return False
         close_side, evaluated_bar = self.evaluate_confirmed_close_bar(closed_bar)
         if close_side is None or evaluated_bar is None:
-            self.last_status = "blocked: closed candle no longer has RSIQUI V3 signal" if not self.last_status.startswith("blocked:") else self.last_status
+            self.last_status = "BLOCKED: Closed candle no longer has RSIQUI V3 signal" if not self.last_status.startswith("BLOCKED:") else self.last_status
             return False
         preview_side = pending[1]
         if evaluated_bar != closed_bar or close_side != preview_side:
-            self.last_status = f"blocked: pre-close preview {preview_side} does not match closed-candle signal {close_side}"
+            self.last_status = f"BLOCKED: Pre-close preview {preview_side} does not match closed-candle signal {close_side}"
             return False
         if self._is_gmt7_entry_blackout(evaluated_bar):
             local_time = self._entry_time_from_signal_bar(evaluated_bar)
-            self.last_status = f"blocked: GMT+7 blackout at {local_time:%H:%M}"
+            self.last_status = f"BLOCKED: GMT+7 blackout at {local_time:%H:%M}"
             return False
         if evaluated_bar == self._last_submitted_bar:
-            self.last_status = "blocked: duplicate closed-candle setup"
+            self.last_status = "BLOCKED: Duplicate closed-candle setup"
             return False
         request = self._build_request(close_side)
         if request is None:
             return False
         result = self.mt5.order_send(request)
         if result is None or result.retcode != self.mt5.TRADE_RETCODE_DONE:
-            self.last_status = f"order rejected: {None if result is None else result.retcode}"
+            self.last_status = f"OR: {None if result is None else result.retcode}"
             return False
         self._last_submitted_bar = evaluated_bar
         self._pending_preclose_signal = None
@@ -482,7 +482,7 @@ class DemoOnlyRsiquiMt5Runner:
     def should_print_status(self, now: float | None = None) -> bool:
         """Rate-limit repetitive terminal output while preserving order-fill evidence."""
         now = time.monotonic() if now is None else now
-        urgent = self.last_status.startswith(("OF:", "order rejected:"))
+        urgent = self.last_status.startswith(("OF:", "OR:"))
         if urgent or self._last_status_log_at is None or now - self._last_status_log_at >= self.config.status_log_interval_seconds:
             self._last_status_log_at = now
             return True

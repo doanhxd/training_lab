@@ -73,16 +73,18 @@ class LogEntry:
 
 
 STRATEGY_SELECTIONS = {
-    "rsiqui_v3_ori": StrategySelection("rsiqui_v3_ori", "rsiqui_v3_ori", CONFIG_ROOT / "ori_m5_demo.json"),
-    "rsiqui_v3_neg": StrategySelection("rsiqui_v3_neg", "rsiqui_v3_neg", CONFIG_ROOT / "neg_m5_demo.json"),
-    "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "rsiqui_v3_final", CONFIG_ROOT / "final_m5_demo.json"),
-    "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "rsiqui_v3_btcusd", CONFIG_ROOT / "btcusd_m5_demo.json"),
+    "rsiqui_v3_ori": StrategySelection("rsiqui_v3_ori", "ori", CONFIG_ROOT / "ori_m5_demo.json"),
+    "rsiqui_v3_neg": StrategySelection("rsiqui_v3_neg", "neg", CONFIG_ROOT / "neg_m5_demo.json"),
+    "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "final", CONFIG_ROOT / "final_m5_demo.json"),
+    "rsiqui_v3_final_trailing": StrategySelection("rsiqui_v3_final_trailing", "final_tr", CONFIG_ROOT / "final_trailing_m5_demo.json"),
+    "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "btcusd", CONFIG_ROOT / "btcusd_m5_demo.json"),
 }
 
 RUNNER_SCRIPT_BY_STRATEGY = {
     "rsiqui_v3_ori": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_ori_demo.py",
     "rsiqui_v3_neg": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_neg_demo.py",
     "rsiqui_v3_final": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_demo.py",
+    "rsiqui_v3_final_trailing": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing_demo.py",
     "rsiqui_v3_btcusd": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_btcusd_demo.py",
 }
 
@@ -90,6 +92,7 @@ RUNNER_MODULE_BY_STRATEGY = {
     "rsiqui_v3_ori": "trading_lab.runners.mt5.rsiqui_ori_demo",
     "rsiqui_v3_neg": "trading_lab.runners.mt5.rsiqui_neg_demo",
     "rsiqui_v3_final": "trading_lab.runners.mt5.rsiqui_final_demo",
+    "rsiqui_v3_final_trailing": "trading_lab.runners.mt5.rsiqui_final_trailing_demo",
     "rsiqui_v3_btcusd": "trading_lab.runners.mt5.rsiqui_btcusd_demo",
 }
 
@@ -113,6 +116,10 @@ def _strategy_loader_for_payload(payload: dict):
         from trading_lab.runners.mt5.rsiqui_final_demo import load_demo_config
 
         return "rsiqui_v3_final", load_demo_config
+    if strategy == "rsiqui-v3-final-trailing":
+        from trading_lab.runners.mt5.rsiqui_final_trailing_demo import load_demo_config
+
+        return "rsiqui_v3_final_trailing", load_demo_config
     if strategy == "rsiqui-v3-btcusd":
         from trading_lab.runners.mt5.rsiqui_btcusd_demo import load_demo_config
 
@@ -129,7 +136,7 @@ def _strategy_runtime(strategy_key: str):
         from trading_lab.strategies.builtins.rsiqui.neg import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
-    if strategy_key == "rsiqui_v3_final":
+    if strategy_key in {"rsiqui_v3_final", "rsiqui_v3_final_trailing"}:
         from trading_lab.strategies.builtins.rsiqui.final import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
@@ -149,6 +156,7 @@ def load_read_only_profile(config_path: str | Path) -> dict[str, str | float]:
         "strategy_key": strategy_key,
         "strategy_name": payload["strategy"],
         "timeframe": config.timeframe,
+        "entry_mode": str(getattr(config, "entry_mode", "close_confirm")),
         "preset": config.preset,
         "side": config.trade_side,
         "symbol": str(payload.get("symbol", getattr(config, "symbol", "XAUUSD"))),
@@ -182,9 +190,9 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._last_signal_bar_by_strategy: dict[str, int] = {}
         self.shell: tk.Frame | None = None
         self._strategy_profiles = {key: load_read_only_profile(selection.config_path) for key, selection in STRATEGY_SELECTIONS.items()}
-        current_strategy_key = str(profile.get("strategy_key", "rsiqui_v3_final"))
+        current_strategy_key = str(profile.get("strategy_key", "rsiqui_v3_final_trailing"))
         if current_strategy_key not in self._strategy_profiles:
-            current_strategy_key = "rsiqui_v3_final"
+            current_strategy_key = "rsiqui_v3_final_trailing"
 
         self._account_value = tk.StringVar(value="—")
         self._equity_value = tk.StringVar(value="—")
@@ -198,6 +206,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._updated_value = tk.StringVar(value="CHƯA CẬP NHẬT")
         self._profile_line_value = tk.StringVar(value="")
         self._strategy_choice = tk.StringVar(value=current_strategy_key)
+        self._profile_choice = tk.StringVar(value=STRATEGY_SELECTIONS[current_strategy_key].label)
         self._timeframe_value = tk.StringVar(value="M5")
         self._preset_value = tk.StringVar(value="gold-loose")
         self._side_value = tk.StringVar(value="both")
@@ -273,6 +282,7 @@ class RsiquiV3MonitorApp(tk.Tk):
 
     def _apply_strategy_profile(self, strategy_key: str) -> None:
         profile = self._strategy_profiles[strategy_key]
+        self._profile_choice.set(STRATEGY_SELECTIONS[strategy_key].label)
         self._timeframe_value.set(str(profile["timeframe"]))
         self._preset_value.set(str(profile["preset"]))
         self._side_value.set(str(profile["side"]))
@@ -380,20 +390,26 @@ class RsiquiV3MonitorApp(tk.Tk):
 
         strategy_card = self._card(content, padding=16)
         strategy_card.pack(fill="x", pady=(0, 14))
-        self._label(strategy_card, text="CHIẾN LƯỢC & SIGNAL", font=("Segoe UI", 11, "bold")).pack(anchor="w")
-        self._label(strategy_card, text="Chọn biến thể RSIQUI và xem sẵn preset TP/SL/volume.", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(anchor="w", pady=(4, 12))
+        self._label(strategy_card, text="SETTINGS", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        self._label(strategy_card, text="Thông số đang áp dụng cho profile theo dõi.", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(anchor="w", pady=(4, 12))
 
         fields = tk.Frame(strategy_card, bg=UiPalette.CARD)
         fields.pack(fill="x")
-        for column in range(4):
-            fields.grid_columnconfigure(column, weight=1)
-        self._labeled_combobox(fields, 0, 0, "CHIẾN LƯỢC", self._strategy_choice, [item.label for item in STRATEGY_SELECTIONS.values()], self._on_strategy_selection)
-        self._labeled_entry(fields, 0, 1, "TIMEFRAME", self._timeframe_value, state="readonly")
-        self._labeled_entry(fields, 0, 2, "PRESET", self._preset_value, state="readonly")
-        self._labeled_entry(fields, 0, 3, "SIDE", self._side_value, state="readonly")
-        self._labeled_entry(fields, 1, 0, "VOLUME LOT", self._volume_value)
-        self._labeled_entry(fields, 1, 1, "SL USD", self._risk_value)
-        self._labeled_entry(fields, 1, 2, "TP USD", self._reward_value)
+        for column in range(5):
+            fields.grid_columnconfigure(column, weight=1, uniform="settings")
+        self._labeled_combobox(
+            fields,
+            0,
+            0,
+            "PROFILE THEO DÕI",
+            self._profile_choice,
+            [selection.label for selection in STRATEGY_SELECTIONS.values()],
+            self._on_strategy_selection,
+        )
+        self._labeled_entry(fields, 0, 1, "TIMEFRAME", self._timeframe_value)
+        self._labeled_entry(fields, 0, 2, "VOLUME LOT", self._volume_value)
+        self._labeled_entry(fields, 0, 3, "SL USD", self._risk_value)
+        self._labeled_entry(fields, 0, 4, "TP USD", self._reward_value)
 
         body = tk.Frame(content, bg=UiPalette.APP)
         body.pack(fill="both", expand=True)
@@ -849,7 +865,7 @@ class RsiquiV3MonitorApp(tk.Tk):
 
     @staticmethod
     def _summarize_bot_status(selected_strategy_key: str, runner_detection_available: bool, running_runners: tuple[RunnerView, ...]) -> tuple[str, str, str]:
-        selected_label = STRATEGY_SELECTIONS[selected_strategy_key].label
+        selected_label = selected_strategy_key
         if not runner_detection_available:
             return "UNKNOWN", UiPalette.WARNING, "Không dò được process runner trên máy này."
         matching = [runner for runner in running_runners if runner.strategy_key == selected_strategy_key]
@@ -976,7 +992,8 @@ class RsiquiV3MonitorApp(tk.Tk):
         point = float(symbol_info.point) if symbol_info is not None else 0.0
         frame["spread"] = frame["spread"] * point
         prepared = prepare_frame(frame, config)
-        row = prepared.iloc[-2]
+        entry_mode = str(profile.get("entry_mode", "close_confirm"))
+        row = prepared.iloc[-1] if entry_mode == "immediate_signal" else prepared.iloc[-2]
         side = evaluate_signal(row, config)
         if side is None:
             self._set_last_signal_state("NONE", f"{STRATEGY_SELECTIONS[strategy_key].label}: chưa có signal mới ở nến đã đóng gần nhất.", UiPalette.INFO)
@@ -1006,8 +1023,9 @@ class RsiquiV3MonitorApp(tk.Tk):
         entry_time = datetime.fromtimestamp(bar_time, tz=UTC) + timedelta(minutes=5 if str(profile["timeframe"]) == "M5" else 15)
         badge = "LONG" if side == "long" else "SHORT"
         self._set_last_signal_state(badge, f"{STRATEGY_SELECTIONS[strategy_key].label} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {entry_time.astimezone().strftime('%H:%M')}", UiPalette.SUCCESS if badge == "LONG" else UiPalette.DANGER)
+        # {STRATEGY_SELECTIONS[strategy_key].label}
         self._append_log(
-            f"{STRATEGY_SELECTIONS[strategy_key].label} signal {side.upper()} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {entry_time.astimezone().strftime('%H:%M')}",
+            f"Signal {side.upper()} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {entry_time.astimezone().strftime('%H:%M')}",
             badge=badge,
         )
     def _refresh(self) -> None:
@@ -1109,7 +1127,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._replay_logs()
 
     def _on_strategy_selection(self, _event) -> None:
-        selected_label = self._strategy_choice.get()
+        selected_label = self._profile_choice.get()
         matching = next((selection for selection in STRATEGY_SELECTIONS.values() if selection.label == selected_label), None)
         if matching is None:
             return
@@ -1130,7 +1148,7 @@ class RsiquiV3MonitorApp(tk.Tk):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Read-only GOLD Trader dashboard for RSIQUI V3 demo positions.")
-    parser.add_argument("--config", default=str(CONFIG_ROOT / "final_m5_demo.json"), help="RSIQUI V3 JSON read for display only")
+    parser.add_argument("--config", default=str(CONFIG_ROOT / "final_trailing_m5_demo.json"), help="RSIQUI V3 JSON read for display only")
     parser.add_argument("--symbol", default="XAUUSD", help="MT5 symbol to observe")
     parser.add_argument("--refresh-seconds", type=float, default=2.0)
     args = parser.parse_args()

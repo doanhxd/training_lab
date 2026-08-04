@@ -64,35 +64,36 @@ class FinalTrailingTests(unittest.TestCase):
     def test_config_is_distinct_and_has_requested_contract(self) -> None:
         config = load_demo_config("configs/strategies/rsiqui/final_trailing_m5_demo.json")
         self.assertEqual("0.03", f"{config.volume_lots:.2f}")
-        self.assertEqual(8.0, config.reward_usd)
+        self.assertEqual(9.0, config.reward_usd)
         self.assertEqual("XAUUSD", config.symbol)
         self.assertEqual(573504, config.magic)
 
-        self.assertEqual(6.0, config.trailing_activation_profit_usd)
-        self.assertEqual(5.0, config.trailing_locked_profit_usd)
-        self.assertEqual(1.0, config.trailing_gap_profit_usd)
+        self.assertEqual(5.0, config.trailing_activation_profit_usd)
+        self.assertEqual(4.0, config.trailing_locked_profit_usd)
+        self.assertEqual(0.5, config.trailing_gap_profit_usd)
+        self.assertEqual(0.5, config.trailing_step_profit_usd)
 
-    def test_trigger_locks_5_and_trails_with_one_dollar_gap(self) -> None:
-        mt5 = FakeMt5(bid=2302.10)  # +$6.30 at 0.03 lot and $100/lot
+    def test_trigger_locks_4_and_ratchets_by_half_dollar_steps(self) -> None:
+        mt5 = FakeMt5(bid=2301.70)  # +$5.10 at 0.03 lot and $100/lot
         runner = DemoOnlyRsiquiFinalTrailingMt5Runner(load_demo_config(), mt5=mt5)
         self.assertTrue(runner.start())
 
         self.assertTrue(runner._trail_open_position())
         self.assertEqual(1, len(mt5.orders))
-        self.assertAlmostEqual(2301.77, mt5.orders[0]["sl"], places=2)
+        self.assertAlmostEqual(2301.33, mt5.orders[0]["sl"], places=2)
         self.assertGreater(mt5.orders[0]["sl"], mt5.position.price_open)
 
-        mt5.bid = 2302.70  # trailing gap remains $1, so SL follows price
+        mt5.bid = 2301.85  # +$5.55 -> next +$0.50 lock step
         self.assertTrue(runner._trail_open_position())
         raised_sl = mt5.position.sl
-        self.assertAlmostEqual(2302.37, raised_sl, places=2)
+        self.assertAlmostEqual(2301.50, raised_sl, places=2)
 
-        mt5.bid = 2302.50
+        mt5.bid = 2301.80
         self.assertFalse(runner._trail_open_position())
         self.assertEqual(raised_sl, mt5.position.sl)
 
     def test_at_or_below_activation_does_not_move_sl(self) -> None:
-        mt5 = FakeMt5(bid=2301.95)  # +$5.85, at or below the $6.00 trailing trigger
+        mt5 = FakeMt5(bid=2301.50)  # +$4.50, below the $5.00 trailing trigger
         runner = DemoOnlyRsiquiFinalTrailingMt5Runner(load_demo_config(), mt5=mt5)
         self.assertTrue(runner.start())
 

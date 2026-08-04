@@ -64,9 +64,11 @@ class RsiquiFinalSingleSymbolContractTests(unittest.TestCase):
         self.assertEqual("XAUUSD", config.symbol)
         self.assertEqual(0.03, config.volume_lots)
         self.assertEqual(100.0, config.price_value_per_lot)
-        self.assertEqual(24.0, config.risk_usd)
-        self.assertEqual(9.0, config.reward_usd)
-        self.assertEqual(0.2, config.max_spread_price)
+        self.assertEqual(30.0, config.risk_usd)
+        self.assertEqual(7.5, config.reward_usd)
+        self.assertEqual(0.4, config.max_spread_price)
+        self.assertEqual("02:00", config.blackout_start_gmt7)
+        self.assertEqual("08:29", config.blackout_until_gmt7)
         self.assertIsNone(config.equity_risk_cap_pct)
 
 
@@ -92,13 +94,13 @@ class RsiquiFinalSingleSymbolContractTests(unittest.TestCase):
         assert request is not None
         self.assertEqual("XAUUSD", request["symbol"])
         self.assertEqual(0.03, request["volume"])
-        self.assertAlmostEqual(8.0, request["price"] - request["sl"], places=2)
-        self.assertAlmostEqual(3.0, request["tp"] - request["price"], places=2)
+        self.assertAlmostEqual(10.0, request["price"] - request["sl"], places=2)
+        self.assertAlmostEqual(2.5, request["tp"] - request["price"], places=2)
         self.assertEqual(0.03, strategy_config.volume_lots)
         self.assertEqual(100.0, strategy_config.price_value_per_lot)
-        self.assertEqual(24.0, strategy_config.risk_usd)
-        self.assertEqual(9.0, strategy_config.reward_usd)
-        self.assertEqual(0.2, strategy_config.max_spread)
+        self.assertEqual(30.0, strategy_config.risk_usd)
+        self.assertEqual(7.5, strategy_config.reward_usd)
+        self.assertEqual(0.4, strategy_config.max_spread)
 
     def test_position_guard_checks_xauusd_only(self) -> None:
         mt5 = FakeMt5()

@@ -36,11 +36,14 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         ori = load_read_only_profile("configs/strategies/rsiqui/ori_m5_demo.json")
         neg = load_read_only_profile("configs/strategies/rsiqui/neg_m5_demo.json")
         final = load_read_only_profile("configs/strategies/rsiqui/final_m5_demo.json")
+        final_tr = load_read_only_profile("configs/strategies/rsiqui/final_trailing_m5_demo.json")
         btcusd = load_read_only_profile("configs/strategies/rsiqui/btcusd_m5_demo.json")
 
         self.assertEqual("rsiqui_v3_ori", ori["strategy_key"])
         self.assertEqual("rsiqui_v3_neg", neg["strategy_key"])
         self.assertEqual("rsiqui_v3_final", final["strategy_key"])
+        self.assertEqual("rsiqui_v3_final_trailing", final_tr["strategy_key"])
+        self.assertEqual("immediate_signal", final_tr["entry_mode"])
         self.assertEqual("rsiqui_v3_btcusd", btcusd["strategy_key"])
         self.assertEqual(0.01, ori["volume"])
         self.assertEqual(20.0, neg["risk_usd"])
@@ -86,11 +89,26 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
     def test_monitor_defaults_to_final_config_and_wider_log_column(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
-        self.assertIn('default=str(CONFIG_ROOT / "final_m5_demo.json")', source)
-        self.assertIn('profile.get("strategy_key", "rsiqui_v3_final")', source)
+        self.assertIn('default=str(CONFIG_ROOT / "final_trailing_m5_demo.json")', source)
+        self.assertIn('profile.get("strategy_key", "rsiqui_v3_final_trailing")', source)
         self.assertIn('body.grid_columnconfigure(0, weight=5, uniform="main")', source)
         self.assertIn('body.grid_columnconfigure(1, weight=6, uniform="main")', source)
         self.assertIn('message_wrap = max(560, self._log_canvas.winfo_width() - 170)', source)
+
+    def test_settings_fit_profile_timeframe_volume_sl_tp_in_one_row(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        settings_start = source.index('strategy_card = self._card(content, padding=16)')
+        settings_block = source[settings_start:source.index('body = tk.Frame(content, bg=UiPalette.APP)', settings_start)]
+        self.assertIn('for column in range(5):', settings_block)
+        self.assertIn('uniform="settings"', settings_block)
+        self.assertIn('"PROFILE THEO DÕI"', settings_block)
+        self.assertIn('"TIMEFRAME", self._timeframe_value)', settings_block)
+        self.assertNotIn('"TIMEFRAME", self._timeframe_value, state="readonly"', settings_block)
+        self.assertIn('"VOLUME LOT", self._volume_value)', settings_block)
+        self.assertIn('"SL USD", self._risk_value)', settings_block)
+        self.assertIn('"TP USD", self._reward_value)', settings_block)
+        self.assertNotIn('"SIDE", self._side_value)', settings_block)
 
     def test_signal_preview_uses_profile_price_value_and_blocks_when_position_open(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")

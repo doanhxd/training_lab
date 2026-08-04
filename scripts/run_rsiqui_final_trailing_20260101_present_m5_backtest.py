@@ -52,6 +52,7 @@ source = source.replace(
     '        "trailing_activation_profit_usd": float(payload["trailing_activation_profit_usd"]),\n'
     '        "trailing_locked_profit_usd": float(payload["trailing_locked_profit_usd"]),\n'
     '        "trailing_gap_profit_usd": float(payload["trailing_gap_profit_usd"]),\n'
+    '        "trailing_step_profit_usd": float(payload.get("trailing_step_profit_usd", 0.5)),\n'
     f'        "trailing_policy": "{TRAILING_POLICY}",',
 )
 source = source.replace(
@@ -91,7 +92,10 @@ source = source.replace(
     '''        if active is not None:
             activation_distance = trailing_activation_distance
             if active["side"] == "long" and float(row["high"]) > active["entry_price"] + activation_distance:
-                candidate_sl = max(active["entry_price"] + trailing_locked_distance, float(row["high"]) - trailing_gap_distance)
+                favorable_profit = (float(row["high"]) - active["entry_price"]) * config.quantity
+                step_profit = float(payload.get("trailing_step_profit_usd", 0.5))
+                locked_profit = float(payload["trailing_locked_profit_usd"]) + max(0, int((favorable_profit - float(payload["trailing_activation_profit_usd"])) / step_profit + 1e-12)) * step_profit
+                candidate_sl = active["entry_price"] + locked_profit / config.quantity
                 if not active["trailing_activated"]:
                     active["trailing_activated"] = True
                     signal_counts["trailing_activated"] += 1
@@ -99,7 +103,10 @@ source = source.replace(
                     active["stop_price"] = candidate_sl
                     signal_counts["trailing_moves"] += 1
             elif active["side"] == "short" and float(row["low"]) < active["entry_price"] - activation_distance:
-                candidate_sl = min(active["entry_price"] - trailing_locked_distance, float(row["low"]) + trailing_gap_distance)
+                favorable_profit = (active["entry_price"] - float(row["low"])) * config.quantity
+                step_profit = float(payload.get("trailing_step_profit_usd", 0.5))
+                locked_profit = float(payload["trailing_locked_profit_usd"]) + max(0, int((favorable_profit - float(payload["trailing_activation_profit_usd"])) / step_profit + 1e-12)) * step_profit
+                candidate_sl = active["entry_price"] - locked_profit / config.quantity
                 if not active["trailing_activated"]:
                     active["trailing_activated"] = True
                     signal_counts["trailing_activated"] += 1
@@ -111,7 +118,7 @@ source = source.replace(
 )
 source = source.replace(
     '"open_position_at_end": open_at_end, "limitations":',
-    '"open_position_at_end": open_at_end, "monthly_equity_reset": {"enabled": monthly_reset_enabled, "reset_day": monthly_reset_day, "reset_count": len(monthly_reset_events), "events": monthly_reset_events}, "trailing_policy": {"activation_profit_usd": float(payload["trailing_activation_profit_usd"]), "locked_profit_usd": float(payload["trailing_locked_profit_usd"]), "gap_profit_usd": float(payload["trailing_gap_profit_usd"]), "ohlc_policy": "uses bar high/low favorable excursion before SL/TP replay; $1 profit gap; same-bar collision remains SL-first"}, "limitations":',
+    '"open_position_at_end": open_at_end, "monthly_equity_reset": {"enabled": monthly_reset_enabled, "reset_day": monthly_reset_day, "reset_count": len(monthly_reset_events), "events": monthly_reset_events}, "trailing_policy": {"activation_profit_usd": float(payload["trailing_activation_profit_usd"]), "locked_profit_usd": float(payload["trailing_locked_profit_usd"]), "gap_profit_usd": float(payload["trailing_gap_profit_usd"]), "step_profit_usd": float(payload.get("trailing_step_profit_usd", 0.5)), "ohlc_policy": "uses bar high/low favorable excursion; stepped positive lock; same-bar collision remains SL-first"}, "limitations":',
 )
 source = source.replace('"variant": "FINAL",', '"variant": "FINAL_TRAILING",')
 exec(compile(source, str(BASE_RUNNER), "exec"), {"__name__": "__main__", "__file__": str(BASE_RUNNER)})
