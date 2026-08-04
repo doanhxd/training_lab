@@ -18,7 +18,7 @@ from trading_lab.storage.artifacts import build_leaderboard, persist_leaderboard
 from trading_lab.strategies.builtins.rsiqui.final import rsiqui_v3_config_for_preset, run_rsiqui_v3_backtest
 
 RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "XAUUSD_M5_202401012305_202607312355_merged.csv"
-CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "final_no_blackout_20240101_present_m5.json"
+CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "backtests" / "final_no_blackout_20240101_present_m5.json"
 SYMBOL = "XAUUSD"
 TIMEFRAME = "5m"
 START_UTC = pd.Timestamp("2024-01-01T00:00:00Z")

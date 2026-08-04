@@ -1,6 +1,6 @@
-"""Canonical RSIQUI V3 ORI contract exposed from the strategy package."""
+"""Compatibility export for the active RSIQUI V3 FINAL contract."""
 
-from trading_lab.strategies.builtins.rsiqui.ori import (
+from trading_lab.strategies.builtins.rsiqui.final import (
     RsiquiV3Config,
     RsiquiV3Result,
     evaluate_rsiqui_v3_signal,

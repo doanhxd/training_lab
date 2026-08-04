@@ -7,9 +7,12 @@ from typing import Any, Callable, Iterable
 
 RSIQUI_V3_COMMENT = "DoanhHD - RSIQUI V3"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
+BOT_MAGIC_LABELS = {
+    573503: "Fn",
+    573504: "FTL",
+    573505: "BTC",
+}
 RUNNER_IDENTIFIERS = {
-    "rsiqui_v3_ori": ("rsiqui_ori_demo.py", "trading_lab.runners.mt5.rsiqui_ori_demo", "rsiqui_ori_demo"),
-    "rsiqui_v3_neg": ("rsiqui_neg_demo.py", "trading_lab.runners.mt5.rsiqui_neg_demo", "rsiqui_neg_demo"),
     "rsiqui_v3_final": ("rsiqui_final_demo.py", "trading_lab.runners.mt5.rsiqui_final_demo", "rsiqui_final_demo"),
     "rsiqui_v3_btcusd": ("rsiqui_btcusd_demo.py", "trading_lab.runners.mt5.rsiqui_btcusd_demo", "rsiqui_btcusd_demo"),
 }
@@ -243,12 +246,16 @@ class RsiquiV3PositionMonitor:
         if timestamp <= 0:
             return None
         offset_hours = self._broker_utc_offset_hours()
-        return datetime.fromtimestamp(timestamp, tz=UTC) + timedelta(hours=7 - offset_hours)
+        shifted = datetime.fromtimestamp(timestamp, tz=UTC) + timedelta(hours=7 - offset_hours)
+        return shifted.replace(tzinfo=GMT_PLUS_7)
 
     def _position_view(self, position: Any) -> PositionView:
         side = "BUY" if position.type == self.mt5.POSITION_TYPE_BUY else "SELL"
         comment = str(getattr(position, "comment", "") or "").upper()
-        source = "DoanhHD_GOLD" if RSIQUI_V3_COMMENT in comment else "TAY"
+        magic = int(getattr(position, "magic", 0) or 0)
+        source = BOT_MAGIC_LABELS.get(magic)
+        if source is None:
+            source = "BOT" if RSIQUI_V3_COMMENT.upper() in comment else "TAY"
         timestamp = int(getattr(position, "time", 0) or 0)
         opened_at = self._mt5_timestamp_to_gmt7(timestamp)
         return PositionView(
@@ -351,7 +358,7 @@ class RsiquiV3PositionMonitor:
         for ticket, position in current_positions.items():
             if ticket not in self._previous_positions:
                 log_entries.append(
-                    f"{'🟢' if position.source == 'RSIQUI V3' else '•'} "
+                    f"{'🟢' if position.source != 'TAY' else '•'} "
                     f"{position.source} mở {position.side} #{ticket} | "
                     f"{position.volume:.2f} lot @ {position.price_open:.2f}"
                 )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 import argparse
 import json
 import math
@@ -10,6 +10,8 @@ import time
 from typing import Any
 
 import pandas as pd
+
+GMT_PLUS_7 = timezone(timedelta(hours=7))
 
 from trading_lab.strategies.builtins.rsiqui.final import RsiquiV3Config, evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_filled_order_message
@@ -511,7 +513,7 @@ class DemoOnlyRsiquiMt5Runner:
         return False
 
     def _terminal_status_line(self) -> str:
-        return f"[{datetime.now():%H:%M:%S}] {self.last_status}"
+        return f"[{datetime.now(tz=GMT_PLUS_7):%H:%M:%S}] {self.last_status}"
 
     def run_forever(self) -> None:
         if not self.start():

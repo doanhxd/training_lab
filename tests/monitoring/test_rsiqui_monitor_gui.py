@@ -32,21 +32,15 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
 
         self.assertEqual("", signature.parameters["text"].default)
 
-    def test_read_only_profile_loader_supports_ori_neg_final_and_btcusd_variants(self) -> None:
-        ori = load_read_only_profile("configs/strategies/rsiqui/ori_m5_demo.json")
-        neg = load_read_only_profile("configs/strategies/rsiqui/neg_m5_demo.json")
+    def test_read_only_profile_loader_supports_final_trailing_final_and_btcusd_aliases(self) -> None:
         final = load_read_only_profile("configs/strategies/rsiqui/final_m5_demo.json")
         final_tr = load_read_only_profile("configs/strategies/rsiqui/final_trailing_m5_demo.json")
         btcusd = load_read_only_profile("configs/strategies/rsiqui/btcusd_m5_demo.json")
 
-        self.assertEqual("rsiqui_v3_ori", ori["strategy_key"])
-        self.assertEqual("rsiqui_v3_neg", neg["strategy_key"])
         self.assertEqual("rsiqui_v3_final", final["strategy_key"])
         self.assertEqual("rsiqui_v3_final_trailing", final_tr["strategy_key"])
         self.assertEqual("immediate_signal", final_tr["entry_mode"])
         self.assertEqual("rsiqui_v3_btcusd", btcusd["strategy_key"])
-        self.assertEqual(0.01, ori["volume"])
-        self.assertEqual(20.0, neg["risk_usd"])
         self.assertEqual(0.03, final["volume"])
         self.assertEqual("BTCUSD", btcusd["symbol"])
         self.assertEqual(100.0, final["price_value_per_lot"])
@@ -132,8 +126,8 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertIn("_filter_history_deals_by_symbol", source)
         self.assertIn('self._history_start_time_value = tk.StringVar(value="08:00")', source)
         self.assertIn('self._history_end_time_value = tk.StringVar(value="23:59")', source)
-        self.assertIn('TỪ GIỜ (GMT+7)', source)
-        self.assertIn('ĐẾN GIỜ (GMT+7)', source)
+        self.assertIn('text="TỪ GIỜ"', source)
+        self.assertIn('text="ĐẾN GIỜ"', source)
         self.assertIn("_filter_history_deals_by_time_gmt7", source)
         self.assertIn("deal.time.replace(tzinfo=None).time()", source)
         self.assertIn("def _history_display_symbol", source)
@@ -160,10 +154,11 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
         self.assertIn("class UiPalette", source)
-        self.assertIn("rsiqui_v3_ori", source)
-        self.assertIn("rsiqui_v3_neg", source)
         self.assertIn("rsiqui_v3_final", source)
         self.assertIn("rsiqui_v3_btcusd", source)
+        self.assertIn('"F Root"', source)
+        self.assertIn('"F Trailing"', source)
+        self.assertIn('"BTC"', source)
         self.assertNotIn("CHẠY BOT", source)
         self.assertIn("BẢNG LOG TÍN HIỆU", source)
         self.assertIn("LỆNH XAU/BTC", source)

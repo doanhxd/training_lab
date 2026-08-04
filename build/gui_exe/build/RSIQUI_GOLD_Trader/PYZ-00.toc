@@ -7515,14 +7515,6 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_final_trailing_demo.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_neg_demo',
-   'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_neg_demo.py',
-   'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_ori_demo',
-   'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_ori_demo.py',
-   'PYMODULE'),
   ('trading_lab.strategies',
    'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\strategies\\__init__.py',
    'PYMODULE'),
@@ -7538,14 +7530,6 @@
   ('trading_lab.strategies.builtins.rsiqui.final',
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\final.py',
-   'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui.neg',
-   'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\neg.py',
-   'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui.ori',
-   'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\ori.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui_v3_root',
    'C:\\Users\\Maple '

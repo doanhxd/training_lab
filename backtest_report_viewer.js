@@ -158,7 +158,7 @@
     function compactRunTitle(report) {
       const cfg = report?.backtest_config || {};
       const name = String(report?.strategy_name || '').toLowerCase();
-      const variant = name.includes('final') ? 'FINAL' : name.includes('neg') ? 'NEG' : name.includes('ori') ? 'ORI' : 'RSIQUI';
+      const variant = String(cfg.variant || (name.includes('final') ? 'FINAL' : name.includes('neg') ? 'NEG' : name.includes('ori') ? 'ORI' : 'RSIQUI')).toUpperCase();
       const tf = String(cfg.timeframe || '').toUpperCase().replace('5M', 'M5') || (name.includes('m5') ? 'M5' : '');
       const volume = Number(cfg.volume_lots);
       const risk = Number(cfg.risk_usd);

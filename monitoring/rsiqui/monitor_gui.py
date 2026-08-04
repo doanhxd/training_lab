@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta, timezone
 import json
 from pathlib import Path
 import subprocess
@@ -24,6 +24,7 @@ if getattr(sys, "frozen", False):
 else:
     PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_ROOT = PROJECT_ROOT / "configs" / "strategies" / "rsiqui"
+GMT_PLUS_7 = timezone(timedelta(hours=7))
 
 
 
@@ -32,13 +33,13 @@ class UiPalette:
 
     DARK = {
         "mode": "dark", "app": "#09111F", "sidebar": "#0D192B", "card": "#111F33", "card_alt": "#14263D",
-        "border": "#233853", "text": "#F3F7FC", "muted": "#91A5BD", "nav_text": "#F3F7FC", "nav_muted": "#A8BDD6", "accent": "#D9AA54",
+        "border": "#233853", "text": "#F3F7FC", "muted": "#91A5BD", "nav_text": "#F3F7FC", "nav_muted": "#A8BDD6", "accent": "#D9AA54", "close": "#B4235A",
         "accent_dark": "#B9842B", "success": "#35C78A", "danger": "#F0727F", "warning": "#E3A64D", "info": "#5AA8FF",
         "table": "#101C2D", "table_alt": "#132238", "badge_fg": "#F8FBFF",
     }
     LIGHT = {
         "mode": "light", "app": "#F5F7FB", "sidebar": "#10233F", "card": "#FFFFFF", "card_alt": "#EAF0F8",
-        "border": "#D2DCE9", "text": "#14253C", "muted": "#60758F", "nav_text": "#F3F7FC", "nav_muted": "#A8BDD6", "accent": "#B7791F",
+        "border": "#D2DCE9", "text": "#14253C", "muted": "#60758F", "nav_text": "#F3F7FC", "nav_muted": "#A8BDD6", "accent": "#B7791F", "close": "#B4235A",
         "accent_dark": "#926017", "success": "#168A60", "danger": "#CC4151", "warning": "#B7791F", "info": "#2563EB",
         "table": "#FFFFFF", "table_alt": "#F0F4F9", "badge_fg": "#FFFFFF",
     }
@@ -73,24 +74,18 @@ class LogEntry:
 
 
 STRATEGY_SELECTIONS = {
-    "rsiqui_v3_ori": StrategySelection("rsiqui_v3_ori", "ori", CONFIG_ROOT / "ori_m5_demo.json"),
-    "rsiqui_v3_neg": StrategySelection("rsiqui_v3_neg", "neg", CONFIG_ROOT / "neg_m5_demo.json"),
-    "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "final", CONFIG_ROOT / "final_m5_demo.json"),
-    "rsiqui_v3_final_trailing": StrategySelection("rsiqui_v3_final_trailing", "final_tr", CONFIG_ROOT / "final_trailing_m5_demo.json"),
-    "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "btcusd", CONFIG_ROOT / "btcusd_m5_demo.json"),
+    "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "F Root", CONFIG_ROOT / "final_m5_demo.json"),
+    "rsiqui_v3_final_trailing": StrategySelection("rsiqui_v3_final_trailing", "F Trailing", CONFIG_ROOT / "final_trailing_m5_demo.json"),
+    "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "BTC", CONFIG_ROOT / "btcusd_m5_demo.json"),
 }
 
 RUNNER_SCRIPT_BY_STRATEGY = {
-    "rsiqui_v3_ori": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_ori_demo.py",
-    "rsiqui_v3_neg": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_neg_demo.py",
     "rsiqui_v3_final": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_demo.py",
     "rsiqui_v3_final_trailing": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing_demo.py",
     "rsiqui_v3_btcusd": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_btcusd_demo.py",
 }
 
 RUNNER_MODULE_BY_STRATEGY = {
-    "rsiqui_v3_ori": "trading_lab.runners.mt5.rsiqui_ori_demo",
-    "rsiqui_v3_neg": "trading_lab.runners.mt5.rsiqui_neg_demo",
     "rsiqui_v3_final": "trading_lab.runners.mt5.rsiqui_final_demo",
     "rsiqui_v3_final_trailing": "trading_lab.runners.mt5.rsiqui_final_trailing_demo",
     "rsiqui_v3_btcusd": "trading_lab.runners.mt5.rsiqui_btcusd_demo",
@@ -104,14 +99,6 @@ def _load_json(path: str | Path) -> dict:
 
 def _strategy_loader_for_payload(payload: dict):
     strategy = str(payload.get("strategy", "")).strip().lower()
-    if strategy == "rsiqui-v3-ori":
-        from trading_lab.runners.mt5.rsiqui_ori_demo import load_demo_config
-
-        return "rsiqui_v3_ori", load_demo_config
-    if strategy == "rsiqui-v3-neg":
-        from trading_lab.runners.mt5.rsiqui_neg_demo import load_demo_config
-
-        return "rsiqui_v3_neg", load_demo_config
     if strategy == "rsiqui-v3-final":
         from trading_lab.runners.mt5.rsiqui_final_demo import load_demo_config
 
@@ -128,14 +115,6 @@ def _strategy_loader_for_payload(payload: dict):
 
 
 def _strategy_runtime(strategy_key: str):
-    if strategy_key == "rsiqui_v3_ori":
-        from trading_lab.strategies.builtins.rsiqui.ori import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
-
-        return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
-    if strategy_key == "rsiqui_v3_neg":
-        from trading_lab.strategies.builtins.rsiqui.neg import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
-
-        return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
     if strategy_key in {"rsiqui_v3_final", "rsiqui_v3_final_trailing"}:
         from trading_lab.strategies.builtins.rsiqui.final import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
@@ -177,7 +156,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         profile: dict[str, str | float],
         *,
         refresh_ms: int = REFRESH_MILLISECONDS,
-        clock: Callable[[], datetime] = datetime.now,
+        clock: Callable[[], datetime] = lambda: datetime.now(tz=GMT_PLUS_7),
     ) -> None:
         super().__init__()
         self.monitor = monitor
@@ -216,8 +195,9 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._run_button_label = tk.StringVar(value="RUN")
         self._history_filter_value = tk.StringVar(value="Hôm nay")
         self._history_symbol_value = tk.StringVar(value="Tất cả")
-        self._history_start_date_value = tk.StringVar(value=(date.today() - timedelta(days=30)).isoformat())
-        self._history_end_date_value = tk.StringVar(value=date.today().isoformat())
+        gmt7_today = self._clock_gmt7().date()
+        self._history_start_date_value = tk.StringVar(value=(gmt7_today - timedelta(days=30)).isoformat())
+        self._history_end_date_value = tk.StringVar(value=gmt7_today.isoformat())
         self._history_start_time_value = tk.StringVar(value="08:00")
         self._history_end_time_value = tk.StringVar(value="23:59")
         self._history_range_value = tk.StringVar(value="—")
@@ -225,7 +205,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._history_winrate_value = tk.StringVar(value="0.0%")
         self._history_daily_dd_value = tk.StringVar(value="0.00 USD")
         self._history_net_value = tk.StringVar(value="0.00 USD")
-        self._position_day_value = tk.StringVar(value=date.today().strftime("%d/%m"))
+        self._position_day_value = tk.StringVar(value=gmt7_today.strftime("%d/%m"))
         self._history_window: tk.Toplevel | None = None
         self._history_table: ttk.Treeview | None = None
         self._history_custom_start_wrap: tk.Frame | None = None
@@ -512,7 +492,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self.focus_force()
 
     def _history_date_range(self) -> tuple[datetime, datetime]:
-        today = date.today()
+        today = self._clock_gmt7().date()
         mode = self._history_filter_value.get().strip().lower()
         if mode == "hôm nay":
             start_date, end_date = today, today
@@ -608,7 +588,7 @@ class RsiquiV3MonitorApp(tk.Tk):
             bd=0,
             insertbackground=UiPalette.TEXT,
         ).pack(fill="x", pady=(6, 0), ipady=8)
-        self._label(controls, text="TỪ GIỜ (GMT+7)", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=0, column=4, sticky="w", padx=6, pady=(6, 0))
+        self._label(controls, text="TỪ GIỜ", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=0, column=4, sticky="w", padx=6, pady=(6, 0))
         tk.Entry(
             controls,
             textvariable=self._history_start_time_value,
@@ -619,7 +599,7 @@ class RsiquiV3MonitorApp(tk.Tk):
             bd=0,
             insertbackground=UiPalette.TEXT,
         ).grid(row=0, column=4, sticky="ew", padx=6, pady=(29, 6), ipady=8)
-        self._label(controls, text="ĐẾN GIỜ (GMT+7)", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=0, column=5, sticky="w", padx=6, pady=(6, 0))
+        self._label(controls, text="ĐẾN GIỜ", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).grid(row=0, column=5, sticky="w", padx=6, pady=(6, 0))
         tk.Entry(
             controls,
             textvariable=self._history_end_time_value,
@@ -654,7 +634,7 @@ class RsiquiV3MonitorApp(tk.Tk):
 
         columns = ("time", "symbol", "side", "volume", "price", "net", "comment")
         self._history_table = ttk.Treeview(history_card, columns=columns, show="headings", style="Monitor.Treeview", height=12)
-        specs = (("time", 154, "TIME GMT+7"), ("symbol", 108, "SYMBOL"), ("side", 64, "SIDE"), ("volume", 72, "LOT"), ("price", 92, "PRICE"), ("net", 92, "NET $"), ("comment", 300, "COMMENT"))
+        specs = (("time", 154, "TIME"), ("symbol", 108, "SYMBOL"), ("side", 64, "SIDE"), ("volume", 72, "LOT"), ("price", 92, "PRICE"), ("net", 92, "NET $"), ("comment", 300, "COMMENT"))
         for key, width, title in specs:
             self._history_table.heading(key, text=title)
             self._history_table.column(key, width=width, anchor="center" if key != "comment" else "w", stretch=True)
@@ -722,7 +702,7 @@ class RsiquiV3MonitorApp(tk.Tk):
             return
         start, end = self._history_date_range()
         start_time, end_time = self._history_time_range()
-        self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d} • {start_time:%H:%M}–{end_time:%H:%M} GMT+7")
+        self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d} • {start_time:%H:%M}–{end_time:%H:%M}")
         self._history_table.delete(*self._history_table.get_children())
         try:
             deals, stats = self.monitor.history(start, end)
@@ -755,14 +735,30 @@ class RsiquiV3MonitorApp(tk.Tk):
                 "",
                 "end",
                 tags=(tag,),
-                values=(deal.time.strftime("%Y-%m-%d %H:%M:%S"), self._history_display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", deal.comment),
+                values=(self._format_gmt7_datetime(deal.time), self._history_display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", deal.comment),
             )
 
     @staticmethod
     def _format_gmt7_timestamp(value: datetime | None) -> str:
         if value is None:
             return "--"
-        return value.strftime("%H:%M:%S")
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=UTC)
+        return value.astimezone(GMT_PLUS_7).strftime("%H:%M:%S")
+
+    @staticmethod
+    def _format_gmt7_datetime(value: datetime | None) -> str:
+        if value is None:
+            return "--"
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=UTC)
+        return value.astimezone(GMT_PLUS_7).strftime("%Y-%m-%d %H:%M:%S")
+
+    def _clock_gmt7(self) -> datetime:
+        value = self.clock()
+        if value.tzinfo is None:
+            return value.replace(tzinfo=GMT_PLUS_7)
+        return value.astimezone(GMT_PLUS_7)
 
     @staticmethod
     def _display_symbol(symbol: str) -> str:
@@ -934,7 +930,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         try:
             with log_path.open("a", encoding="utf-8") as handle:
-                handle.write(f"\n[{self.clock():%Y-%m-%d %H:%M:%S}] Launch from monitor GUI\n")
+                handle.write(f"\n[{self._clock_gmt7():%Y-%m-%d %H:%M:%S}] Launch from monitor GUI\n")
                 handle.flush()
                 process = subprocess.Popen(
                     command,
@@ -980,7 +976,7 @@ class RsiquiV3MonitorApp(tk.Tk):
     def _evaluate_signal_preview(self) -> None:
         mt5 = self.monitor.mt5
         strategy_key, profile, config, prepare_frame, evaluate_signal = self._selected_strategy_runtime_config()
-        self._last_signal_check_value.set(f"{self.clock():%H:%M:%S}")
+        self._last_signal_check_value.set(f"{self._clock_gmt7():%H:%M:%S}")
         timeframe = getattr(mt5, f"TIMEFRAME_{profile['timeframe']}")
         rates = mt5.copy_rates_from_pos(self._selected_symbol(), timeframe, 0, 200)
         if rates is None or len(rates) < 121:
@@ -1021,11 +1017,12 @@ class RsiquiV3MonitorApp(tk.Tk):
             self._set_last_signal_state("BLOCKED", f"{STRATEGY_SELECTIONS[strategy_key].label}: có tín hiệu nhưng bị chặn bởi dữ liệu tick/spread hiện tại.", UiPalette.WARNING)
             return
         entry_time = datetime.fromtimestamp(bar_time, tz=UTC) + timedelta(minutes=5 if str(profile["timeframe"]) == "M5" else 15)
+        eta = entry_time.astimezone(GMT_PLUS_7).strftime("%H:%M")
         badge = "LONG" if side == "long" else "SHORT"
-        self._set_last_signal_state(badge, f"{STRATEGY_SELECTIONS[strategy_key].label} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {entry_time.astimezone().strftime('%H:%M')}", UiPalette.SUCCESS if badge == "LONG" else UiPalette.DANGER)
+        self._set_last_signal_state(badge, f"{STRATEGY_SELECTIONS[strategy_key].label} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {eta}", UiPalette.SUCCESS if badge == "LONG" else UiPalette.DANGER)
         # {STRATEGY_SELECTIONS[strategy_key].label}
         self._append_log(
-            f"Signal {side.upper()} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {entry_time.astimezone().strftime('%H:%M')}",
+            f"Signal {side.upper()} • Entry {request['price']:.2f} • SL {request['sl']:.2f} • TP {request['tp']:.2f} • ETA {eta}",
             badge=badge,
         )
     def _refresh(self) -> None:
@@ -1049,10 +1046,11 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._position_count_value.set(str(len(snapshot.positions)))
         self._mt5_status_value.set(f"ONLINE • {snapshot.server}")
         if snapshot.positions and snapshot.positions[0].opened_at is not None:
-            self._position_day_value.set(snapshot.positions[0].opened_at.strftime("%d/%m"))
+            opened = self._format_gmt7_datetime(snapshot.positions[0].opened_at)
+            self._position_day_value.set(f"{opened[8:10]}/{opened[5:7]}")
         else:
-            self._position_day_value.set(self.clock().strftime("%d/%m"))
-        self._updated_value.set(self.clock().strftime("%H:%M:%S"))
+            self._position_day_value.set(self._clock_gmt7().strftime("%d/%m"))
+        self._updated_value.set(self._clock_gmt7().strftime("%H:%M:%S"))
         self._apply_bot_status(snapshot)
         self.positions.delete(*self.positions.get_children())
         for position in snapshot.positions:
@@ -1065,14 +1063,17 @@ class RsiquiV3MonitorApp(tk.Tk):
     @staticmethod
     def _classify_log_badge(message: str, explicit_badge: str | None = None) -> tuple[str, str]:
         badge = (explicit_badge or "").strip().upper()
-        if badge in {"LONG", "SHORT", "ERROR", "INFO"}:
+        if badge in {"LONG", "SHORT", "CLOSE", "ERROR", "INFO"}:
             return {
                 "LONG": ("LONG", UiPalette.SUCCESS),
                 "SHORT": ("SHORT", UiPalette.DANGER),
+                "CLOSE": ("CLOSE", UiPalette.CLOSE),
                 "ERROR": ("ERROR", UiPalette.DANGER),
                 "INFO": ("INFO", UiPalette.INFO),
             }[badge]
         upper = message.upper()
+        if any(token in upper for token in ("ĐÃ ĐÓNG", " ĐÓNG /", " CLOSED", " CLOSE")):
+            return "CLOSE", UiPalette.CLOSE
         if any(token in upper for token in (" SELL", "SHORT", " BÁN")):
             return "SHORT", UiPalette.DANGER
         if any(token in upper for token in (" BUY", "LONG", " MUA")):
@@ -1083,7 +1084,7 @@ class RsiquiV3MonitorApp(tk.Tk):
 
     def _append_log(self, message: str, *, badge: str | None = None) -> None:
         badge_text, badge_color = self._classify_log_badge(message, badge)
-        entry = LogEntry(timestamp=f"{self.clock():%H:%M:%S}", badge=badge_text, message=message, badge_color=badge_color)
+        entry = LogEntry(timestamp=f"{self._clock_gmt7():%H:%M:%S}", badge=badge_text, message=message, badge_color=badge_color)
         self._log_history.insert(0, entry)
         self._log_history = self._log_history[:500]
         self._replay_logs()

@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_RUNNER = ROOT / "scripts" / "run_rsiqui_final_20260101_present_m5_sl24_tp9_vol003_eq700_spread04_backtest.py"
-SOURCE_CONFIG = ROOT / "configs" / "strategies" / "rsiqui" / "final_m5_backtest_20260101_present_sl40_tp10_vol004_eq500_monthly_reset.json"
+SOURCE_CONFIG = ROOT / "configs" / "strategies" / "rsiqui" / "backtests" / "final_m5_backtest_20260101_present_sl40_tp10_vol004_eq500_monthly_reset.json"
 OLD_CONFIG_LITERAL = 'final_m5_backtest_20260101_present_sl24_tp9_vol003_eq700_spread04.json'
 OLD_STRATEGY_LITERAL = 'builtin_rsiqui-v3-final_gold-loose_both_vol0.03_risk24_reward9_spreadcap0.4_closeconfirm_blackout_gmt7_M5_20260101_present'
 NEW_STRATEGY_LITERAL = 'builtin_rsiqui-v3-final_gold-loose_both_vol0.04_risk40_reward10_spreadcap0.4_monthly_reset_closeconfirm_blackout_gmt7_M5_20260101_present'
@@ -13,7 +13,7 @@ source = BASE_RUNNER.read_text(encoding="utf-8")
 for literal, label in ((OLD_CONFIG_LITERAL, "config"), (OLD_STRATEGY_LITERAL, "strategy"), (OLD_RAW_LITERAL, "raw CSV")):
     if source.count(literal) != 1:
         raise RuntimeError(f"Base runner {label} literal changed unexpectedly")
-source = source.replace(OLD_CONFIG_LITERAL, SOURCE_CONFIG.name)
+source = source.replace(OLD_CONFIG_LITERAL, str(SOURCE_CONFIG.relative_to(ROOT / "configs" / "strategies" / "rsiqui")))
 source = source.replace(OLD_STRATEGY_LITERAL, NEW_STRATEGY_LITERAL)
 source = source.replace(OLD_RAW_LITERAL, NEW_RAW_LITERAL)
 source = source.replace(

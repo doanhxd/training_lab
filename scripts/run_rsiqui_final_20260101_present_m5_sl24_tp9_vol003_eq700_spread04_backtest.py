@@ -26,7 +26,7 @@ from run_rsiqui_final_20260101_present_m5_sl27_tp9_vol003_eq1000_backtest import
 )
 
 RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "XAUUSD_M5_202601020105_202607312345.csv"
-CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "final_m5_backtest_20260101_present_sl24_tp9_vol003_eq700_spread04.json"
+CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "backtests" / "final_m5_backtest_20260101_present_sl24_tp9_vol003_eq700_spread04.json"
 SYMBOL = "XAUUSD"
 TIMEFRAME = "5m"
 REQUESTED_START_UTC = pd.Timestamp("2026-01-01T00:00:00Z")

@@ -7,8 +7,6 @@ import unittest
 
 import trading_lab.runners.mt5.rsiqui_btcusd_demo as btcusd_demo
 import trading_lab.runners.mt5.rsiqui_final_demo as final_demo
-import trading_lab.runners.mt5.rsiqui_neg_demo as neg_demo
-import trading_lab.runners.mt5.rsiqui_ori_demo as ori_demo
 
 
 class FakeResult:
@@ -76,8 +74,6 @@ class FakeMt5:
 
 VARIANTS = (
     ("FINAL", final_demo, "XAUUSD"),
-    ("ORI", ori_demo, "XAUUSD"),
-    ("NEG", neg_demo, "XAUUSD"),
     ("BTCUSD", btcusd_demo, "BTCUSD"),
 )
 
