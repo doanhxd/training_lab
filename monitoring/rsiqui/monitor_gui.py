@@ -32,6 +32,8 @@ GMT_PLUS_7 = timezone(timedelta(hours=4))
 class UiPalette:
     """Semantic palettes for the GOLD TRADER dashboard."""
 
+    TELEGRAM_BLUE = "#2AABEE"
+
     DARK = {
         "mode": "dark", "app": "#09111F", "sidebar": "#0D192B", "card": "#111F33", "card_alt": "#14263D",
         "border": "#233853", "text": "#F3F7FC", "muted": "#91A5BD", "nav_text": "#F3F7FC", "nav_muted": "#A8BDD6", "accent": "#D9AA54", "close": "#B4235A",
@@ -1263,12 +1265,12 @@ class RsiquiV3MonitorApp(tk.Tk):
         canvas = tk.Canvas(parent, width=width, height=24, bg=bg, highlightthickness=0, bd=0)
         radius = 10
         x1, y1, x2, y2 = 2, 2, width - 2, 22
-        canvas.create_rectangle(x1 + radius, y1, x2 - radius, y2, fill=fill, outline=fill)
-        canvas.create_rectangle(x1, y1 + radius, x2, y2 - radius, fill=fill, outline=fill)
-        canvas.create_oval(x1, y1, x1 + radius * 2, y1 + radius * 2, fill=fill, outline=fill)
-        canvas.create_oval(x2 - radius * 2, y1, x2, y1 + radius * 2, fill=fill, outline=fill)
-        canvas.create_oval(x1, y2 - radius * 2, x1 + radius * 2, y2, fill=fill, outline=fill)
-        canvas.create_oval(x2 - radius * 2, y2 - radius * 2, x2, y2, fill=fill, outline=fill)
+        canvas.create_rectangle(x1 + radius, y1, x2 - radius, y2, fill=fill, outline=fill, tags=("badge_fill",))
+        canvas.create_rectangle(x1, y1 + radius, x2, y2 - radius, fill=fill, outline=fill, tags=("badge_fill",))
+        canvas.create_oval(x1, y1, x1 + radius * 2, y1 + radius * 2, fill=fill, outline=fill, tags=("badge_fill",))
+        canvas.create_oval(x2 - radius * 2, y1, x2, y1 + radius * 2, fill=fill, outline=fill, tags=("badge_fill",))
+        canvas.create_oval(x1, y2 - radius * 2, x1 + radius * 2, y2, fill=fill, outline=fill, tags=("badge_fill",))
+        canvas.create_oval(x2 - radius * 2, y2 - radius * 2, x2, y2, fill=fill, outline=fill, tags=("badge_fill",))
         canvas.create_text(
             width / 2,
             12,
@@ -1284,8 +1286,8 @@ class RsiquiV3MonitorApp(tk.Tk):
         badge = self._badge(parent, entry.badge, entry.badge_color, parent.cget("bg"))
         badge.configure(cursor="hand2")
         badge.bind("<Button-1>", lambda _event, message=entry.telegram_message: self._confirm_telegram_signal(message))
-        badge.bind("<Enter>", lambda _event: badge.itemconfigure("badge_text", text="Tele"))
-        badge.bind("<Leave>", lambda _event: badge.itemconfigure("badge_text", text=entry.badge))
+        badge.bind("<Enter>", lambda _event: (badge.itemconfigure("badge_text", text="Tele"), badge.itemconfigure("badge_fill", fill=UiPalette.TELEGRAM_BLUE, outline=UiPalette.TELEGRAM_BLUE)))
+        badge.bind("<Leave>", lambda _event: (badge.itemconfigure("badge_text", text=entry.badge), badge.itemconfigure("badge_fill", fill=entry.badge_color, outline=entry.badge_color)))
         return badge
 
     def _confirm_telegram_signal(self, telegram_message: str | None) -> None:
