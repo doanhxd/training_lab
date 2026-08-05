@@ -446,11 +446,13 @@
    'PYMODULE'),
   ('aiohttp._websocket.reader',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\aiohttp\\_websocket\\reader.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\aiohttp\\_websocket\
+eader.py',
    'PYMODULE'),
   ('aiohttp._websocket.reader_py',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\aiohttp\\_websocket\\reader_py.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\aiohttp\\_websocket\
+eader_py.py',
    'PYMODULE'),
   ('aiohttp._websocket.writer',
    'C:\\Users\\Maple '
@@ -554,7 +556,8 @@
    'PYMODULE'),
   ('aiohttp.resolver',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\aiohttp\\resolver.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\aiohttp\
+esolver.py',
    'PYMODULE'),
   ('aiohttp.streams',
    'C:\\Users\\Maple '
@@ -718,7 +721,8 @@
    'PYMODULE'),
   ('asyncio.runners',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\asyncio\\runners.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\asyncio\
+unners.py',
    'PYMODULE'),
   ('asyncio.selector_events',
    'C:\\Users\\Maple '
@@ -1130,7 +1134,8 @@
    'PYMODULE'),
   ('cryptography.hazmat.primitives.asymmetric.rsa',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\cryptography\\hazmat\\primitives\\asymmetric\\rsa.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\cryptography\\hazmat\\primitives\\asymmetric\
+sa.py',
    'PYMODULE'),
   ('cryptography.hazmat.primitives.asymmetric.types',
    'C:\\Users\\Maple '
@@ -1282,11 +1287,13 @@
    'PYMODULE'),
   ('dateutil.relativedelta',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\dateutil\\relativedelta.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\dateutil\
+elativedelta.py',
    'PYMODULE'),
   ('dateutil.rrule',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\dateutil\\rrule.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\dateutil\
+rule.py',
    'PYMODULE'),
   ('dateutil.tz',
    'C:\\Users\\Maple '
@@ -1742,7 +1749,8 @@
    'PYMODULE'),
   ('fsspec.implementations.reference',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\fsspec\\implementations\\reference.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\fsspec\\implementations\
+eference.py',
    'PYMODULE'),
   ('fsspec.implementations.sftp',
    'C:\\Users\\Maple '
@@ -1778,7 +1786,8 @@
    'PYMODULE'),
   ('fsspec.registry',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\fsspec\\registry.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\fsspec\
+egistry.py',
    'PYMODULE'),
   ('fsspec.spec',
    'C:\\Users\\Maple '
@@ -1934,35 +1943,44 @@
    'PYMODULE'),
   ('importlib.readers',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\readers.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+eaders.py',
    'PYMODULE'),
   ('importlib.resources',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\__init__.py',
    'PYMODULE'),
   ('importlib.resources._adapters',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_adapters.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_adapters.py',
    'PYMODULE'),
   ('importlib.resources._common',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_common.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_common.py',
    'PYMODULE'),
   ('importlib.resources._itertools',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_itertools.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_itertools.py',
    'PYMODULE'),
   ('importlib.resources._legacy',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_legacy.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_legacy.py',
    'PYMODULE'),
   ('importlib.resources.abc',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\abc.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\abc.py',
    'PYMODULE'),
   ('importlib.resources.readers',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\readers.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\
+eaders.py',
    'PYMODULE'),
   ('importlib.util',
    'C:\\Users\\Maple '
@@ -2050,7 +2068,8 @@
    'PYMODULE'),
   ('jinja2.runtime',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\jinja2\\runtime.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\jinja2\
+untime.py',
    'PYMODULE'),
   ('jinja2.sandbox',
    'C:\\Users\\Maple '
@@ -2174,163 +2193,205 @@
    'PYMODULE'),
   ('markdown_it.renderer',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\renderer.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+enderer.py',
    'PYMODULE'),
   ('markdown_it.ruler',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\ruler.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+uler.py',
    'PYMODULE'),
   ('markdown_it.rules_block',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\__init__.py',
    'PYMODULE'),
   ('markdown_it.rules_block.blockquote',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\blockquote.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\blockquote.py',
    'PYMODULE'),
   ('markdown_it.rules_block.code',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\code.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\code.py',
    'PYMODULE'),
   ('markdown_it.rules_block.fence',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\fence.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\fence.py',
    'PYMODULE'),
   ('markdown_it.rules_block.heading',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\heading.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\heading.py',
    'PYMODULE'),
   ('markdown_it.rules_block.hr',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\hr.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\hr.py',
    'PYMODULE'),
   ('markdown_it.rules_block.html_block',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\html_block.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\html_block.py',
    'PYMODULE'),
   ('markdown_it.rules_block.lheading',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\lheading.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\lheading.py',
    'PYMODULE'),
   ('markdown_it.rules_block.list',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\list.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\list.py',
    'PYMODULE'),
   ('markdown_it.rules_block.paragraph',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\paragraph.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\paragraph.py',
    'PYMODULE'),
   ('markdown_it.rules_block.reference',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\reference.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\
+eference.py',
    'PYMODULE'),
   ('markdown_it.rules_block.state_block',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\state_block.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\state_block.py',
    'PYMODULE'),
   ('markdown_it.rules_block.table',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_block\\table.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_block\\table.py',
    'PYMODULE'),
   ('markdown_it.rules_core',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\__init__.py',
    'PYMODULE'),
   ('markdown_it.rules_core.block',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\block.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\block.py',
    'PYMODULE'),
   ('markdown_it.rules_core.inline',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\inline.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\inline.py',
    'PYMODULE'),
   ('markdown_it.rules_core.linkify',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\linkify.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\linkify.py',
    'PYMODULE'),
   ('markdown_it.rules_core.normalize',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\normalize.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\normalize.py',
    'PYMODULE'),
   ('markdown_it.rules_core.replacements',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\replacements.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\
+eplacements.py',
    'PYMODULE'),
   ('markdown_it.rules_core.smartquotes',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\smartquotes.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\smartquotes.py',
    'PYMODULE'),
   ('markdown_it.rules_core.state_core',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\state_core.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\state_core.py',
    'PYMODULE'),
   ('markdown_it.rules_core.text_join',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_core\\text_join.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_core\\text_join.py',
    'PYMODULE'),
   ('markdown_it.rules_inline',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\__init__.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.autolink',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\autolink.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\autolink.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.backticks',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\backticks.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\backticks.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.balance_pairs',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\balance_pairs.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\balance_pairs.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.emphasis',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\emphasis.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\emphasis.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.entity',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\entity.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\entity.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.escape',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\escape.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\escape.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.fragments_join',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\fragments_join.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\fragments_join.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.html_inline',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\html_inline.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\html_inline.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.image',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\image.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\image.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.link',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\link.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\link.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.linkify',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\linkify.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\linkify.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.newline',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\newline.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\newline.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.state_inline',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\state_inline.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\state_inline.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.strikethrough',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\strikethrough.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\strikethrough.py',
    'PYMODULE'),
   ('markdown_it.rules_inline.text',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\\rules_inline\\text.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\markdown_it\
+ules_inline\\text.py',
    'PYMODULE'),
   ('markdown_it.token',
    'C:\\Users\\Maple '
@@ -2454,15 +2515,18 @@
    'PYMODULE'),
   ('multiprocessing.reduction',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\\reduction.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\
+eduction.py',
    'PYMODULE'),
   ('multiprocessing.resource_sharer',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\\resource_sharer.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\
+esource_sharer.py',
    'PYMODULE'),
   ('multiprocessing.resource_tracker',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\\resource_tracker.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\
+esource_tracker.py',
    'PYMODULE'),
   ('multiprocessing.shared_memory',
    'C:\\Users\\Maple '
@@ -2606,7 +2670,8 @@
    'PYMODULE'),
   ('numpy._core.records',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\_core\\records.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\_core\
+ecords.py',
    'PYMODULE'),
   ('numpy._core.shape_base',
    'C:\\Users\\Maple '
@@ -2790,7 +2855,8 @@
    'PYMODULE'),
   ('numpy.f2py.rules',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\f2py\\rules.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\f2py\
+ules.py',
    'PYMODULE'),
   ('numpy.f2py.symbolic',
    'C:\\Users\\Maple '
@@ -2922,7 +2988,8 @@
    'PYMODULE'),
   ('numpy.lib.recfunctions',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\lib\\recfunctions.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\lib\
+ecfunctions.py',
    'PYMODULE'),
   ('numpy.lib.scimath',
    'C:\\Users\\Maple '
@@ -3006,15 +3073,18 @@
    'PYMODULE'),
   ('numpy.random',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\random\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\
+andom\\__init__.py',
    'PYMODULE'),
   ('numpy.random._pickle',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\random\\_pickle.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\
+andom\\_pickle.py',
    'PYMODULE'),
   ('numpy.rec',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\\rec\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\numpy\
+ec\\__init__.py',
    'PYMODULE'),
   ('numpy.strings',
    'C:\\Users\\Maple '
@@ -3094,7 +3164,8 @@
    'PYMODULE'),
   ('packaging.requirements',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\packaging\\requirements.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\packaging\
+equirements.py',
    'PYMODULE'),
   ('packaging.specifiers',
    'C:\\Users\\Maple '
@@ -3326,7 +3397,8 @@
    'PYMODULE'),
   ('pandas.core.array_algos.replace',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\array_algos\\replace.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\array_algos\
+eplace.py',
    'PYMODULE'),
   ('pandas.core.array_algos.take',
    'C:\\Users\\Maple '
@@ -3682,7 +3754,8 @@
    'PYMODULE'),
   ('pandas.core.indexes.range',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\indexes\\range.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\indexes\
+ange.py',
    'PYMODULE'),
   ('pandas.core.indexes.timedeltas',
    'C:\\Users\\Maple '
@@ -3806,47 +3879,59 @@
    'PYMODULE'),
   ('pandas.core.resample',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\resample.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+esample.py',
    'PYMODULE'),
   ('pandas.core.reshape',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\__init__.py',
    'PYMODULE'),
   ('pandas.core.reshape.api',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\api.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\api.py',
    'PYMODULE'),
   ('pandas.core.reshape.concat',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\concat.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\concat.py',
    'PYMODULE'),
   ('pandas.core.reshape.encoding',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\encoding.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\encoding.py',
    'PYMODULE'),
   ('pandas.core.reshape.melt',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\melt.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\melt.py',
    'PYMODULE'),
   ('pandas.core.reshape.merge',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\merge.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\merge.py',
    'PYMODULE'),
   ('pandas.core.reshape.pivot',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\pivot.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\pivot.py',
    'PYMODULE'),
   ('pandas.core.reshape.reshape',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\reshape.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\
+eshape.py',
    'PYMODULE'),
   ('pandas.core.reshape.tile',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\reshape\\tile.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+eshape\\tile.py',
    'PYMODULE'),
   ('pandas.core.roperator',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\roperator.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\
+operator.py',
    'PYMODULE'),
   ('pandas.core.sample',
    'C:\\Users\\Maple '
@@ -3934,7 +4019,8 @@
    'PYMODULE'),
   ('pandas.core.window.rolling',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\window\\rolling.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\core\\window\
+olling.py',
    'PYMODULE'),
   ('pandas.errors',
    'C:\\Users\\Maple '
@@ -4122,7 +4208,8 @@
    'PYMODULE'),
   ('pandas.io.parsers.readers',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\io\\parsers\\readers.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pandas\\io\\parsers\
+eaders.py',
    'PYMODULE'),
   ('pandas.io.pickle',
    'C:\\Users\\Maple '
@@ -4574,7 +4661,8 @@
    'PYMODULE'),
   ('pydantic.root_model',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pydantic\\root_model.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pydantic\
+oot_model.py',
    'PYMODULE'),
   ('pydantic.schema',
    'C:\\Users\\Maple '
@@ -4802,7 +4890,8 @@
    'PYMODULE'),
   ('pygments.formatters.rtf',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\formatters\\rtf.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\formatters\
+tf.py',
    'PYMODULE'),
   ('pygments.formatters.svg',
    'C:\\Users\\Maple '
@@ -5562,51 +5651,63 @@
    'PYMODULE'),
   ('pygments.lexers.r',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\r.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+.py',
    'PYMODULE'),
   ('pygments.lexers.rdf',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\rdf.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+df.py',
    'PYMODULE'),
   ('pygments.lexers.rebol',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\rebol.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+ebol.py',
    'PYMODULE'),
   ('pygments.lexers.rego',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\rego.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+ego.py',
    'PYMODULE'),
   ('pygments.lexers.resource',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\resource.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+esource.py',
    'PYMODULE'),
   ('pygments.lexers.ride',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\ride.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+ide.py',
    'PYMODULE'),
   ('pygments.lexers.rita',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\rita.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+ita.py',
    'PYMODULE'),
   ('pygments.lexers.rnc',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\rnc.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+nc.py',
    'PYMODULE'),
   ('pygments.lexers.roboconf',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\roboconf.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+oboconf.py',
    'PYMODULE'),
   ('pygments.lexers.robotframework',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\robotframework.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+obotframework.py',
    'PYMODULE'),
   ('pygments.lexers.ruby',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\ruby.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+uby.py',
    'PYMODULE'),
   ('pygments.lexers.rust',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\\rust.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\lexers\
+ust.py',
    'PYMODULE'),
   ('pygments.lexers.sas',
    'C:\\Users\\Maple '
@@ -5866,7 +5967,8 @@
    'PYMODULE'),
   ('pygments.regexopt',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\regexopt.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\
+egexopt.py',
    'PYMODULE'),
   ('pygments.scanner',
    'C:\\Users\\Maple '
@@ -6018,11 +6120,13 @@
    'PYMODULE'),
   ('pygments.styles.rainbow_dash',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\styles\\rainbow_dash.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\styles\
+ainbow_dash.py',
    'PYMODULE'),
   ('pygments.styles.rrt',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\styles\\rrt.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\pygments\\styles\
+rt.py',
    'PYMODULE'),
   ('pygments.styles.sas',
    'C:\\Users\\Maple '
@@ -6090,447 +6194,561 @@
    'PYMODULE'),
   ('random',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\random.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\
+andom.py',
    'PYMODULE'),
   ('requests',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\__init__.py',
    'PYMODULE'),
   ('requests.__version__',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\__version__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\__version__.py',
    'PYMODULE'),
   ('requests._internal_utils',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\_internal_utils.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\_internal_utils.py',
    'PYMODULE'),
   ('requests.adapters',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\adapters.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\adapters.py',
    'PYMODULE'),
   ('requests.api',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\api.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\api.py',
    'PYMODULE'),
   ('requests.auth',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\auth.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\auth.py',
    'PYMODULE'),
   ('requests.certs',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\certs.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\certs.py',
    'PYMODULE'),
   ('requests.compat',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\compat.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\compat.py',
    'PYMODULE'),
   ('requests.cookies',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\cookies.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\cookies.py',
    'PYMODULE'),
   ('requests.exceptions',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\exceptions.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\exceptions.py',
    'PYMODULE'),
   ('requests.hooks',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\hooks.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\hooks.py',
    'PYMODULE'),
   ('requests.models',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\models.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\models.py',
    'PYMODULE'),
   ('requests.packages',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\packages.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\packages.py',
    'PYMODULE'),
   ('requests.sessions',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\sessions.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\sessions.py',
    'PYMODULE'),
   ('requests.status_codes',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\status_codes.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\status_codes.py',
    'PYMODULE'),
   ('requests.structures',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\structures.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\structures.py',
    'PYMODULE'),
   ('requests.utils',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\requests\\utils.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+equests\\utils.py',
    'PYMODULE'),
   ('rich',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\__init__.py',
    'PYMODULE'),
   ('rich.__main__',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\__main__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\__main__.py',
    'PYMODULE'),
   ('rich._emoji_codes',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_emoji_codes.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_emoji_codes.py',
    'PYMODULE'),
   ('rich._emoji_replace',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_emoji_replace.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_emoji_replace.py',
    'PYMODULE'),
   ('rich._export_format',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_export_format.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_export_format.py',
    'PYMODULE'),
   ('rich._extension',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_extension.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_extension.py',
    'PYMODULE'),
   ('rich._fileno',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_fileno.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_fileno.py',
    'PYMODULE'),
   ('rich._inspect',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_inspect.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_inspect.py',
    'PYMODULE'),
   ('rich._log_render',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_log_render.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_log_render.py',
    'PYMODULE'),
   ('rich._loop',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_loop.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_loop.py',
    'PYMODULE'),
   ('rich._null_file',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_null_file.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_null_file.py',
    'PYMODULE'),
   ('rich._palettes',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_palettes.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_palettes.py',
    'PYMODULE'),
   ('rich._pick',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_pick.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_pick.py',
    'PYMODULE'),
   ('rich._ratio',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_ratio.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_ratio.py',
    'PYMODULE'),
   ('rich._spinners',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_spinners.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_spinners.py',
    'PYMODULE'),
   ('rich._stack',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_stack.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_stack.py',
    'PYMODULE'),
   ('rich._timer',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_timer.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_timer.py',
    'PYMODULE'),
   ('rich._unicode_data',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\__init__.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\__init__.py',
    'PYMODULE'),
   ('rich._unicode_data._versions',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\_versions.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\_versions.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode10-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode10-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode10-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode11-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode11-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode11-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode12-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode12-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode12-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode12-1-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode12-1-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode12-1-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode13-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode13-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode13-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode14-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode14-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode14-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode15-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode15-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode15-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode15-1-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode15-1-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode15-1-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode16-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode16-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode16-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode17-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode17-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode17-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode4-1-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode4-1-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode4-1-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode5-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode5-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode5-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode5-1-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode5-1-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode5-1-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode5-2-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode5-2-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode5-2-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode6-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode6-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode6-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode6-1-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode6-1-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode6-1-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode6-2-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode6-2-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode6-2-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode6-3-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode6-3-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode6-3-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode7-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode7-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode7-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode8-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode8-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode8-0-0.py',
    'PYMODULE'),
   ('rich._unicode_data.unicode9-0-0',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_unicode_data\\unicode9-0-0.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_unicode_data\\unicode9-0-0.py',
    'PYMODULE'),
   ('rich._win32_console',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_win32_console.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_win32_console.py',
    'PYMODULE'),
   ('rich._windows',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_windows.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_windows.py',
    'PYMODULE'),
   ('rich._windows_renderer',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_windows_renderer.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_windows_renderer.py',
    'PYMODULE'),
   ('rich._wrap',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\_wrap.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\_wrap.py',
    'PYMODULE'),
   ('rich.abc',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\abc.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\abc.py',
    'PYMODULE'),
   ('rich.align',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\align.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\align.py',
    'PYMODULE'),
   ('rich.ansi',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\ansi.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\ansi.py',
    'PYMODULE'),
   ('rich.box',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\box.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\box.py',
    'PYMODULE'),
   ('rich.cells',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\cells.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\cells.py',
    'PYMODULE'),
   ('rich.color',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\color.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\color.py',
    'PYMODULE'),
   ('rich.color_triplet',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\color_triplet.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\color_triplet.py',
    'PYMODULE'),
   ('rich.columns',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\columns.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\columns.py',
    'PYMODULE'),
   ('rich.console',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\console.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\console.py',
    'PYMODULE'),
   ('rich.constrain',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\constrain.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\constrain.py',
    'PYMODULE'),
   ('rich.containers',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\containers.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\containers.py',
    'PYMODULE'),
   ('rich.control',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\control.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\control.py',
    'PYMODULE'),
   ('rich.default_styles',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\default_styles.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\default_styles.py',
    'PYMODULE'),
   ('rich.emoji',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\emoji.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\emoji.py',
    'PYMODULE'),
   ('rich.errors',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\errors.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\errors.py',
    'PYMODULE'),
   ('rich.file_proxy',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\file_proxy.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\file_proxy.py',
    'PYMODULE'),
   ('rich.highlighter',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\highlighter.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\highlighter.py',
    'PYMODULE'),
   ('rich.json',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\json.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\json.py',
    'PYMODULE'),
   ('rich.jupyter',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\jupyter.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\jupyter.py',
    'PYMODULE'),
   ('rich.live',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\live.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\live.py',
    'PYMODULE'),
   ('rich.live_render',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\live_render.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\live_render.py',
    'PYMODULE'),
   ('rich.markdown',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\markdown.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\markdown.py',
    'PYMODULE'),
   ('rich.markup',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\markup.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\markup.py',
    'PYMODULE'),
   ('rich.measure',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\measure.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\measure.py',
    'PYMODULE'),
   ('rich.padding',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\padding.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\padding.py',
    'PYMODULE'),
   ('rich.pager',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\pager.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\pager.py',
    'PYMODULE'),
   ('rich.palette',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\palette.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\palette.py',
    'PYMODULE'),
   ('rich.panel',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\panel.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\panel.py',
    'PYMODULE'),
   ('rich.pretty',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\pretty.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\pretty.py',
    'PYMODULE'),
   ('rich.protocol',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\protocol.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\protocol.py',
    'PYMODULE'),
   ('rich.region',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\region.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\
+egion.py',
    'PYMODULE'),
   ('rich.repr',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\repr.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\
+epr.py',
    'PYMODULE'),
   ('rich.rule',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\rule.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\
+ule.py',
    'PYMODULE'),
   ('rich.scope',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\scope.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\scope.py',
    'PYMODULE'),
   ('rich.screen',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\screen.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\screen.py',
    'PYMODULE'),
   ('rich.segment',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\segment.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\segment.py',
    'PYMODULE'),
   ('rich.spinner',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\spinner.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\spinner.py',
    'PYMODULE'),
   ('rich.status',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\status.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\status.py',
    'PYMODULE'),
   ('rich.style',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\style.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\style.py',
    'PYMODULE'),
   ('rich.styled',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\styled.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\styled.py',
    'PYMODULE'),
   ('rich.syntax',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\syntax.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\syntax.py',
    'PYMODULE'),
   ('rich.table',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\table.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\table.py',
    'PYMODULE'),
   ('rich.terminal_theme',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\terminal_theme.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\terminal_theme.py',
    'PYMODULE'),
   ('rich.text',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\text.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\text.py',
    'PYMODULE'),
   ('rich.theme',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\theme.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\theme.py',
    'PYMODULE'),
   ('rich.themes',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\themes.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\themes.py',
    'PYMODULE'),
   ('rich.traceback',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\rich\\traceback.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\
+ich\\traceback.py',
    'PYMODULE'),
   ('rlcompleter',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\rlcompleter.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\
+lcompleter.py',
    'PYMODULE'),
   ('runpy',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\runpy.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\
+unpy.py',
    'PYMODULE'),
   ('secrets',
    'C:\\Users\\Maple '
@@ -6906,7 +7124,8 @@
    'PYMODULE'),
   ('setuptools._vendor.more_itertools.recipes',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\setuptools\\_vendor\\more_itertools\\recipes.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\setuptools\\_vendor\\more_itertools\
+ecipes.py',
    'PYMODULE'),
   ('setuptools._vendor.packaging',
    'C:\\Users\\Maple '
@@ -6942,7 +7161,8 @@
    'PYMODULE'),
   ('setuptools._vendor.packaging.requirements',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\setuptools\\_vendor\\packaging\\requirements.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\setuptools\\_vendor\\packaging\
+equirements.py',
    'PYMODULE'),
   ('setuptools._vendor.packaging.specifiers',
    'C:\\Users\\Maple '
@@ -7375,37 +7595,50 @@
    'PYMODULE'),
   ('trading_lab.monitoring.rsiqui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\\rsiqui\\__init__.py',
+   'Razer\\Desktop\\trading_lab\\monitoring\
+siqui\\__init__.py',
    'PYMODULE'),
   ('trading_lab.monitoring.rsiqui.monitor_gui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\\rsiqui\\monitor_gui.py',
+   'Razer\\Desktop\\trading_lab\\monitoring\
+siqui\\monitor_gui.py',
    'PYMODULE'),
   ('trading_lab.monitoring.rsiqui.position_monitor',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\\rsiqui\\position_monitor.py',
+   'Razer\\Desktop\\trading_lab\\monitoring\
+siqui\\position_monitor.py',
    'PYMODULE'),
   ('trading_lab.runners',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\runners\\__init__.py',
+   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\
+unners\\__init__.py',
    'PYMODULE'),
   ('trading_lab.runners.mt5',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\runners\\mt5\\__init__.py',
+   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\
+unners\\mt5\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_btcusd_demo',
+  ('trading_lab.runners.mt5.rsiqui_btcusd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_btcusd_demo.py',
+   'Razer\\Desktop\\trading_lab\
+unners\\mt5\
+siqui_btcusd.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_final_demo',
+  ('trading_lab.runners.mt5.rsiqui_final',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_final_demo.py',
+   'Razer\\Desktop\\trading_lab\
+unners\\mt5\
+siqui_final.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_neg_demo',
+  ('trading_lab.runners.mt5.rsiqui_neg_paper',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_neg_demo.py',
+   'Razer\\Desktop\\trading_lab\
+unners\\mt5\
+siqui_neg_paper.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_ori_demo',
+  ('trading_lab.runners.mt5.rsiqui_ori_paper',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_ori_demo.py',
+   'Razer\\Desktop\\trading_lab\
+unners\\mt5\
+siqui_ori_paper.py',
    'PYMODULE'),
   ('trading_lab.strategies',
    'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\strategies\\__init__.py',
@@ -7413,27 +7646,33 @@
   ('trading_lab.strategies.builtins', '-', 'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\__init__.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\__init__.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui.btcusd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\btcusd.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\btcusd.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui.final',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\final.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\final.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui.neg',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\neg.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\neg.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui.ori',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\ori.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\ori.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui_v3_root',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui_v3_root.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui_v3_root.py',
    'PYMODULE'),
   ('trading_lab.telegram_notifier',
    'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\telegram_notifier.py',
@@ -7580,11 +7819,13 @@
    'PYMODULE'),
   ('unittest.result',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\\result.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\
+esult.py',
    'PYMODULE'),
   ('unittest.runner',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\\runner.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\
+unner.py',
    'PYMODULE'),
   ('unittest.signals',
    'C:\\Users\\Maple '
@@ -7612,11 +7853,13 @@
    'PYMODULE'),
   ('urllib.request',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\\request.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\
+equest.py',
    'PYMODULE'),
   ('urllib.response',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\\response.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\
+esponse.py',
    'PYMODULE'),
   ('urllib3',
    'C:\\Users\\Maple '
@@ -7664,11 +7907,13 @@
    'PYMODULE'),
   ('urllib3.contrib.emscripten.request',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\contrib\\emscripten\\request.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\contrib\\emscripten\
+equest.py',
    'PYMODULE'),
   ('urllib3.contrib.emscripten.response',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\contrib\\emscripten\\response.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\contrib\\emscripten\
+esponse.py',
    'PYMODULE'),
   ('urllib3.contrib.pyopenssl',
    'C:\\Users\\Maple '
@@ -7708,7 +7953,8 @@
    'PYMODULE'),
   ('urllib3.response',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\response.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\
+esponse.py',
    'PYMODULE'),
   ('urllib3.util',
    'C:\\Users\\Maple '
@@ -7724,15 +7970,18 @@
    'PYMODULE'),
   ('urllib3.util.request',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\util\\request.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\util\
+equest.py',
    'PYMODULE'),
   ('urllib3.util.response',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\util\\response.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\util\
+esponse.py',
    'PYMODULE'),
   ('urllib3.util.retry',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\util\\retry.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\urllib3\\util\
+etry.py',
    'PYMODULE'),
   ('urllib3.util.ssl_',
    'C:\\Users\\Maple '
@@ -7916,15 +8165,18 @@
    'PYMODULE'),
   ('yaml.reader',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\yaml\\reader.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\yaml\
+eader.py',
    'PYMODULE'),
   ('yaml.representer',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\yaml\\representer.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\yaml\
+epresenter.py',
    'PYMODULE'),
   ('yaml.resolver',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\yaml\\resolver.py',
+   'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\yaml\
+esolver.py',
    'PYMODULE'),
   ('yaml.scanner',
    'C:\\Users\\Maple '

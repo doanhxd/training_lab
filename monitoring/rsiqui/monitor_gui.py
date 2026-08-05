@@ -97,24 +97,24 @@ def format_telegram_signal_message(
 
 
 STRATEGY_SELECTIONS = {
-    "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "F Root", CONFIG_ROOT / "final_m5_demo.json"),
-    "rsiqui_v3_final_trailing": StrategySelection("rsiqui_v3_final_trailing", "F Trailing", CONFIG_ROOT / "final_trailing_m5_demo.json"),
-    "rsiqui_v3_final_trailing_c": StrategySelection("rsiqui_v3_final_trailing_c", "F Trailing X · $5K", CONFIG_ROOT / "final_trailing_c_m5_demo.json"),
-    "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "BTC", CONFIG_ROOT / "btcusd_m5_demo.json"),
+    "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "F Root", CONFIG_ROOT / "final_m5.json"),
+    "rsiqui_v3_final_trailing": StrategySelection("rsiqui_v3_final_trailing", "F TRL", CONFIG_ROOT / "final_trailing_m5.json"),
+    "rsiqui_v3_final_x": StrategySelection("rsiqui_v3_final_x", "F X · $5K", CONFIG_ROOT / "final_x_m5.json"),
+    "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "BTC", CONFIG_ROOT / "btcusd_m5.json"),
 }
 
 RUNNER_SCRIPT_BY_STRATEGY = {
-    "rsiqui_v3_final": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_demo.py",
-    "rsiqui_v3_final_trailing": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing_demo.py",
-    "rsiqui_v3_final_trailing_c": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing_demo.py",
-    "rsiqui_v3_btcusd": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_btcusd_demo.py",
+    "rsiqui_v3_final": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final.py",
+    "rsiqui_v3_final_trailing": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing.py",
+    "rsiqui_v3_final_x": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_final_trailing.py",
+    "rsiqui_v3_btcusd": PROJECT_ROOT / "runners" / "mt5" / "rsiqui_btcusd.py",
 }
 
 RUNNER_MODULE_BY_STRATEGY = {
-    "rsiqui_v3_final": "trading_lab.runners.mt5.rsiqui_final_demo",
-    "rsiqui_v3_final_trailing": "trading_lab.runners.mt5.rsiqui_final_trailing_demo",
-    "rsiqui_v3_final_trailing_c": "trading_lab.runners.mt5.rsiqui_final_trailing_demo",
-    "rsiqui_v3_btcusd": "trading_lab.runners.mt5.rsiqui_btcusd_demo",
+    "rsiqui_v3_final": "trading_lab.runners.mt5.rsiqui_final",
+    "rsiqui_v3_final_trailing": "trading_lab.runners.mt5.rsiqui_final_trailing",
+    "rsiqui_v3_final_x": "trading_lab.runners.mt5.rsiqui_final_trailing",
+    "rsiqui_v3_btcusd": "trading_lab.runners.mt5.rsiqui_btcusd",
 }
 
 
@@ -126,22 +126,22 @@ def _load_json(path: str | Path) -> dict:
 def _strategy_loader_for_payload(payload: dict):
     strategy = str(payload.get("strategy", "")).strip().lower()
     if strategy == "rsiqui-v3-final":
-        from trading_lab.runners.mt5.rsiqui_final_demo import load_demo_config
+        from trading_lab.runners.mt5.rsiqui_final import load_config
 
-        return "rsiqui_v3_final", load_demo_config
-    if strategy in {"rsiqui-v3-final-trailing", "rsiqui-v3-final-trailing-c"}:
-        from trading_lab.runners.mt5.rsiqui_final_trailing_demo import load_demo_config
+        return "rsiqui_v3_final", load_config
+    if strategy in {"rsiqui-v3-final-trailing", "rsiqui-v3-final-x"}:
+        from trading_lab.runners.mt5.rsiqui_final_trailing import load_config
 
-        return ("rsiqui_v3_final_trailing_c" if strategy.endswith("-c") else "rsiqui_v3_final_trailing"), load_demo_config
+        return ("rsiqui_v3_final_x" if strategy.endswith("-x") else "rsiqui_v3_final_trailing"), load_config
     if strategy == "rsiqui-v3-btcusd":
-        from trading_lab.runners.mt5.rsiqui_btcusd_demo import load_demo_config
+        from trading_lab.runners.mt5.rsiqui_btcusd import load_config
 
-        return "rsiqui_v3_btcusd", load_demo_config
+        return "rsiqui_v3_btcusd", load_config
     raise ValueError(f"Unsupported RSIQUI strategy payload: {strategy or '<missing>'}")
 
 
 def _strategy_runtime(strategy_key: str):
-    if strategy_key in {"rsiqui_v3_final", "rsiqui_v3_final_trailing", "rsiqui_v3_final_trailing_c"}:
+    if strategy_key in {"rsiqui_v3_final", "rsiqui_v3_final_trailing", "rsiqui_v3_final_x"}:
         from trading_lab.strategies.builtins.rsiqui.final import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
@@ -155,8 +155,8 @@ def _strategy_runtime(strategy_key: str):
 def load_read_only_profile(config_path: str | Path) -> dict[str, str | float]:
     """Read the RSIQUI contract for display and signal preview only."""
     payload = _load_json(config_path)
-    strategy_key, load_demo_config = _strategy_loader_for_payload(payload)
-    config = load_demo_config(config_path)
+    strategy_key, load_config = _strategy_loader_for_payload(payload)
+    config = load_config(config_path)
     return {
         "strategy_key": strategy_key,
         "strategy_name": payload["strategy"],
@@ -872,7 +872,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         if upper.startswith("BTC"):
             return "BTC"
         if upper.startswith("XAU"):
-            return "XAU"
+            return "XAUUSD"
         if upper.endswith("USDT"):
             return upper[:-4]
         if upper.endswith("USD"):
@@ -1395,8 +1395,8 @@ class RsiquiV3MonitorApp(tk.Tk):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Read-only GOLD Trader dashboard for RSIQUI V3 demo positions.")
-    parser.add_argument("--config", default=str(CONFIG_ROOT / "final_trailing_m5_demo.json"), help="RSIQUI V3 JSON read for display only")
+    parser = argparse.ArgumentParser(description="Read-only GOLD Trader dashboard for RSIQUI V3 paper positions.")
+    parser.add_argument("--config", default=str(CONFIG_ROOT / "final_trailing_m5.json"), help="RSIQUI V3 JSON read for display only")
     parser.add_argument("--symbol", default="XAUUSD", help="MT5 symbol to observe")
     parser.add_argument("--refresh-seconds", type=float, default=2.0)
     args = parser.parse_args()

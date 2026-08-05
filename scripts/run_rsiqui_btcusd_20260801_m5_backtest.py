@@ -26,7 +26,7 @@ from trading_lab.strategies.builtins.rsiqui.btcusd import (
 )
 
 RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "BTCUSD_M5_202608010010_202608020840.csv"
-CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "btcusd_m5_demo.json"
+CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "btcusd_m5.json"
 SYMBOL = "BTCUSD"
 TIMEFRAME = "5m"
 START_UTC = pd.Timestamp("2026-08-01T00:00:00Z")

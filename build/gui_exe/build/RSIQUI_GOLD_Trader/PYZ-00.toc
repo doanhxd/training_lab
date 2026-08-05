@@ -138,7 +138,8 @@
    'PYMODULE'),
   ('asyncio.runners',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\asyncio\\runners.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\asyncio\
+unners.py',
    'PYMODULE'),
   ('asyncio.selector_events',
    'C:\\Users\\Maple '
@@ -326,11 +327,13 @@
    'PYMODULE'),
   ('dateutil.relativedelta',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\dateutil\\relativedelta.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\dateutil\
+elativedelta.py',
    'PYMODULE'),
   ('dateutil.rrule',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\dateutil\\rrule.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\dateutil\
+rule.py',
    'PYMODULE'),
   ('dateutil.tz',
    'C:\\Users\\Maple '
@@ -686,35 +689,44 @@
    'PYMODULE'),
   ('importlib.readers',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\readers.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+eaders.py',
    'PYMODULE'),
   ('importlib.resources',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\__init__.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\__init__.py',
    'PYMODULE'),
   ('importlib.resources._adapters',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_adapters.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_adapters.py',
    'PYMODULE'),
   ('importlib.resources._common',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_common.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_common.py',
    'PYMODULE'),
   ('importlib.resources._itertools',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_itertools.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_itertools.py',
    'PYMODULE'),
   ('importlib.resources._legacy',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\_legacy.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\_legacy.py',
    'PYMODULE'),
   ('importlib.resources.abc',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\abc.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\\abc.py',
    'PYMODULE'),
   ('importlib.resources.readers',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\\resources\\readers.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\importlib\
+esources\
+eaders.py',
    'PYMODULE'),
   ('importlib.util',
    'C:\\Users\\Maple '
@@ -818,15 +830,18 @@
    'PYMODULE'),
   ('multiprocessing.reduction',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\\reduction.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\
+eduction.py',
    'PYMODULE'),
   ('multiprocessing.resource_sharer',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\\resource_sharer.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\
+esource_sharer.py',
    'PYMODULE'),
   ('multiprocessing.resource_tracker',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\\resource_tracker.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\multiprocessing\
+esource_tracker.py',
    'PYMODULE'),
   ('multiprocessing.shared_memory',
    'C:\\Users\\Maple '
@@ -970,7 +985,8 @@
    'PYMODULE'),
   ('numpy._core.records',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\_core\\records.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\_core\
+ecords.py',
    'PYMODULE'),
   ('numpy._core.shape_base',
    'C:\\Users\\Maple '
@@ -1154,7 +1170,8 @@
    'PYMODULE'),
   ('numpy.f2py.rules',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\f2py\\rules.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\f2py\
+ules.py',
    'PYMODULE'),
   ('numpy.f2py.symbolic',
    'C:\\Users\\Maple '
@@ -1286,7 +1303,8 @@
    'PYMODULE'),
   ('numpy.lib.recfunctions',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\lib\\recfunctions.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\lib\
+ecfunctions.py',
    'PYMODULE'),
   ('numpy.lib.scimath',
    'C:\\Users\\Maple '
@@ -1370,15 +1388,18 @@
    'PYMODULE'),
   ('numpy.random',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\__init__.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\__init__.py',
    'PYMODULE'),
   ('numpy.random._pickle',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_pickle.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_pickle.py',
    'PYMODULE'),
   ('numpy.rec',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\rec\\__init__.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+ec\\__init__.py',
    'PYMODULE'),
   ('numpy.strings',
    'C:\\Users\\Maple '
@@ -1478,7 +1499,8 @@
    'PYMODULE'),
   ('packaging.requirements',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\packaging\\requirements.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\packaging\
+equirements.py',
    'PYMODULE'),
   ('packaging.specifiers',
    'C:\\Users\\Maple '
@@ -1710,7 +1732,8 @@
    'PYMODULE'),
   ('pandas.core.array_algos.replace',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\array_algos\\replace.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\array_algos\
+eplace.py',
    'PYMODULE'),
   ('pandas.core.array_algos.take',
    'C:\\Users\\Maple '
@@ -2062,7 +2085,8 @@
    'PYMODULE'),
   ('pandas.core.indexes.range',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\indexes\\range.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\indexes\
+ange.py',
    'PYMODULE'),
   ('pandas.core.indexes.timedeltas',
    'C:\\Users\\Maple '
@@ -2194,51 +2218,64 @@
    'PYMODULE'),
   ('pandas.core.resample',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\resample.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+esample.py',
    'PYMODULE'),
   ('pandas.core.reshape',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\__init__.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\__init__.py',
    'PYMODULE'),
   ('pandas.core.reshape.api',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\api.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\api.py',
    'PYMODULE'),
   ('pandas.core.reshape.concat',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\concat.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\concat.py',
    'PYMODULE'),
   ('pandas.core.reshape.encoding',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\encoding.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\encoding.py',
    'PYMODULE'),
   ('pandas.core.reshape.melt',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\melt.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\melt.py',
    'PYMODULE'),
   ('pandas.core.reshape.merge',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\merge.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\merge.py',
    'PYMODULE'),
   ('pandas.core.reshape.pivot',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\pivot.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\pivot.py',
    'PYMODULE'),
   ('pandas.core.reshape.reshape',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\reshape.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\
+eshape.py',
    'PYMODULE'),
   ('pandas.core.reshape.tile',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\tile.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\tile.py',
    'PYMODULE'),
   ('pandas.core.reshape.util',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\reshape\\util.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+eshape\\util.py',
    'PYMODULE'),
   ('pandas.core.roperator',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\roperator.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\
+operator.py',
    'PYMODULE'),
   ('pandas.core.sample',
    'C:\\Users\\Maple '
@@ -2334,7 +2371,8 @@
    'PYMODULE'),
   ('pandas.core.window.rolling',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\window\\rolling.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\core\\window\
+olling.py',
    'PYMODULE'),
   ('pandas.errors',
    'C:\\Users\\Maple '
@@ -2518,7 +2556,8 @@
    'PYMODULE'),
   ('pandas.io.parsers.readers',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\io\\parsers\\readers.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\io\\parsers\
+eaders.py',
    'PYMODULE'),
   ('pandas.io.pickle',
    'C:\\Users\\Maple '
@@ -2942,7 +2981,8 @@
    'PYMODULE'),
   ('pydantic.root_model',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pydantic\\root_model.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pydantic\
+oot_model.py',
    'PYMODULE'),
   ('pydantic.schema',
    'C:\\Users\\Maple '
@@ -3138,15 +3178,18 @@
    'PYMODULE'),
   ('random',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\random.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\
+andom.py',
    'PYMODULE'),
   ('rlcompleter',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\rlcompleter.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\
+lcompleter.py',
    'PYMODULE'),
   ('runpy',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\runpy.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\
+unpy.py',
    'PYMODULE'),
   ('secrets',
    'C:\\Users\\Maple '
@@ -3514,7 +3557,8 @@
    'PYMODULE'),
   ('setuptools._vendor.more_itertools.recipes',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\more_itertools\\recipes.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\more_itertools\
+ecipes.py',
    'PYMODULE'),
   ('setuptools._vendor.packaging',
    'C:\\Users\\Maple '
@@ -3550,7 +3594,8 @@
    'PYMODULE'),
   ('setuptools._vendor.packaging.requirements',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\packaging\\requirements.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\packaging\
+equirements.py',
    'PYMODULE'),
   ('setuptools._vendor.packaging.specifiers',
    'C:\\Users\\Maple '
@@ -3686,7 +3731,8 @@
    'PYMODULE'),
   ('setuptools._vendor.wheel.vendored.packaging.requirements',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\wheel\\vendored\\packaging\\requirements.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\setuptools\\_vendor\\wheel\\vendored\\packaging\
+equirements.py',
    'PYMODULE'),
   ('setuptools._vendor.wheel.vendored.packaging.specifiers',
    'C:\\Users\\Maple '
@@ -4019,33 +4065,44 @@
    'PYMODULE'),
   ('trading_lab.monitoring.rsiqui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\\rsiqui\\__init__.py',
+   'Razer\\Desktop\\trading_lab\\monitoring\
+siqui\\__init__.py',
    'PYMODULE'),
   ('trading_lab.monitoring.rsiqui.monitor_gui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\\rsiqui\\monitor_gui.py',
+   'Razer\\Desktop\\trading_lab\\monitoring\
+siqui\\monitor_gui.py',
    'PYMODULE'),
   ('trading_lab.monitoring.rsiqui.position_monitor',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\\rsiqui\\position_monitor.py',
+   'Razer\\Desktop\\trading_lab\\monitoring\
+siqui\\position_monitor.py',
    'PYMODULE'),
   ('trading_lab.runners',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\runners\\__init__.py',
+   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\
+unners\\__init__.py',
    'PYMODULE'),
   ('trading_lab.runners.mt5',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\runners\\mt5\\__init__.py',
+   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\
+unners\\mt5\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_btcusd_demo',
+  ('trading_lab.runners.mt5.rsiqui_btcusd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_btcusd_demo.py',
+   'Razer\\Desktop\\trading_lab\
+unners\\mt5\
+siqui_btcusd.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_final_demo',
+  ('trading_lab.runners.mt5.rsiqui_final',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_final_demo.py',
+   'Razer\\Desktop\\trading_lab\
+unners\\mt5\
+siqui_final.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_final_trailing_demo',
+  ('trading_lab.runners.mt5.rsiqui_final_trailing',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\runners\\mt5\\rsiqui_final_trailing_demo.py',
+   'Razer\\Desktop\\trading_lab\
+unners\\mt5\
+siqui_final_trailing.py',
    'PYMODULE'),
   ('trading_lab.strategies',
    'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\strategies\\__init__.py',
@@ -4053,19 +4110,23 @@
   ('trading_lab.strategies.builtins', '-', 'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\__init__.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\__init__.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui.btcusd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\btcusd.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\btcusd.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui.final',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui\\final.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui\\final.py',
    'PYMODULE'),
   ('trading_lab.strategies.builtins.rsiqui_v3_root',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\\rsiqui_v3_root.py',
+   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+siqui_v3_root.py',
    'PYMODULE'),
   ('trading_lab.telegram_notifier',
    'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\telegram_notifier.py',
@@ -4212,11 +4273,13 @@
    'PYMODULE'),
   ('unittest.result',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\\result.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\
+esult.py',
    'PYMODULE'),
   ('unittest.runner',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\\runner.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\unittest\
+unner.py',
    'PYMODULE'),
   ('unittest.signals',
    'C:\\Users\\Maple '
@@ -4244,11 +4307,13 @@
    'PYMODULE'),
   ('urllib.request',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\\request.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\
+equest.py',
    'PYMODULE'),
   ('urllib.response',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\\response.py',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\Lib\\urllib\
+esponse.py',
    'PYMODULE'),
   ('uuid',
    'C:\\Users\\Maple '

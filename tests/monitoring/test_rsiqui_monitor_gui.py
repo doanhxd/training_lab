@@ -44,19 +44,20 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertEqual("USD", RsiquiV3MonitorApp._display_currency("USD"))
 
     def test_read_only_profile_loader_supports_final_trailing_final_and_btcusd_aliases(self) -> None:
-        final = load_read_only_profile("configs/strategies/rsiqui/final_m5_demo.json")
-        final_tr = load_read_only_profile("configs/strategies/rsiqui/final_trailing_m5_demo.json")
-        final_tr_c = load_read_only_profile("configs/strategies/rsiqui/final_trailing_c_m5_demo.json")
-        btcusd = load_read_only_profile("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        final = load_read_only_profile("configs/strategies/rsiqui/final_m5.json")
+        final_tr = load_read_only_profile("configs/strategies/rsiqui/final_trailing_m5.json")
+        final_x = load_read_only_profile("configs/strategies/rsiqui/final_x_m5.json")
+        btcusd = load_read_only_profile("configs/strategies/rsiqui/btcusd_m5.json")
 
         self.assertEqual("rsiqui_v3_final", final["strategy_key"])
         self.assertEqual("rsiqui_v3_final_trailing", final_tr["strategy_key"])
-        self.assertEqual("rsiqui_v3_final_trailing_c", final_tr_c["strategy_key"])
-        self.assertEqual("XAUUSDc", final_tr_c["symbol"])
-        self.assertEqual(0.20, final_tr_c["volume"])
-        self.assertEqual(240.0, final_tr_c["risk_usd"])
-        self.assertEqual(100.0, final_tr_c["reward_usd"])
-        self.assertEqual(5000.0, json.loads(Path("configs/strategies/rsiqui/final_trailing_c_m5_demo.json").read_text(encoding="utf-8"))["initial_equity"])
+        self.assertEqual("rsiqui_v3_final_x", final_x["strategy_key"])
+        self.assertEqual("XAUUSDc", final_x["symbol"])
+        self.assertEqual(0.10, final_x["volume"])
+        self.assertEqual(100.0, final_x["risk_usd"])
+        self.assertEqual(30.0, final_x["reward_usd"])
+        self.assertEqual(0.3, final_x["max_spread"])
+        self.assertEqual(5000.0, json.loads(Path("configs/strategies/rsiqui/final_x_m5.json").read_text(encoding="utf-8"))["initial_equity"])
         self.assertEqual("immediate_signal", final_tr["entry_mode"])
         self.assertEqual("rsiqui_v3_btcusd", btcusd["strategy_key"])
         self.assertEqual(0.03, final["volume"])
@@ -152,7 +153,7 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         running = RsiquiV3MonitorApp._summarize_bot_status(
             "rsiqui_v3_final",
             True,
-            (RunnerView(strategy_key="rsiqui_v3_final", label="rsiqui_v3_final", pid=4321, command="python runners/mt5/rsiqui_final_demo.py"),),
+            (RunnerView(strategy_key="rsiqui_v3_final", label="rsiqui_v3_final", pid=4321, command="python runners/mt5/rsiqui_final.py"),),
         )
         stopped = RsiquiV3MonitorApp._summarize_bot_status("rsiqui_v3_final", True, ())
 
@@ -167,16 +168,16 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
 
         self.assertTrue(command[0])
         self.assertEqual("-m", command[1])
-        self.assertEqual("trading_lab.runners.mt5.rsiqui_final_demo", command[2])
+        self.assertEqual("trading_lab.runners.mt5.rsiqui_final", command[2])
         self.assertEqual("--config", command[3])
-        self.assertTrue(command[4].endswith("final_m5_demo.json"))
-        self.assertEqual("trading_lab.runners.mt5.rsiqui_btcusd_demo", btcusd_command[2])
-        self.assertTrue(btcusd_command[4].endswith("btcusd_m5_demo.json"))
+        self.assertTrue(command[4].endswith("final_m5.json"))
+        self.assertEqual("trading_lab.runners.mt5.rsiqui_btcusd", btcusd_command[2])
+        self.assertTrue(btcusd_command[4].endswith("btcusd_m5.json"))
 
     def test_monitor_defaults_to_final_config_and_wider_log_column(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
-        self.assertIn('default=str(CONFIG_ROOT / "final_trailing_m5_demo.json")', source)
+        self.assertIn('default=str(CONFIG_ROOT / "final_trailing_m5.json")', source)
         self.assertIn('profile.get("strategy_key", "rsiqui_v3_final_trailing")', source)
         self.assertIn('body.grid_columnconfigure(0, weight=5, uniform="main")', source)
         self.assertIn('body.grid_columnconfigure(1, weight=6, uniform="main")', source)
@@ -250,7 +251,7 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertIn("rsiqui_v3_final", source)
         self.assertIn("rsiqui_v3_btcusd", source)
         self.assertIn('"F Root"', source)
-        self.assertIn('"F Trailing"', source)
+        self.assertIn('"F TRL"', source)
         self.assertIn('"BTC"', source)
         self.assertNotIn("CHẠY BOT", source)
         self.assertIn("BẢNG LOG TÍN HIỆU", source)

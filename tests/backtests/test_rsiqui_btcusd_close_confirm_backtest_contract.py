@@ -61,8 +61,8 @@ class RsiquiBtcusdBacktestCloseConfirmContractTests(unittest.TestCase):
                 self.assertNotIn(".initialize(", source)
 
     def test_negative_r_config_is_separate_btcusd_contract(self) -> None:
-        base = json.loads((ROOT / "configs/strategies/rsiqui/btcusd_m5_demo.json").read_text(encoding="utf-8"))
-        negative = json.loads((ROOT / "configs/strategies/rsiqui/btcusd_negative_r_m5_demo.json").read_text(encoding="utf-8"))
+        base = json.loads((ROOT / "configs/strategies/rsiqui/btcusd_m5.json").read_text(encoding="utf-8"))
+        negative = json.loads((ROOT / "configs/strategies/rsiqui/btcusd_negative_r_m5.json").read_text(encoding="utf-8"))
         script = (ROOT / "scripts/run_rsiqui_btcusd_negative_r_20260101_m5_backtest.py").read_text(encoding="utf-8")
 
         self.assertEqual("BTCUSD", negative["symbol"])
@@ -74,7 +74,7 @@ class RsiquiBtcusdBacktestCloseConfirmContractTests(unittest.TestCase):
         self.assertEqual(10.0, negative["max_spread"])
         self.assertEqual(10, base["risk_usd"])
         self.assertEqual(10, base["reward_usd"])
-        self.assertIn("btcusd_negative_r_m5_demo.json", script)
+        self.assertIn("btcusd_negative_r_m5.json", script)
         self.assertIn("negativeR_closeconfirm", script)
 
 

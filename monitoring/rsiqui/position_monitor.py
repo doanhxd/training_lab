@@ -8,13 +8,14 @@ from typing import Any, Callable, Iterable
 RSIQUI_V3_COMMENT = "DoanhHD - RSIQUI V3"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
 BOT_MAGIC_LABELS = {
-    573503: "Fn",
-    573504: "FTL",
-    573505: "BTC",
+    573503: "FNL",
+    573504: "FTR",
+    573505: "VIP",
+
 }
 RUNNER_IDENTIFIERS = {
-    "rsiqui_v3_final": ("rsiqui_final_demo.py", "trading_lab.runners.mt5.rsiqui_final_demo", "rsiqui_final_demo"),
-    "rsiqui_v3_btcusd": ("rsiqui_btcusd_demo.py", "trading_lab.runners.mt5.rsiqui_btcusd_demo", "rsiqui_btcusd_demo"),
+    "rsiqui_v3_final": ("rsiqui_final.py", "trading_lab.runners.mt5.rsiqui_final", "rsiqui_final"),
+    "rsiqui_v3_btcusd": ("rsiqui_btcusd.py", "trading_lab.runners.mt5.rsiqui_btcusd", "rsiqui_btcusd"),
 }
 
 
@@ -79,7 +80,7 @@ class HistoryStats:
 
 
 class RsiquiV3PositionMonitor:
-    """Read-only MT5 position monitor for the RSIQUI V3 demo runner.
+    """Read-only MT5 position monitor for the RSIQUI V3 paper runner.
 
     This class never authenticates, evaluates signals, sends orders, closes positions,
     or changes MT5 state. It reads the account currently connected in MT5 only.

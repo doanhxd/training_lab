@@ -25,7 +25,7 @@ from trading_lab.strategies.builtins.rsiqui.final import (
 )
 
 RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "XAUUSDm_M5_202501012305_202608030115.csv"
-CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "final_m5_demo.json"
+CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "final_m5.json"
 SYMBOL = "XAUUSD"
 TIMEFRAME = "5m"
 REQUESTED_START_UTC = pd.Timestamp("2026-01-01T00:00:00Z")

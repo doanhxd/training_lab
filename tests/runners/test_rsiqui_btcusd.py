@@ -5,11 +5,11 @@ from types import SimpleNamespace
 import unittest
 from dataclasses import replace
 
-from trading_lab.runners.mt5.rsiqui_btcusd_demo import DemoOnlyRsiquiMt5Runner, load_demo_config
+from trading_lab.runners.mt5.rsiqui_btcusd import PaperOnlyRsiquiMt5Runner, load_config
 
 
 class FakeMt5:
-    ACCOUNT_TRADE_MODE_DEMO = 0
+    ACCOUNT_TRADE_MODE_PAPER = 0
     TIMEFRAME_M5 = 5
     TRADE_ACTION_DEAL = 1
     TRADE_ACTION_SLTP = 2
@@ -33,7 +33,7 @@ class FakeMt5:
         pass
 
     def account_info(self):
-        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_DEMO, equity=10_000.0)
+        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_PAPER, equity=10_000.0)
 
     def symbol_select(self, symbol: str, enabled: bool) -> bool:
         self.selected_symbols.append(symbol)
@@ -82,10 +82,10 @@ class FillMt5(FakeMt5):
 
 class RsiquiBtcusdContractTests(unittest.TestCase):
     def test_loads_btcusd_config_as_distinct_strategy(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/btcusd_m5.json")
 
         self.assertEqual("BTCUSD", config.symbol)
-        self.assertEqual(("BTCUSD",), DemoOnlyRsiquiMt5Runner(config, mt5=FakeMt5())._symbols_to_guard())
+        self.assertEqual(("BTCUSD",), PaperOnlyRsiquiMt5Runner(config, mt5=FakeMt5())._symbols_to_guard())
         self.assertEqual("M5", config.timeframe)
         self.assertEqual("gold-loose", config.preset)
         self.assertEqual("immediate_signal", config.entry_mode)
@@ -98,10 +98,10 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertFalse(config.telegram_enabled)
 
     def test_immediate_entry_mode_matches_final_execution_path(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/btcusd_m5.json")
         config = replace(config, symbol_candidates=("BTCUSD",))
         mt5 = FillMt5()
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=mt5)
         self.assertTrue(runner.start())
         runner._evaluate_signal_bar = lambda bar_time, active: ("long", bar_time)  # type: ignore[method-assign]
         runner._build_request = lambda side: {"symbol": "BTCUSD", "price": 100.0, "sl": 90.0, "tp": 110.0}  # type: ignore[method-assign]
@@ -111,9 +111,9 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertIn("immediate signal bar", runner.last_status)
 
     def test_btcusd_build_request_uses_btc_symbol_and_contract(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/btcusd_m5.json")
         mt5 = FakeMt5()
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=mt5)
 
         self.assertTrue(runner.start())
         request = runner._build_request("long")
@@ -135,10 +135,10 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertEqual([], mt5.sent_orders)
 
     def test_poll_once_waits_until_m5_preclose_window(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/btcusd_m5.json")
         config = replace(config, entry_mode="close_confirm")
         mt5 = FillMt5()
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=mt5)
         self.assertTrue(runner.start())
         runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)  # type: ignore[method-assign]
         runner._build_request = lambda side: {"symbol": "BTCUSD", "price": 100.0, "sl": 90.0, "tp": 110.0}  # type: ignore[method-assign]
@@ -150,10 +150,10 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertEqual([], mt5.sent_orders)
 
     def test_poll_once_previews_then_submits_after_candle_close(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/btcusd_m5.json")
         config = replace(config, entry_mode="close_confirm")
         mt5 = FillMt5()
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=mt5)
         self.assertTrue(runner.start())
         runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)  # type: ignore[method-assign]
         runner.evaluate_confirmed_close_bar = lambda bar_time: ("long", bar_time)  # type: ignore[method-assign]
@@ -167,11 +167,11 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertIn("Duplicate close confirmation", runner.last_status)
 
     def test_open_position_skips_the_current_preclose_bar(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/btcusd_m5.json")
         config = replace(config, entry_mode="close_confirm")
         mt5 = FillMt5()
         mt5.has_open_position = True
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=mt5)
         self.assertTrue(runner.start())
         runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)  # type: ignore[method-assign]
         runner._build_request = lambda side: {"symbol": "BTCUSD", "price": 100.0, "sl": 90.0, "tp": 110.0}  # type: ignore[method-assign]
@@ -184,7 +184,7 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
         self.assertIn("duplicate pre-close preview", runner.last_status)
 
     def test_btcusd_trailing_contract(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/btcusd_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/btcusd_m5.json")
 
         class TrailingMt5(FakeMt5):
             TRADE_ACTION_SLTP = 2
@@ -209,7 +209,7 @@ class RsiquiBtcusdContractTests(unittest.TestCase):
                 return SimpleNamespace(retcode=self.TRADE_RETCODE_DONE)
 
         mt5 = TrailingMt5()
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=mt5)
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=mt5)
         self.assertTrue(runner.start())
         self.assertTrue(runner._trail_open_position())
         self.assertAlmostEqual(100.0 + 4.0 / (config.volume_lots * config.price_value_per_lot), mt5.position.sl, places=2)

@@ -6,18 +6,19 @@ import math
 from pathlib import Path
 from typing import Any
 
-from trading_lab.runners.mt5.rsiqui_final_demo import (
-    DemoOnlyRsiquiMt5Runner as FinalRunner,
-    Mt5DemoConfig,
+from trading_lab.runners.mt5.rsiqui_final import (
+    PaperOnlyRsiquiMt5Runner as FinalRunner,
+    Mt5Config,
 )
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CONFIG = ROOT / "configs" / "strategies" / "rsiqui" / "final_trailing_m5_demo.json"
+DEFAULT_CONFIG = ROOT / "configs" / "strategies" / "rsiqui" / "final_trailing_m5.json"
 
 
 @dataclass(frozen=True)
-class FinalTrailingConfig(Mt5DemoConfig):
+class FinalTrailingConfig(Mt5Config):
+    trailing_enabled: bool = True
     trailing_activation_price_distance: float = 2.0
     trailing_locked_profit_usd: float = 4.0
     trailing_step_price: float = 0.5
@@ -31,11 +32,11 @@ def _resolve_config_path(path: str | Path) -> Path:
     return config_path
 
 
-def load_demo_config(path: str | Path = DEFAULT_CONFIG) -> Mt5DemoConfig:
+def load_config(path: str | Path = DEFAULT_CONFIG) -> Mt5Config:
     config_path = _resolve_config_path(path)
     payload = json.loads(config_path.read_text(encoding="utf-8"))
-    if payload.get("strategy") not in {"rsiqui-v3-final-trailing", "rsiqui-v3-final-trailing-c"}:
-        raise ValueError("runner accepts only strategy rsiqui-v3-final-trailing or rsiqui-v3-final-trailing-c")
+    if payload.get("strategy") not in {"rsiqui-v3-final-trailing", "rsiqui-v3-final-x"}:
+        raise ValueError("runner accepts only strategy rsiqui-v3-final-trailing or rsiqui-v3-final-x")
     timeframe = str(payload["timeframe"]).upper()
     timeframe = {"5M": "M5", "15M": "M15"}.get(timeframe, timeframe)
     if timeframe not in {"M5", "M15"}:
@@ -62,6 +63,7 @@ def load_demo_config(path: str | Path = DEFAULT_CONFIG) -> Mt5DemoConfig:
         telegram_enabled=bool(payload.get("telegram_enabled", False)),
         status_log_interval_seconds=float(payload.get("status_log_interval_seconds", 300.0)),
         magic=int(payload.get("magic", 573504)),
+        trailing_enabled=bool(payload.get("trailing_enabled", True)),
         trailing_activation_price_distance=float(
             payload.get(
                 "trailing_activation_price_distance",
@@ -81,10 +83,10 @@ def load_demo_config(path: str | Path = DEFAULT_CONFIG) -> Mt5DemoConfig:
     return config
 
 
-class DemoOnlyRsiquiFinalTrailingMt5Runner(FinalRunner):
+class PaperOnlyRsiquiFinalTrailingMt5Runner(FinalRunner):
     """FINAL replacement with +2.0 price activation, +$4 lock, 0.5-price steps."""
 
-    def __init__(self, config: Mt5DemoConfig, *, mt5: Any, notifier: Any = None) -> None:
+    def __init__(self, config: Mt5Config, *, mt5: Any, notifier: Any = None) -> None:
         super().__init__(config, mt5=mt5, notifier=notifier)
         self.trailing_activation_price_distance = config.trailing_activation_price_distance
         self.trailing_locked_profit_usd = config.trailing_locked_profit_usd
@@ -94,6 +96,8 @@ class DemoOnlyRsiquiFinalTrailingMt5Runner(FinalRunner):
         return profit_usd / max(volume_lots * self.config.price_value_per_lot, 1e-12)
 
     def _trail_open_position(self) -> bool:
+        if not self.config.trailing_enabled:
+            return False
         positions_get = getattr(self.mt5, "positions_get", None)
         if positions_get is None:
             return False
@@ -184,14 +188,14 @@ def main() -> None:
     parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--status-log-interval-seconds", type=float, default=None)
     args = parser.parse_args()
-    config = load_demo_config(args.config)
+    config = load_config(args.config)
     overrides = {"poll_seconds": args.poll_seconds}
     if args.symbol is not None:
         overrides["symbol"] = args.symbol
     if args.status_log_interval_seconds is not None:
         overrides["status_log_interval_seconds"] = args.status_log_interval_seconds
     config = replace(config, **overrides)
-    DemoOnlyRsiquiFinalTrailingMt5Runner(config, mt5=mt5).run_forever()
+    PaperOnlyRsiquiFinalTrailingMt5Runner(config, mt5=mt5).run_forever()
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import os
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_RUNNER = ROOT / "scripts" / "run_rsiqui_final_20260101_present_m5_sl24_tp9_vol003_eq700_spread04_backtest.py"
-CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / os.environ.get("FINAL_TRAILING_BACKTEST_CONFIG", "final_trailing_m5_demo.json")
+CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / os.environ.get("FINAL_TRAILING_BACKTEST_CONFIG", "final_trailing_m5.json")
 RAW_CSV_NAME = os.environ.get("FINAL_TRAILING_BACKTEST_RAW_CSV", "XAUUSD_M5_202601012305_202608030925.csv")
 START_UTC = os.environ.get("FINAL_TRAILING_BACKTEST_START_UTC", "2026-01-01")
 PERIOD_LABEL = os.environ.get("FINAL_TRAILING_BACKTEST_PERIOD_LABEL", "20260101_present")

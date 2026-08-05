@@ -5,8 +5,8 @@ import inspect
 from types import SimpleNamespace
 import unittest
 
-import trading_lab.runners.mt5.rsiqui_btcusd_demo as btcusd_demo
-import trading_lab.runners.mt5.rsiqui_final_demo as final_demo
+import trading_lab.runners.mt5.rsiqui_btcusd as btcusd_module
+import trading_lab.runners.mt5.rsiqui_final as final_module
 
 
 class FakeResult:
@@ -15,7 +15,7 @@ class FakeResult:
 
 
 class FakeMt5:
-    ACCOUNT_TRADE_MODE_DEMO = 0
+    ACCOUNT_TRADE_MODE_PAPER = 0
     TIMEFRAME_M5 = 5
     TIMEFRAME_M15 = 15
     TRADE_ACTION_DEAL = 1
@@ -42,7 +42,7 @@ class FakeMt5:
         pass
 
     def account_info(self):
-        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_DEMO, equity=10_000.0)
+        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_PAPER, equity=10_000.0)
 
     def symbol_select(self, symbol: str, enabled: bool) -> bool:
         self.selected_symbols.append(symbol)
@@ -73,17 +73,17 @@ class FakeMt5:
 
 
 VARIANTS = (
-    ("FINAL", final_demo, "XAUUSD"),
-    ("BTCUSD", btcusd_demo, "BTCUSD"),
+    ("FINAL", final_module, "XAUUSD"),
+    ("BTCUSD", btcusd_module, "BTCUSD"),
 )
 
 
 def make_config(module, symbol: str):
     kwargs = {"symbol": symbol, "timeframe": "M5", "telegram_enabled": False}
     try:
-        return module.Mt5DemoConfig(**kwargs, max_open_positions=1)
+        return module.Mt5Config(**kwargs, max_open_positions=1)
     except TypeError:
-        return module.Mt5DemoConfig(**kwargs)
+        return module.Mt5Config(**kwargs)
 
 
 class RsiquiAllVariantEntryContractTests(unittest.TestCase):
@@ -91,7 +91,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
         for label, module, symbol in VARIANTS:
             with self.subTest(label=label):
                 config = make_config(module, symbol)
-                runner = module.DemoOnlyRsiquiMt5Runner(config, mt5=FakeMt5(symbol))
+                runner = module.PaperOnlyRsiquiMt5Runner(config, mt5=FakeMt5(symbol))
                 source = inspect.getsource(runner.poll_once)
 
                 self.assertEqual(1.0, config.poll_seconds)
@@ -101,7 +101,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
     def test_all_variants_terminal_status_lines_include_time_only(self) -> None:
         for label, module, symbol in VARIANTS:
             with self.subTest(label=label):
-                runner = module.DemoOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=FakeMt5(symbol))
+                runner = module.PaperOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=FakeMt5(symbol))
                 runner.last_status = "waiting: test status"
 
                 status_line = runner._terminal_status_line()
@@ -113,7 +113,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
         for label, module, symbol in VARIANTS:
             with self.subTest(label=label):
                 mt5 = FakeMt5(symbol)
-                runner = module.DemoOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
+                runner = module.PaperOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
                 calls: list[int] = []
                 runner.evaluate_preclose_bar = lambda bar_time: (calls.append(bar_time) or ("long", bar_time))
 
@@ -129,7 +129,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
         for label, module, symbol in VARIANTS:
             with self.subTest(label=label):
                 mt5 = FakeMt5(symbol)
-                runner = module.DemoOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
+                runner = module.PaperOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
                 preclose_calls: list[int] = []
                 close_calls: list[int] = []
                 runner.evaluate_preclose_bar = lambda bar_time: (preclose_calls.append(bar_time) or ("long", bar_time))
@@ -149,7 +149,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
         for label, module, symbol in VARIANTS:
             with self.subTest(label=label):
                 mt5 = FakeMt5(symbol)
-                runner = module.DemoOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
+                runner = module.PaperOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
                 runner.evaluate_preclose_bar = lambda bar_time: ("short", bar_time)
                 runner.evaluate_confirmed_close_bar = lambda bar_time: ("long", bar_time)
                 runner._build_request = lambda side: {"symbol": symbol, "price": 100.0, "sl": 90.0, "tp": 110.0}
@@ -165,7 +165,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
         for label, module, symbol in VARIANTS:
             with self.subTest(label=label):
                 mt5 = FakeMt5(symbol)
-                runner = module.DemoOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
+                runner = module.PaperOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
                 runner.evaluate_confirmed_close_bar = lambda bar_time: ("long", bar_time)
                 runner._build_request = lambda side: {"symbol": symbol, "price": 100.0, "sl": 90.0, "tp": 110.0}
 
@@ -180,7 +180,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
             with self.subTest(label=label):
                 mt5 = FakeMt5(symbol)
                 mt5.positions = (object(),)
-                runner = module.DemoOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
+                runner = module.PaperOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
                 preclose_calls: list[int] = []
                 close_calls: list[int] = []
                 runner.evaluate_preclose_bar = lambda bar_time: (preclose_calls.append(bar_time) or ("long", bar_time))
@@ -201,7 +201,7 @@ class RsiquiAllVariantEntryContractTests(unittest.TestCase):
         for label, module, symbol in VARIANTS:
             with self.subTest(label=label):
                 mt5 = FakeMt5(symbol)
-                runner = module.DemoOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
+                runner = module.PaperOnlyRsiquiMt5Runner(make_config(module, symbol), mt5=mt5)
                 runner.evaluate_preclose_bar = lambda bar_time: ("long", bar_time)
                 runner.evaluate_confirmed_close_bar = lambda bar_time: ("long", bar_time)
                 runner._build_request = lambda side: {"symbol": symbol, "price": 100.0, "sl": 90.0, "tp": 110.0}

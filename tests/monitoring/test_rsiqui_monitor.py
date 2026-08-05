@@ -24,7 +24,7 @@ class FakeMt5:
         self.broker_symbols = ()
         self.deals = ()
         self.history_args = None
-        self.account = SimpleNamespace(login=7123456, server="Demo-Server", balance=10_000.0, equity=10_012.5, currency="USD")
+        self.account = SimpleNamespace(login=7123456, server="Paper-Server", balance=10_000.0, equity=10_012.5, currency="USD")
 
     def initialize(self) -> bool:
         self.initialized = True
@@ -94,7 +94,7 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
     def test_snapshot_marks_rsiqui_v3_and_manual_positions_without_trading(self) -> None:
         mt5 = FakeMt5()
         mt5.positions = (
-            position(ticket=1001, side=mt5.POSITION_TYPE_BUY, comment="RSIQUI V3 DEMO", profit=4.5),
+            position(ticket=1001, side=mt5.POSITION_TYPE_BUY, comment="RSIQUI V3 PAPER", profit=4.5),
             position(ticket=1002, side=mt5.POSITION_TYPE_SELL, comment="manual", profit=-2.0),
             position(ticket=1003, side=mt5.POSITION_TYPE_BUY, comment="DoanhHD_Trader B", profit=1.95, symbol="BTCUSD"),
             position(ticket=1004, side=mt5.POSITION_TYPE_BUY, comment="other", profit=0.5, symbol="EURUSD"),
@@ -117,7 +117,7 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
     def test_refresh_logs_open_and_close_transitions_once(self) -> None:
         mt5 = FakeMt5()
         monitor = RsiquiV3PositionMonitor(symbol="XAUUSD", mt5=mt5, process_iter=lambda: ())
-        mt5.positions = (position(ticket=1001, side=mt5.POSITION_TYPE_BUY, comment="RSIQUI V3 DEMO", profit=1.0),)
+        mt5.positions = (position(ticket=1001, side=mt5.POSITION_TYPE_BUY, comment="RSIQUI V3 PAPER", profit=1.0),)
 
         first = monitor.refresh()
         second = monitor.refresh()
@@ -187,8 +187,8 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
             symbol="XAUUSD",
             mt5=mt5,
             process_iter=lambda: (
-                FakeProcess(1201, "python", "runners/mt5/rsiqui_final_demo.py", "--config", "final_m5_demo.json"),
-                FakeProcess(1203, "python", "-m", "trading_lab.runners.mt5.rsiqui_btcusd_demo", "--config", "btcusd_m5_demo.json"),
+                FakeProcess(1201, "python", "runners/mt5/rsiqui_final.py", "--config", "final_m5.json"),
+                FakeProcess(1203, "python", "-m", "trading_lab.runners.mt5.rsiqui_btcusd", "--config", "btcusd_m5.json"),
                 FakeProcess(1202, "python", "something_else.py"),
             ),
         )

@@ -3,11 +3,11 @@ from __future__ import annotations
 from types import SimpleNamespace
 import unittest
 
-from trading_lab.runners.mt5.rsiqui_final_demo import DemoOnlyRsiquiMt5Runner, load_demo_config
+from trading_lab.runners.mt5.rsiqui_final import PaperOnlyRsiquiMt5Runner, load_config
 
 
 class FakeMt5:
-    ACCOUNT_TRADE_MODE_DEMO = 0
+    ACCOUNT_TRADE_MODE_PAPER = 0
     TIMEFRAME_M5 = 5
     TRADE_ACTION_DEAL = 1
     ORDER_TYPE_BUY = 0
@@ -30,7 +30,7 @@ class FakeMt5:
         pass
 
     def account_info(self):
-        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_DEMO, equity=10_000.0)
+        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_PAPER, equity=10_000.0)
 
     def symbol_select(self, symbol: str, enabled: bool) -> bool:
         self.selected_symbols.append(symbol)
@@ -59,7 +59,7 @@ class FakeMt5:
 
 class RsiquiFinalSingleSymbolContractTests(unittest.TestCase):
     def test_loads_final_contract_as_single_xauusd_symbol(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/final_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/final_m5.json")
 
         self.assertEqual("XAUUSD", config.symbol)
         self.assertEqual(0.03, config.volume_lots)
@@ -73,8 +73,8 @@ class RsiquiFinalSingleSymbolContractTests(unittest.TestCase):
 
 
     def test_final_runner_uses_xauusd_only(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/final_m5_demo.json")
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=FakeMt5())
+        config = load_config("configs/strategies/rsiqui/final_m5.json")
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=FakeMt5())
 
         self.assertEqual("XAUUSD", runner._active_symbol())
         self.assertEqual(("XAUUSD",), runner._symbols_required_for_start())
@@ -83,8 +83,8 @@ class RsiquiFinalSingleSymbolContractTests(unittest.TestCase):
         self.assertEqual(["XAUUSD"], runner.mt5.selected_symbols)
 
     def test_build_request_uses_weekday_final_money_contract_only(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/final_m5_demo.json")
-        runner = DemoOnlyRsiquiMt5Runner(config, mt5=FakeMt5())
+        config = load_config("configs/strategies/rsiqui/final_m5.json")
+        runner = PaperOnlyRsiquiMt5Runner(config, mt5=FakeMt5())
 
         self.assertTrue(runner.start())
         request = runner._build_request("long")
@@ -104,7 +104,7 @@ class RsiquiFinalSingleSymbolContractTests(unittest.TestCase):
 
     def test_position_guard_checks_xauusd_only(self) -> None:
         mt5 = FakeMt5()
-        runner = DemoOnlyRsiquiMt5Runner(load_demo_config("configs/strategies/rsiqui/final_m5_demo.json"), mt5=mt5)
+        runner = PaperOnlyRsiquiMt5Runner(load_config("configs/strategies/rsiqui/final_m5.json"), mt5=mt5)
 
         self.assertFalse(runner._open_positions_exist())
         self.assertEqual(["XAUUSD"], mt5.position_symbols)

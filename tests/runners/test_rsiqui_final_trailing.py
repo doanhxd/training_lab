@@ -4,14 +4,14 @@ from dataclasses import replace
 from types import SimpleNamespace
 import unittest
 
-from trading_lab.runners.mt5.rsiqui_final_trailing_demo import (
-    DemoOnlyRsiquiFinalTrailingMt5Runner,
-    load_demo_config,
+from trading_lab.runners.mt5.rsiqui_final_trailing import (
+    PaperOnlyRsiquiFinalTrailingMt5Runner,
+    load_config,
 )
 
 
 class FakeMt5:
-    ACCOUNT_TRADE_MODE_DEMO = 0
+    ACCOUNT_TRADE_MODE_PAPER = 0
     TIMEFRAME_M5 = 5
     ORDER_TYPE_BUY = 0
     ORDER_TYPE_SELL = 1
@@ -35,7 +35,7 @@ class FakeMt5:
         return True
 
     def account_info(self):
-        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_DEMO, equity=600.0)
+        return SimpleNamespace(trade_mode=self.ACCOUNT_TRADE_MODE_PAPER, equity=600.0)
 
     def symbol_select(self, symbol: str, enabled: bool) -> bool:
         return True
@@ -68,22 +68,39 @@ class FakeMt5:
 
 class FinalTrailingTests(unittest.TestCase):
     def test_config_is_distinct_and_has_requested_contract(self) -> None:
-        config = load_demo_config("configs/strategies/rsiqui/final_trailing_m5_demo.json")
+        config = load_config("configs/strategies/rsiqui/final_trailing_m5.json")
         self.assertEqual("0.02", f"{config.volume_lots:.2f}")
         self.assertEqual(24.0, config.risk_usd)
         self.assertEqual(10.0, config.reward_usd)
-        self.assertEqual("XAUUSDc", config.symbol)
-        self.assertEqual(("XAUUSDc", "XAUUSD"), config.symbol_candidates)
+        self.assertEqual("XAUUSD", config.symbol)
+        self.assertEqual(("XAUUSD",), config.symbol_candidates)
         self.assertEqual(573504, config.magic)
 
         self.assertEqual(2.0, config.trailing_activation_price_distance)
         self.assertEqual(3.0, config.trailing_locked_profit_usd)
         self.assertEqual(0.5, config.trailing_step_price)
 
+    def test_final_x_is_non_trailing_and_keeps_original_price_distances(self) -> None:
+        config = load_config("configs/strategies/rsiqui/final_x_m5.json")
+
+        self.assertFalse(config.trailing_enabled)
+        self.assertEqual("0.10", f"{config.volume_lots:.2f}")
+        self.assertEqual(100.0, config.risk_usd)
+        self.assertEqual(30.0, config.reward_usd)
+        self.assertEqual(0.3, config.max_spread_price)
+        self.assertAlmostEqual(10.0, config.risk_usd / (config.volume_lots * config.price_value_per_lot))
+        self.assertAlmostEqual(3.0, config.reward_usd / (config.volume_lots * config.price_value_per_lot))
+
+        mt5 = FakeMt5(bid=2302.51)
+        runner = PaperOnlyRsiquiFinalTrailingMt5Runner(config, mt5=mt5)
+        self.assertTrue(runner.start())
+        self.assertFalse(runner._trail_open_position())
+        self.assertEqual([], mt5.orders)
+
     def test_c_symbol_fallback_resolves_and_trails_on_xauusdc(self) -> None:
-        config = replace(load_demo_config(), symbol="XAUUSD", symbol_candidates=("XAUUSD",))
+        config = replace(load_config(), symbol="XAUUSD", symbol_candidates=("XAUUSD",))
         mt5 = FakeMt5(bid=2302.01)
-        runner = DemoOnlyRsiquiFinalTrailingMt5Runner(config, mt5=mt5)
+        runner = PaperOnlyRsiquiFinalTrailingMt5Runner(config, mt5=mt5)
 
         self.assertTrue(runner.start())
         self.assertEqual("XAUUSDc", runner._active_symbol())
@@ -92,7 +109,7 @@ class FinalTrailingTests(unittest.TestCase):
 
     def test_trigger_locks_3_and_ratchets_by_half_price_steps(self) -> None:
         mt5 = FakeMt5(bid=2302.01)  # just above +2.0 price / +$6.00
-        runner = DemoOnlyRsiquiFinalTrailingMt5Runner(load_demo_config(), mt5=mt5)
+        runner = PaperOnlyRsiquiFinalTrailingMt5Runner(load_config(), mt5=mt5)
         self.assertTrue(runner.start())
 
         self.assertTrue(runner._trail_open_position())
@@ -111,7 +128,7 @@ class FinalTrailingTests(unittest.TestCase):
 
     def test_at_or_below_activation_does_not_move_sl(self) -> None:
         mt5 = FakeMt5(bid=2302.00)  # exactly +2.0 price / +$6.00: strict trigger is not met
-        runner = DemoOnlyRsiquiFinalTrailingMt5Runner(load_demo_config(), mt5=mt5)
+        runner = PaperOnlyRsiquiFinalTrailingMt5Runner(load_config(), mt5=mt5)
         self.assertTrue(runner.start())
 
         self.assertFalse(runner._trail_open_position())
@@ -121,7 +138,7 @@ class FinalTrailingTests(unittest.TestCase):
     def test_does_not_modify_foreign_magic_position(self) -> None:
         mt5 = FakeMt5(bid=2302.20)
         mt5.position.magic = 573503
-        runner = DemoOnlyRsiquiFinalTrailingMt5Runner(load_demo_config(), mt5=mt5)
+        runner = PaperOnlyRsiquiFinalTrailingMt5Runner(load_config(), mt5=mt5)
         self.assertTrue(runner.start())
 
         self.assertFalse(runner._trail_open_position())

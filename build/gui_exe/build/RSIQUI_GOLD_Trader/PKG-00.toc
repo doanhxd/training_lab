@@ -41,31 +41,38 @@
    'PYSOURCE'),
   ('pyi_rth_inspect',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\
+thooks\\pyi_rth_inspect.py',
    'PYSOURCE'),
   ('pyi_rth_pkgutil',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\
+thooks\\pyi_rth_pkgutil.py',
    'PYSOURCE'),
   ('pyi_rth_multiprocessing',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_multiprocessing.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\
+thooks\\pyi_rth_multiprocessing.py',
    'PYSOURCE'),
   ('pyi_rth_setuptools',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\
+thooks\\pyi_rth_setuptools.py',
    'PYSOURCE'),
   ('pyi_rth_pkgres',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgres.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\
+thooks\\pyi_rth_pkgres.py',
    'PYSOURCE'),
   ('pyi_rth__tkinter',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth__tkinter.py',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\
+thooks\\pyi_rth__tkinter.py',
    'PYSOURCE'),
   ('monitor_gui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\\rsiqui\\monitor_gui.py',
+   'Razer\\Desktop\\trading_lab\\monitoring\
+siqui\\monitor_gui.py',
    'PYSOURCE'),
   ('python311.dll',
    'C:\\Users\\Maple '
@@ -167,41 +174,59 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\linalg\\_umath_linalg.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\mtrand.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\mtrand.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\mtrand.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\mtrand.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\bit_generator.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\bit_generator.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\bit_generator.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\bit_generator.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\_sfc64.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\_sfc64.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_sfc64.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_sfc64.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\_philox.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\_philox.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_philox.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_philox.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\_pcg64.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\_pcg64.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_pcg64.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_pcg64.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\_mt19937.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\_mt19937.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_mt19937.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_mt19937.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\_generator.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\_generator.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_generator.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_generator.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\_common.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\_common.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_common.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_common.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('numpy\\random\\_bounded_integers.cp311-win_amd64.pyd',
+  ('numpy\
+andom\\_bounded_integers.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\\random\\_bounded_integers.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy\
+andom\\_bounded_integers.cp311-win_amd64.pyd',
    'EXTENSION'),
   ('numpy\\fft\\_pocketfft_umath.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
@@ -307,9 +332,11 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\_libs\\sas.cp311-win_amd64.pyd',
    'EXTENSION'),
-  ('pandas\\_libs\\reshape.cp311-win_amd64.pyd',
+  ('pandas\\_libs\
+eshape.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\_libs\\reshape.cp311-win_amd64.pyd',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\pandas\\_libs\
+eshape.cp311-win_amd64.pyd',
    'EXTENSION'),
   ('pandas\\_libs\\properties.cp311-win_amd64.pyd',
    'C:\\Users\\Maple '
@@ -431,217 +458,323 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\configs\\strategies\\gold_bloome_v3_m5_20240101_present_vol001_risk10_tp10_eq500_spread04_slip05_monthly_reset.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\__pycache__\\btcusd_negative_r_m5_demo.cpython-311.pyc',
+  ('configs\\strategies\
+siqui\\__pycache__\\btcusd_negative_r_m5.cpython-311.pyc',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\__pycache__\\btcusd_negative_r_m5_demo.cpython-311.pyc',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\__pycache__\\btcusd_negative_r_m5.cpython-311.pyc',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_1051910961928d4c.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_1051910961928d4c.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_1051910961928d4c.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_1051910961928d4c.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_5c25d32f4844fb64.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_5c25d32f4844fb64.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_5c25d32f4844fb64.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_5c25d32f4844fb64.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_60741880b7def545.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_60741880b7def545.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_60741880b7def545.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_60741880b7def545.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_8469531b851fddd3.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_8469531b851fddd3.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_8469531b851fddd3.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_8469531b851fddd3.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_8f2826c6e1a4fcfc.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_8f2826c6e1a4fcfc.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_8f2826c6e1a4fcfc.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_8f2826c6e1a4fcfc.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_9089d7f9308f74d9.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_9089d7f9308f74d9.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_9089d7f9308f74d9.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_9089d7f9308f74d9.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_94795c8155d6245c.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_94795c8155d6245c.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_94795c8155d6245c.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_94795c8155d6245c.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_a81b36115504663f.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_a81b36115504663f.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_a81b36115504663f.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_a81b36115504663f.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_a97f780e4efa06cf.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_a97f780e4efa06cf.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_a97f780e4efa06cf.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_a97f780e4efa06cf.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_b7313c09688e666c.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_b7313c09688e666c.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_b7313c09688e666c.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_b7313c09688e666c.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_bfe2e60ab32490e6.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_bfe2e60ab32490e6.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_bfe2e60ab32490e6.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_bfe2e60ab32490e6.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_c62042fcbd288c1c.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_c62042fcbd288c1c.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_c62042fcbd288c1c.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_c62042fcbd288c1c.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_ca07d99b58ea6921.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_ca07d99b58ea6921.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_ca07d99b58ea6921.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_ca07d99b58ea6921.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_d34d6eb3711ebdc2.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_d34d6eb3711ebdc2.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_d34d6eb3711ebdc2.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_d34d6eb3711ebdc2.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_e87d4c5f73ce50f0.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_e87d4c5f73ce50f0.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_e87d4c5f73ce50f0.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_e87d4c5f73ce50f0.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_e8895827be05faef.json',
+  ('configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_e8895827be05faef.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\archive\\final_m5_monthly_reset_source_e8895827be05faef.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\archive\\final_m5_monthly_reset_source_e8895827be05faef.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm016_monthly_reset.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm016_monthly_reset.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm016_monthly_reset.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm016_monthly_reset.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm020_monthly_reset.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm020_monthly_reset.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm020_monthly_reset.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl25_tp25_vol005_eq500_spread05_comm020_monthly_reset.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl45_tp15_vol005_eq500_spread05_comm016_monthly_reset.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl45_tp15_vol005_eq500_spread05_comm016_monthly_reset.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20240101_present_sl45_tp15_vol005_eq500_spread05_comm016_monthly_reset.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20240101_present_sl45_tp15_vol005_eq500_spread05_comm016_monthly_reset.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl15_tp15_vol003_eq700_spread04.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl15_tp15_vol003_eq700_spread04.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl15_tp15_vol003_eq700_spread04.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl15_tp15_vol003_eq700_spread04.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp6_vol003_eq700_spread04.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp6_vol003_eq700_spread04.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp6_vol003_eq700_spread04.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp6_vol003_eq700_spread04.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp9_vol003_eq700_spread04.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp9_vol003_eq700_spread04.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp9_vol003_eq700_spread04.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl18_tp9_vol003_eq700_spread04.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol002_eq700.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol002_eq700.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol002_eq700.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol002_eq700.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol004_eq500_spread05_comm016.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol004_eq500_spread05_comm016.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol004_eq500_spread05_comm016.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp10_vol004_eq500_spread05_comm016.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp20_vol004_eq700_spread05_comm016.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp20_vol004_eq700_spread05_comm016.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp20_vol004_eq700_spread05_comm016.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp20_vol004_eq700_spread05_comm016.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol002_eq750_spread05.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol002_eq750_spread05.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol002_eq750_spread05.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol002_eq750_spread05.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol004_eq750_spread05.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol004_eq750_spread05.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol004_eq750_spread05.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl20_tp5_vol004_eq750_spread05.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl24_tp9_vol003_eq700_spread04.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl24_tp9_vol003_eq700_spread04.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl24_tp9_vol003_eq700_spread04.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl24_tp9_vol003_eq700_spread04.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq500_spread05_comm016.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq500_spread05_comm016.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq500_spread05_comm016.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq500_spread05_comm016.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq750_spread05.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq750_spread05.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq750_spread05.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl25_tp25_vol005_eq750_spread05.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl27_tp9_vol003_eq1000.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl27_tp9_vol003_eq1000.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl27_tp9_vol003_eq1000.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl27_tp9_vol003_eq1000.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp15_vol003_eq1000.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp15_vol003_eq1000.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp15_vol003_eq1000.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp15_vol003_eq1000.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp30_vol005_eq600_spread05_comm016.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp30_vol005_eq600_spread05_comm016.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp30_vol005_eq600_spread05_comm016.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl30_tp30_vol005_eq600_spread05_comm016.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq500_monthly_reset.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq500_monthly_reset.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq500_monthly_reset.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq500_monthly_reset.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq750_spread05_comm016.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq750_spread05_comm016.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq750_spread05_comm016.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp10_vol004_eq750_spread05_comm016.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016_monthly_reset.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_no_blackout_20240101_present_m5.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_no_blackout_20240101_present_m5.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_no_blackout_20240101_present_m5.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_no_blackout_20240101_present_m5.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_balanced_trailing.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_balanced_trailing.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_balanced_trailing.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_balanced_trailing.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_milestone_trailing.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_milestone_trailing.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_milestone_trailing.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_trailing_20260101_present_sl30_tp30_vol003_milestone_trailing.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_trailing_sl30_tp15_vol002_m5_20250101_present_backtest.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_trailing_sl30_tp15_vol002_m5_20250101_present_backtest.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_trailing_sl30_tp15_vol002_m5_20250101_present_backtest.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_trailing_sl30_tp15_vol002_m5_20250101_present_backtest.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\backtests\\final_trailing_sl40_tp10_vol004_m5_backtest.json',
+  ('configs\\strategies\
+siqui\\backtests\\final_trailing_sl40_tp10_vol004_m5_backtest.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\backtests\\final_trailing_sl40_tp10_vol004_m5_backtest.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\backtests\\final_trailing_sl40_tp10_vol004_m5_backtest.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\btcusd_m5_demo.json',
+  ('configs\\strategies\
+siqui\\btcusd_m5.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\btcusd_m5_demo.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\btcusd_m5.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\btcusd_negative_r_m5_demo.json',
+  ('configs\\strategies\
+siqui\\btcusd_negative_r_m5.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\btcusd_negative_r_m5_demo.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\btcusd_negative_r_m5.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\final_ctrader_m5_demo.json',
+  ('configs\\strategies\
+siqui\\final_ctrader_m5.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\final_ctrader_m5_demo.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\final_ctrader_m5.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\final_m5_demo.json',
+  ('configs\\strategies\
+siqui\\final_m5.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\final_m5_demo.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\final_m5.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
+  ('configs\\strategies\
+siqui\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\final_trailing_20260101_present_sl30_tp20_vol002_current_trailing.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\final_trailing_m5_demo.json',
+  ('configs\\strategies\
+siqui\\final_trailing_m5.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\final_trailing_m5_demo.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\final_trailing_m5.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\monthly_reset_variants\\final_m5_monthly_reset_source_8469531b851fddd3.json',
+  ('configs\\strategies\
+siqui\\monthly_reset_variants\\final_m5_monthly_reset_source_8469531b851fddd3.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\monthly_reset_variants\\final_m5_monthly_reset_source_8469531b851fddd3.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\monthly_reset_variants\\final_m5_monthly_reset_source_8469531b851fddd3.json',
    'DATA'),
-  ('configs\\strategies\\rsiqui\\telegram_targets.json',
+  ('configs\\strategies\
+siqui\\telegram_targets.json',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\telegram_targets.json',
+   'Razer\\Desktop\\trading_lab\\configs\\strategies\
+siqui\\telegram_targets.json',
    'DATA'),
   ('setuptools\\_vendor\\importlib_metadata-8.0.0.dist-info\\WHEEL',
    'C:\\Users\\Maple '
@@ -6236,9 +6369,11 @@
    'C:\\Users\\Maple '
    'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\tzdata\\America\\Marigot',
    'DATA'),
-  ('_tk_data\\msgs\\ru.msg',
+  ('_tk_data\\msgs\
+u.msg',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tk8.6\\msgs\\ru.msg',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tk8.6\\msgs\
+u.msg',
    'DATA'),
   ('_tcl_data\\tzdata\\SystemV\\PST8PDT',
    'C:\\Users\\Maple '
@@ -6524,9 +6659,11 @@
    'C:\\Users\\Maple '
    'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\tzdata\\Asia\\Shanghai',
    'DATA'),
-  ('_tcl_data\\msgs\\ru.msg',
+  ('_tcl_data\\msgs\
+u.msg',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\msgs\\ru.msg',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\msgs\
+u.msg',
    'DATA'),
   ('_tcl_data\\tzdata\\Asia\\Makassar',
    'C:\\Users\\Maple '
@@ -8532,13 +8669,17 @@
    'C:\\Users\\Maple '
    'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\tzdata\\Asia\\Ujung_Pandang',
    'DATA'),
-  ('_tcl_data\\msgs\\ro.msg',
+  ('_tcl_data\\msgs\
+o.msg',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\msgs\\ro.msg',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\msgs\
+o.msg',
    'DATA'),
-  ('_tcl_data\\msgs\\ru_ua.msg',
+  ('_tcl_data\\msgs\
+u_ua.msg',
    'C:\\Users\\Maple '
-   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\msgs\\ru_ua.msg',
+   'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\msgs\
+u_ua.msg',
    'DATA'),
   ('_tcl_data\\tzdata\\Asia\\Novokuznetsk',
    'C:\\Users\\Maple '
@@ -9232,9 +9373,11 @@
    'C:\\Users\\Maple '
    'Razer\\AppData\\Roaming\\uv\\python\\cpython-3.11-windows-x86_64-none\\tcl\\tcl8.6\\tzdata\\America\\Grenada',
    'DATA'),
-  ('numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\sfc64\\LICENSE.md',
+  ('numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\sfc64\\LICENSE.md',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\sfc64\\LICENSE.md',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\sfc64\\LICENSE.md',
    'DATA'),
   ('pydantic-2.13.4.dist-info\\WHEEL',
    'C:\\Users\\Maple '
@@ -9260,9 +9403,11 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\_core\\src\\umath\\svml\\LICENSE',
    'DATA'),
-  ('numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\mt19937\\LICENSE.md',
+  ('numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\mt19937\\LICENSE.md',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\mt19937\\LICENSE.md',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\mt19937\\LICENSE.md',
    'DATA'),
   ('setuptools\\_vendor\\wheel-0.45.1.dist-info\\RECORD',
    'C:\\Users\\Maple '
@@ -9272,17 +9417,23 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\_core\\src\\multiarray\\dragon4_LICENSE.txt',
    'DATA'),
-  ('numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\splitmix64\\LICENSE.md',
+  ('numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\splitmix64\\LICENSE.md',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\splitmix64\\LICENSE.md',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\splitmix64\\LICENSE.md',
    'DATA'),
-  ('numpy-2.4.6.dist-info\\licenses\\numpy\\random\\LICENSE.md',
+  ('numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\LICENSE.md',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\random\\LICENSE.md',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\LICENSE.md',
    'DATA'),
-  ('numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\pcg64\\LICENSE.md',
+  ('numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\pcg64\\LICENSE.md',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\pcg64\\LICENSE.md',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\pcg64\\LICENSE.md',
    'DATA'),
   ('numpy-2.4.6.dist-info\\licenses\\numpy\\_core\\src\\highway\\LICENSE',
    'C:\\Users\\Maple '
@@ -9332,9 +9483,11 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\fft\\pocketfft\\LICENSE.md',
    'DATA'),
-  ('numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\philox\\LICENSE.md',
+  ('numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\philox\\LICENSE.md',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\philox\\LICENSE.md',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\philox\\LICENSE.md',
    'DATA'),
   ('numpy-2.4.6.dist-info\\licenses\\numpy\\linalg\\lapack_lite\\LICENSE.txt',
    'C:\\Users\\Maple '
@@ -9372,9 +9525,11 @@
    'C:\\Users\\Maple '
    'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\_core\\src\\common\\pythoncapi-compat\\COPYING',
    'DATA'),
-  ('numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\distributions\\LICENSE.md',
+  ('numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\distributions\\LICENSE.md',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\\random\\src\\distributions\\LICENSE.md',
+   'Razer\\Desktop\\trading_lab\\.venv\\Lib\\site-packages\\numpy-2.4.6.dist-info\\licenses\\numpy\
+andom\\src\\distributions\\LICENSE.md',
    'DATA'),
   ('base_library.zip',
    'C:\\Users\\Maple '
