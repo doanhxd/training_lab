@@ -228,7 +228,12 @@ class PaperOnlyRsiquiMt5Runner:
             self.last_status = f"BLOCKED: {kind} {self.config.timeframe} bar {bar_time} is unavailable"
             return None, None
         frame["timestamp"] = pd.to_datetime(frame["time"], unit="s", utc=True)
-        frame["spread"] = frame["spread"] * float(self.mt5.symbol_info(symbol).point)
+        symbol_info = self.mt5.symbol_info(symbol)
+        point = float(getattr(symbol_info, "point", 0.0) or 0.0) if symbol_info is not None else 0.0
+        if point <= 0:
+            self.last_status = f"BLOCKED: symbol metadata unavailable for {symbol}"
+            return None, None
+        frame["spread"] = frame["spread"] * point
         strategy_config = self._strategy_config()
         prepared = prepare_rsiqui_v3_frame(frame, strategy_config)
         row = prepared.iloc[-1]

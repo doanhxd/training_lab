@@ -109,6 +109,22 @@ class RsiquiFinalSingleSymbolContractTests(unittest.TestCase):
         self.assertFalse(runner._open_positions_exist())
         self.assertEqual(["XAUUSD"], mt5.position_symbols)
 
+    def test_signal_evaluation_blocks_when_symbol_metadata_temporarily_disappears(self) -> None:
+        mt5 = FakeMt5()
+        mt5.TIMEFRAME_M5 = 5
+        bar_time = 1_785_904_500
+        mt5.copy_rates_from_pos = lambda symbol, timeframe, start, count: tuple(
+            {"time": bar_time - (120 - index) * 300, "spread": 10} for index in range(121)
+        )
+        mt5.symbol_info = lambda symbol: None
+        runner = PaperOnlyRsiquiMt5Runner(load_config("configs/strategies/rsiqui/final_m5.json"), mt5=mt5)
+
+        side, evaluated_bar = runner._evaluate_signal_bar(bar_time, active=True)
+
+        self.assertIsNone(side)
+        self.assertIsNone(evaluated_bar)
+        self.assertEqual("BLOCKED: symbol metadata unavailable for XAUUSD", runner.last_status)
+
 
 if __name__ == "__main__":
     unittest.main()

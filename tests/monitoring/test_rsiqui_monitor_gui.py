@@ -4,8 +4,10 @@ from pathlib import Path
 import json
 import inspect
 import unittest
+from datetime import UTC, datetime
 
 from trading_lab.monitoring.rsiqui.monitor_gui import (
+    GMT_PLUS_7,
     RsiquiV3MonitorApp,
     format_telegram_signal_message,
     load_read_only_profile,
@@ -14,6 +16,13 @@ from trading_lab.monitoring.rsiqui.position_monitor import RunnerView
 
 
 class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
+    def test_gui_timezone_is_gmt_plus_7_for_clock_and_timestamp_display(self) -> None:
+        self.assertEqual(7 * 60 * 60, GMT_PLUS_7.utcoffset(None).total_seconds())
+        utc_value = datetime(2026, 8, 5, 4, 45, 10, tzinfo=UTC)
+
+        self.assertEqual("11:45:10", RsiquiV3MonitorApp._format_gmt7_timestamp(utc_value))
+        self.assertEqual("2026-08-05 11:45:10", RsiquiV3MonitorApp._format_gmt7_datetime(utc_value))
+
     def test_palette_exposes_a_real_light_theme(self) -> None:
         from trading_lab.monitoring.rsiqui.monitor_gui import UiPalette
 

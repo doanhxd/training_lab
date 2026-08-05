@@ -25,7 +25,7 @@ if getattr(sys, "frozen", False):
 else:
     PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_ROOT = PROJECT_ROOT / "configs" / "strategies" / "rsiqui"
-GMT_PLUS_7 = timezone(timedelta(hours=4))
+GMT_PLUS_7 = timezone(timedelta(hours=7))
 
 
 

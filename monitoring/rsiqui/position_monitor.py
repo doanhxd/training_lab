@@ -294,7 +294,10 @@ class RsiquiV3PositionMonitor:
         return HistoryDealView(
             time=self._mt5_timestamp_to_gmt7(timestamp) or datetime.fromtimestamp(timestamp, tz=UTC).astimezone(GMT_PLUS_7),
             symbol=str(getattr(deal, "symbol", "") or ""),
-            side="BUY" if deal_type == buy_type else "SELL",
+            # For a closing deal, MT5's deal type is the execution direction
+            # used to close the position, which is opposite to the original
+            # position direction (e.g. closing a SELL position is a BUY deal).
+            side="SELL" if deal_type == buy_type else "BUY",
             volume=float(getattr(deal, "volume", 0.0) or 0.0),
             price=float(getattr(deal, "price", 0.0) or 0.0),
             profit=profit,

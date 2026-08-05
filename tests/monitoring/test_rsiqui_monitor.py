@@ -233,6 +233,20 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
         self.assertAlmostEqual(19.0, stats.net_profit)
         self.assertAlmostEqual(0.0, stats.max_daily_drawdown)
 
+    def test_history_side_reports_original_position_direction_not_closing_deal_direction(self) -> None:
+        mt5 = FakeMt5()
+        mt5.deals = (
+            deal(ticket=2101, when=datetime(2026, 8, 1, 9, 0), side=mt5.DEAL_TYPE_BUY, symbol="XAUUSD", profit=12.0),
+            deal(ticket=2102, when=datetime(2026, 8, 1, 10, 0), side=mt5.DEAL_TYPE_SELL, symbol="XAUUSD", profit=-8.0),
+        )
+        monitor = RsiquiV3PositionMonitor(symbol="XAUUSD", mt5=mt5, process_iter=lambda: ())
+
+        deals, _stats = monitor.history(datetime(2026, 8, 1), datetime(2026, 8, 2))
+
+        by_time = {item.time.hour: item.side for item in deals}
+        self.assertEqual("SELL", by_time[16])
+        self.assertEqual("BUY", by_time[17])
+
 
 if __name__ == "__main__":
     unittest.main()
