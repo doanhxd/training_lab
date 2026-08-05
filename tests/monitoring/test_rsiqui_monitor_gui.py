@@ -52,6 +52,10 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertEqual("USD", RsiquiV3MonitorApp._display_currency("USC"))
         self.assertEqual("USD", RsiquiV3MonitorApp._display_currency("USD"))
 
+    def test_history_comment_trims_decimal_values_to_two_places_for_display(self) -> None:
+        self.assertEqual("[tp 4163.30]", RsiquiV3MonitorApp._format_history_comment("[tp 4163.29700]"))
+        self.assertEqual("[sl 4167.67 / tp 4165.78]", RsiquiV3MonitorApp._format_history_comment("[sl 4167.67300 / tp 4165.78000]"))
+
     def test_read_only_profile_loader_supports_final_trailing_final_and_btcusd_aliases(self) -> None:
         final = load_read_only_profile("configs/strategies/rsiqui/final_m5.json")
         final_tr = load_read_only_profile("configs/strategies/rsiqui/final_trailing_m5.json")
@@ -265,7 +269,7 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertNotIn("CHẠY BOT", source)
         self.assertIn("BẢNG LOG TÍN HIỆU", source)
         self.assertIn("LỆNH XAU/BTC", source)
-        self.assertIn("Tất cả vị thế XAUUSD / BTCUSD • read-only", source)
+        self.assertIn("Tất cả vị thế XAU / BTC • read-only", source)
         self.assertIn('("time", 62, "TIME")', source)
         self.assertIn('self._position_day_value', source)
         self.assertIn('upper.startswith("BTC")', source)

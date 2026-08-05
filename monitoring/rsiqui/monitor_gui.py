@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta, timezone
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tkinter as tk
@@ -88,10 +89,10 @@ def format_telegram_signal_message(
 ) -> str:
     """Format the operator-approved Telegram alert from one immutable signal preview."""
     message = format_signal_message(
-        symbol=symbol,
+        symbol=f"XAUUSD",
         side=side,
         request=request,
-        timeframe=f"Next {timeframe} ({eta})",
+        timeframe=f"Next M5 ({eta})",
     )
     return message
 
@@ -467,7 +468,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         section.pack(fill="x")
         self._label(section, text="LỆNH ĐANG MỞ", font=("Segoe UI", 11, "bold")).pack(side="left")
         self._label(section, textvariable=self._position_day_value, font=("Segoe UI", 9, "bold"), fg=UiPalette.MUTED).pack(side="left", padx=(10, 0), pady=(1, 0))
-        self._label(section, text="Tất cả vị thế XAUUSD / BTCUSD • read-only", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="right")
+        self._label(section, text="Tất cả vị thế XAU / BTC • read-only", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="right")
         columns = ("time", "symbol", "side", "volume", "entry", "sl", "tp", "profit")
         self.positions = ttk.Treeview(positions_card, columns=columns, show="headings", style="Monitor.Treeview", height=9)
         specs = (("time", 62, "TIME"), ("symbol", 56, "SYMBOL"), ("side", 50, "TYPE"), ("volume", 42, "LOT"), ("entry", 72, "ENTRY"), ("sl", 66, "SL"), ("tp", 66, "TP"), ("profit", 70, "PnL"))
@@ -841,7 +842,7 @@ class RsiquiV3MonitorApp(tk.Tk):
                 "",
                 "end",
                 tags=(tag,),
-                values=(self._format_gmt7_datetime(deal.time), self._history_display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", deal.comment),
+                values=(self._format_gmt7_datetime(deal.time), self._history_display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", self._format_history_comment(deal.comment)),
             )
 
     @staticmethod
@@ -872,7 +873,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         if upper.startswith("BTC"):
             return "BTC"
         if upper.startswith("XAU"):
-            return "XAUUSD"
+            return "XAU"
         if upper.endswith("USDT"):
             return upper[:-4]
         if upper.endswith("USD"):
@@ -893,6 +894,14 @@ class RsiquiV3MonitorApp(tk.Tk):
         if upper.startswith("BTCUSD"):
             return "BTCUSD"
         return upper
+
+    @staticmethod
+    def _format_history_comment(comment: str) -> str:
+        """Trim decimal price/money values in broker comments for display only."""
+        def format_number(match: re.Match[str]) -> str:
+            return f"{float(match.group(0)):.2f}"
+
+        return re.sub(r"(?<![\w.])[+-]?\d+\.\d+(?!\w)", format_number, str(comment or ""))
 
     def _toggle_theme(self) -> None:
         self._theme_mode = "light" if self._theme_mode == "dark" else "dark"
