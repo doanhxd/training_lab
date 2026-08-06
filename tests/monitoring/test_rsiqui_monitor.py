@@ -72,7 +72,7 @@ def position(*, ticket: int, side: int, comment: str, profit: float, symbol: str
     )
 
 
-def deal(*, ticket: int, when: datetime, side: int, symbol: str, profit: float, commission: float = 0.0, swap: float = 0.0, comment: str = "", entry: int = FakeMt5.DEAL_ENTRY_OUT) -> SimpleNamespace:
+def deal(*, ticket: int, when: datetime, side: int, symbol: str, profit: float, commission: float = 0.0, swap: float = 0.0, comment: str = "", entry: int = FakeMt5.DEAL_ENTRY_OUT, position_id: int = 0) -> SimpleNamespace:
     if when.tzinfo is None:
         when = when.replace(tzinfo=UTC)
     return SimpleNamespace(
@@ -87,6 +87,7 @@ def deal(*, ticket: int, when: datetime, side: int, symbol: str, profit: float, 
         commission=commission,
         swap=swap,
         comment=comment,
+        position_id=position_id,
     )
 
 
@@ -246,6 +247,19 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
         by_time = {item.time.hour: item.side for item in deals}
         self.assertEqual("SELL", by_time[16])
         self.assertEqual("BUY", by_time[17])
+
+    def test_history_prefers_opening_position_comment_over_closing_reason_comment(self) -> None:
+        mt5 = FakeMt5()
+        mt5.deals = (
+            deal(ticket=2201, when=datetime(2026, 8, 1, 9, 0), side=mt5.DEAL_TYPE_SELL, symbol="XAUUSD", profit=0.0, comment="XAU_DoanhHD", entry=mt5.DEAL_ENTRY_IN, position_id=7001),
+            deal(ticket=2202, when=datetime(2026, 8, 1, 10, 0), side=mt5.DEAL_TYPE_BUY, symbol="XAUUSD", profit=30.0, comment="[tp 4233.16]", entry=mt5.DEAL_ENTRY_OUT, position_id=7001),
+        )
+        monitor = RsiquiV3PositionMonitor(symbol="XAUUSD", mt5=mt5, process_iter=lambda: ())
+
+        deals, _stats = monitor.history(datetime(2026, 8, 1), datetime(2026, 8, 2))
+
+        self.assertEqual(1, len(deals))
+        self.assertEqual("XAU_DoanhHD", deals[0].comment)
 
 
 if __name__ == "__main__":

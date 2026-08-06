@@ -272,7 +272,7 @@ class RsiquiV3PositionMonitor:
             source=source,
         )
 
-    def _history_deal_view(self, deal: Any) -> HistoryDealView | None:
+    def _history_deal_view(self, deal: Any, *, opening_comments: dict[int, str] | None = None) -> HistoryDealView | None:
         deal_type = int(getattr(deal, "type", -1))
         buy_type = int(getattr(self.mt5, "DEAL_TYPE_BUY", 0))
         sell_type = int(getattr(self.mt5, "DEAL_TYPE_SELL", 1))
@@ -291,6 +291,10 @@ class RsiquiV3PositionMonitor:
         swap = float(getattr(deal, "swap", 0.0) or 0.0)
         fee = float(getattr(deal, "fee", 0.0) or 0.0)
         net_profit = profit + commission + swap + fee
+        position_id = int(getattr(deal, "position_id", 0) or 0)
+        comment = str(getattr(deal, "comment", "") or "")
+        if opening_comments and position_id:
+            comment = opening_comments.get(position_id, comment)
         return HistoryDealView(
             time=self._mt5_timestamp_to_gmt7(timestamp) or datetime.fromtimestamp(timestamp, tz=UTC).astimezone(GMT_PLUS_7),
             symbol=str(getattr(deal, "symbol", "") or ""),
@@ -304,7 +308,7 @@ class RsiquiV3PositionMonitor:
             commission=commission,
             swap=swap,
             net_profit=net_profit,
-            comment=str(getattr(deal, "comment", "") or ""),
+            comment=comment,
         )
 
     @staticmethod
@@ -341,9 +345,17 @@ class RsiquiV3PositionMonitor:
         raw_deals = self.mt5.history_deals_get(start, end)
         if raw_deals is None:
             raise RuntimeError(f"MT5 không trả về lịch sử lệnh: {self.mt5.last_error()}")
+        opening_comments: dict[int, str] = {}
+        opening_entry = int(getattr(self.mt5, "DEAL_ENTRY_IN", 0))
+        for raw_deal in raw_deals:
+            entry = int(getattr(raw_deal, "entry", opening_entry) or opening_entry)
+            position_id = int(getattr(raw_deal, "position_id", 0) or 0)
+            comment = str(getattr(raw_deal, "comment", "") or "")
+            if entry == opening_entry and position_id and comment:
+                opening_comments[position_id] = comment
         deals = tuple(
             sorted(
-                (view for deal in raw_deals if (view := self._history_deal_view(deal)) is not None),
+                (view for deal in raw_deals if (view := self._history_deal_view(deal, opening_comments=opening_comments)) is not None),
                 key=lambda item: item.time,
                 reverse=True,
             )

@@ -14,5 +14,6 @@ if not exist "%PYTHONW%" (
 )
 
 cd /d "%PROJECT_ROOT%"
+set "PYTHONPATH=%PROJECT_ROOT%..;%PYTHONPATH%"
 start "GOLD Trader Monitor" /b "%PYTHONW%" -m trading_lab.monitoring.rsiqui.monitor_gui --config "%PROJECT_ROOT%configs\strategies\rsiqui\final_m5.json" --symbol XAUUSD
 exit /b 0

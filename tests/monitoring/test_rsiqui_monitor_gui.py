@@ -257,6 +257,18 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertIn("WINRATE", source)
         self.assertIn("NET P/L", source)
 
+    def test_flr_history_filter_is_today_gmt7_profit_only_and_recomputes_stats(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn('text="RESET LỌC"', source)
+        self.assertIn("command=self._toggle_flr_filter", source)
+        self.assertIn('self._history_filter_value.set("Hôm nay")', source)
+        self.assertIn('self._history_start_time_value.set("08:00")', source)
+        self.assertIn('self._history_end_time_value.set("23:59")', source)
+        self.assertIn("self._history_flr_enabled", source)
+        self.assertIn('float(getattr(deal, "net_profit", 0.0) or 0.0) > 0.0', source)
+        self.assertIn("stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=stats.raw_deals)", source)
+
     def test_monitor_source_keeps_order_submission_out_of_the_dashboard(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 

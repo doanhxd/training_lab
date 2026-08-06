@@ -240,6 +240,9 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._history_table: ttk.Treeview | None = None
         self._history_custom_start_wrap: tk.Frame | None = None
         self._history_custom_end_wrap: tk.Frame | None = None
+        self._history_flr_enabled = False
+        self._history_flr_button: tk.Button | None = None
+        self._history_flr_previous_state: tuple[str, str, str] | None = None
         self._bot_status_badge_color = UiPalette.WARNING
         self._last_signal_badge_color = UiPalette.INFO
         self._bot_status_badge_widget: tk.Canvas | None = None
@@ -644,6 +647,22 @@ class RsiquiV3MonitorApp(tk.Tk):
         header.pack(fill="x", pady=(0, 14))
         self._label(header, text="LỊCH SỬ LỆNH", font=("Segoe UI", 18, "bold"), bg=UiPalette.APP).pack(side="left")
         self._label(header, text="Tài khoản MT5 đang đăng nhập • chỉ đọc history_deals_get", font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
+        self._history_flr_button = tk.Button(
+            header,
+            text="RESET LỌC",
+            command=self._toggle_flr_filter,
+            font=("Segoe UI", 9, "bold"),
+            fg=UiPalette.TEXT,
+            bg=UiPalette.CARD_ALT,
+            activeforeground="#101722",
+            activebackground=UiPalette.ACCENT,
+            relief="flat",
+            bd=0,
+            padx=14,
+            pady=7,
+            cursor="hand2",
+        )
+        self._history_flr_button.pack(side="right")
 
         controls = self._card(shell, padding=14)
         controls.pack(fill="x", pady=(0, 12))
@@ -751,11 +770,48 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._center_window(window)
 
     def _on_history_filter_change(self, _event=None) -> None:
+        if self._history_flr_enabled:
+            self._history_flr_enabled = False
+            self._history_flr_previous_state = None
+            self._update_flr_button()
         self._set_custom_history_controls_visible()
         if self._history_filter_value.get().strip().lower() != "tùy chỉnh":
             self._refresh_history()
 
     def _on_history_symbol_change(self, _event=None) -> None:
+        self._refresh_history()
+
+    def _update_flr_button(self) -> None:
+        if self._history_flr_button is None:
+            return
+        self._history_flr_button.configure(
+            bg=UiPalette.ACCENT if self._history_flr_enabled else UiPalette.CARD_ALT,
+            fg="#101722" if self._history_flr_enabled else UiPalette.TEXT,
+            activebackground=UiPalette.ACCENT_DARK if self._history_flr_enabled else UiPalette.ACCENT,
+        )
+
+    def _toggle_flr_filter(self) -> None:
+        """Toggle today's GMT+7 profitable-only history filter."""
+        if not self._history_flr_enabled:
+            self._history_flr_previous_state = (
+                self._history_filter_value.get(),
+                self._history_start_time_value.get(),
+                self._history_end_time_value.get(),
+            )
+            self._history_flr_enabled = True
+            self._history_filter_value.set("Hôm nay")
+            self._history_start_time_value.set("08:00")
+            self._history_end_time_value.set("23:59")
+        else:
+            previous = self._history_flr_previous_state
+            self._history_flr_enabled = False
+            self._history_flr_previous_state = None
+            if previous is not None:
+                self._history_filter_value.set(previous[0])
+                self._history_start_time_value.set(previous[1])
+                self._history_end_time_value.set(previous[2])
+        self._update_flr_button()
+        self._set_custom_history_controls_visible()
         self._refresh_history()
 
     def _filter_history_deals_by_symbol(self, deals: tuple, symbol_filter: str | None = None) -> tuple:
@@ -822,6 +878,8 @@ class RsiquiV3MonitorApp(tk.Tk):
             return
         deals = self._filter_history_deals_by_symbol(deals)
         deals = self._filter_history_deals_by_time_gmt7(deals)
+        if self._history_flr_enabled:
+            deals = tuple(deal for deal in deals if float(getattr(deal, "net_profit", 0.0) or 0.0) > 0.0)
         stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=stats.raw_deals)
         self._history_deals_value.set(str(stats.deals))
         self._history_winrate_value.set(f"{stats.winrate:.1f}%")
