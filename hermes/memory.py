@@ -8,9 +8,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from trading_lab.config import OUTPUT_HERMES_DIR
-from trading_lab.io import ensure_parent
-from trading_lab.models import BacktestMetrics, StrategySpec, ValidationSummary
+from training_lab.config import OUTPUT_HERMES_DIR
+from training_lab.io import ensure_parent
+from training_lab.models import BacktestMetrics, StrategySpec, ValidationSummary
 
 
 class StrategyMemoryRecord(BaseModel):

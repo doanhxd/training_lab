@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from trading_lab.models import BacktestMetrics, TradeRecord
+from training_lab.models import BacktestMetrics, TradeRecord
 
 
 def compute_metrics(trades: list[TradeRecord], equity_curve: list[float], initial_equity: float) -> BacktestMetrics:

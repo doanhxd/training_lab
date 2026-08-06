@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import unittest
 from dataclasses import replace
 
-from trading_lab.runners.mt5.rsiqui_btcusd import PaperOnlyRsiquiMt5Runner, load_config
+from training_lab.runners.mt5.rsiqui_btcusd import PaperOnlyRsiquiMt5Runner, load_config
 
 
 class FakeMt5:

@@ -27,8 +27,8 @@
   ],
   "telegram_enabled": false,
   "status_log_interval_seconds": 300,
-  "source_config_file": "C:\\Users\\Maple Razer\\Desktop\\trading_lab\\configs\\strategies\\rsiqui\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016.json",
-  "raw_csv": "C:\\Users\\Maple Razer\\Desktop\\trading_lab\\data\\raw\\mt5_exports\\XAUUSD_M5_202601020105_202607312345.csv",
+  "source_config_file": "C:\\Users\\Maple Razer\\Desktop\\training_lab\\configs\\strategies\\rsiqui\\final_m5_backtest_20260101_present_sl40_tp20_vol004_eq500_spread05_comm016.json",
+  "raw_csv": "C:\\Users\\Maple Razer\\Desktop\\training_lab\\data\\raw\\mt5_exports\\XAUUSD_M5_202601020105_202607312345.csv",
   "requested_period_utc": "2026-01-01T00:00:00Z..now",
   "source_run_id": "5c25d32f4844fb64"
 }

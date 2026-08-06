@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from trading_lab.backtest.metrics.performance import compute_metrics
-from trading_lab.models import BacktestMetrics, TradeRecord
+from training_lab.backtest.metrics.performance import compute_metrics
+from training_lab.models import BacktestMetrics, TradeRecord
 
 
 @dataclass(frozen=True)

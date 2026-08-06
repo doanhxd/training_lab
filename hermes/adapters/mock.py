@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from trading_lab.hermes.memory import HermesMemoryStore, strategy_fingerprint
-from trading_lab.hermes.skills import HermesSkillProfile, choose_skill_from_memory, get_skill_profile
-from trading_lab.models import StrategySpec
+from training_lab.hermes.memory import HermesMemoryStore, strategy_fingerprint
+from training_lab.hermes.skills import HermesSkillProfile, choose_skill_from_memory, get_skill_profile
+from training_lab.models import StrategySpec
 
 
 def _strategy_payload_for(skill: HermesSkillProfile, suffix: int) -> dict:

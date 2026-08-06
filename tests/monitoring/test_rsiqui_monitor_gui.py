@@ -6,13 +6,13 @@ import inspect
 import unittest
 from datetime import UTC, datetime
 
-from trading_lab.monitoring.rsiqui.monitor_gui import (
+from training_lab.monitoring.rsiqui.monitor_gui import (
     GMT_PLUS_7,
     RsiquiV3MonitorApp,
     format_telegram_signal_message,
     load_read_only_profile,
 )
-from trading_lab.monitoring.rsiqui.position_monitor import RunnerView
+from training_lab.monitoring.rsiqui.position_monitor import RunnerView
 
 
 class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertEqual("2026-08-05 11:45:10", RsiquiV3MonitorApp._format_gmt7_datetime(utc_value))
 
     def test_palette_exposes_a_real_light_theme(self) -> None:
-        from trading_lab.monitoring.rsiqui.monitor_gui import UiPalette
+        from training_lab.monitoring.rsiqui.monitor_gui import UiPalette
 
         light = UiPalette.for_mode("light")
         dark = UiPalette.for_mode("dark")
@@ -181,10 +181,10 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
 
         self.assertTrue(command[0])
         self.assertEqual("-m", command[1])
-        self.assertEqual("trading_lab.runners.mt5.rsiqui_final", command[2])
+        self.assertEqual("training_lab.runners.mt5.rsiqui_final", command[2])
         self.assertEqual("--config", command[3])
         self.assertTrue(command[4].endswith("final_m5.json"))
-        self.assertEqual("trading_lab.runners.mt5.rsiqui_btcusd", btcusd_command[2])
+        self.assertEqual("training_lab.runners.mt5.rsiqui_btcusd", btcusd_command[2])
         self.assertTrue(btcusd_command[4].endswith("btcusd_m5.json"))
 
     def test_monitor_defaults_to_final_config_and_wider_log_column(self) -> None:

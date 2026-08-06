@@ -6,7 +6,7 @@ BTCUSD uses the operator-supplied root RSIQUI V3 entry/signal logic exactly.
 Only the runner/config money contract and symbol metadata are BTC-specific.
 """
 
-from trading_lab.strategies.builtins.rsiqui_v3_root import (  # noqa: F401
+from training_lab.strategies.builtins.rsiqui_v3_root import (  # noqa: F401
     RsiquiV3Config,
     RsiquiV3Result,
     evaluate_rsiqui_v3_signal,

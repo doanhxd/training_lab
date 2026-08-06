@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 import unittest
 
-from trading_lab.runners.mt5.rsiqui_final import PaperOnlyRsiquiMt5Runner, load_config
+from training_lab.runners.mt5.rsiqui_final import PaperOnlyRsiquiMt5Runner, load_config
 
 
 class FakeMt5:

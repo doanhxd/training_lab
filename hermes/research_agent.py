@@ -4,8 +4,8 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-from trading_lab.hermes.memory import HermesMemoryStore, ResearchNote
-from trading_lab.hermes.xauusd_knowledge import research_recommendation_guard
+from training_lab.hermes.memory import HermesMemoryStore, ResearchNote
+from training_lab.hermes.xauusd_knowledge import research_recommendation_guard
 
 
 @dataclass(frozen=True)

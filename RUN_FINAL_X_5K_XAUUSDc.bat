@@ -2,7 +2,7 @@
 setlocal
 
 set "PROJECT_ROOT=%~dp0"
-if not exist "%PROJECT_ROOT%configs\strategies\rsiqui\final_x_m5.json" set "PROJECT_ROOT=%USERPROFILE%\Desktop\trading_lab\"
+if not exist "%PROJECT_ROOT%configs\strategies\rsiqui\final_x_m5.json" set "PROJECT_ROOT=%USERPROFILE%\Desktop\training_lab\"
 
 cd /d "%PROJECT_ROOT%"
 
@@ -41,7 +41,7 @@ echo Project : %PROJECT_ROOT%
 echo Safety  : this launcher starts the bot; it does not place a test order
 echo ================================================================
 
-"%PYTHON%" -m trading_lab.runners.mt5.rsiqui_final_trailing --config "%CONFIG%" %*
+"%PYTHON%" -m training_lab.runners.mt5.rsiqui_final_trailing --config "%CONFIG%" %*
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo.

@@ -5,7 +5,7 @@ a = Analysis(
     ['..\\..\\monitoring\\rsiqui\\monitor_gui.py'],
     pathex=['..'],
     binaries=[],
-    datas=[('C:/Users/Maple Razer/Desktop/trading_lab/configs', 'configs')],
+    datas=[('C:/Users/Maple Razer/Desktop/training_lab/configs', 'configs')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

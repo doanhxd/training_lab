@@ -1,5 +1,5 @@
 ('C:\\Users\\Maple '
- 'Razer\\Desktop\\trading_lab\\build\\gui_exe\\RSIQUI_GOLD_Trader\\PYZ-00.pyz',
+ 'Razer\\Desktop\\training_lab\\build\\gui_exe\\RSIQUI_GOLD_Trader\\PYZ-00.pyz',
  [('MetaTrader5',
    'C:\\Users\\Maple '
    'Razer\\AppData\\Local\\hermes\\hermes-agent\\venv\\Lib\\site-packages\\MetaTrader5\\__init__.py',
@@ -7576,106 +7576,106 @@ equirements.py',
    'C:\\Users\\Maple '
    'Razer\\AppData\\Local\\hermes\\hermes-agent\\.hermes-runtime\\python\\generation-1785211309-6688-8fb50fe3\\cpython-3.11-windows-x86_64-none\\Lib\\tracemalloc.py',
    'PYMODULE'),
-  ('trading_lab',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\__init__.py',
+  ('training_lab',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.backtest',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\backtest\\__init__.py',
+  ('training_lab.backtest',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\\backtest\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.backtest.metrics', '-', 'PYMODULE'),
-  ('trading_lab.backtest.metrics.performance',
+  ('training_lab.backtest.metrics', '-', 'PYMODULE'),
+  ('training_lab.backtest.metrics.performance',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\backtest\\metrics\\performance.py',
+   'Razer\\Desktop\\training_lab\\backtest\\metrics\\performance.py',
    'PYMODULE'),
-  ('trading_lab.models',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\models.py',
+  ('training_lab.models',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\\models.py',
    'PYMODULE'),
-  ('trading_lab.monitoring',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\monitoring\\__init__.py',
+  ('training_lab.monitoring',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\\monitoring\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.monitoring.rsiqui',
+  ('training_lab.monitoring.rsiqui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\
+   'Razer\\Desktop\\training_lab\\monitoring\
 siqui\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.monitoring.rsiqui.monitor_gui',
+  ('training_lab.monitoring.rsiqui.monitor_gui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\
+   'Razer\\Desktop\\training_lab\\monitoring\
 siqui\\monitor_gui.py',
    'PYMODULE'),
-  ('trading_lab.monitoring.rsiqui.position_monitor',
+  ('training_lab.monitoring.rsiqui.position_monitor',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\monitoring\
+   'Razer\\Desktop\\training_lab\\monitoring\
 siqui\\position_monitor.py',
    'PYMODULE'),
-  ('trading_lab.runners',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\
+  ('training_lab.runners',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\
 unners\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\
+  ('training_lab.runners.mt5',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\
 unners\\mt5\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_btcusd',
+  ('training_lab.runners.mt5.rsiqui_btcusd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\
+   'Razer\\Desktop\\training_lab\
 unners\\mt5\
 siqui_btcusd.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_final',
+  ('training_lab.runners.mt5.rsiqui_final',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\
+   'Razer\\Desktop\\training_lab\
 unners\\mt5\
 siqui_final.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_neg_paper',
+  ('training_lab.runners.mt5.rsiqui_neg_paper',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\
+   'Razer\\Desktop\\training_lab\
 unners\\mt5\
 siqui_neg_paper.py',
    'PYMODULE'),
-  ('trading_lab.runners.mt5.rsiqui_ori_paper',
+  ('training_lab.runners.mt5.rsiqui_ori_paper',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\
+   'Razer\\Desktop\\training_lab\
 unners\\mt5\
 siqui_ori_paper.py',
    'PYMODULE'),
-  ('trading_lab.strategies',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\strategies\\__init__.py',
+  ('training_lab.strategies',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\\strategies\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.strategies.builtins', '-', 'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui',
+  ('training_lab.strategies.builtins', '-', 'PYMODULE'),
+  ('training_lab.strategies.builtins.rsiqui',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+   'Razer\\Desktop\\training_lab\\strategies\\builtins\
 siqui\\__init__.py',
    'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui.btcusd',
+  ('training_lab.strategies.builtins.rsiqui.btcusd',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+   'Razer\\Desktop\\training_lab\\strategies\\builtins\
 siqui\\btcusd.py',
    'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui.final',
+  ('training_lab.strategies.builtins.rsiqui.final',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+   'Razer\\Desktop\\training_lab\\strategies\\builtins\
 siqui\\final.py',
    'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui.neg',
+  ('training_lab.strategies.builtins.rsiqui.neg',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+   'Razer\\Desktop\\training_lab\\strategies\\builtins\
 siqui\\neg.py',
    'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui.ori',
+  ('training_lab.strategies.builtins.rsiqui.ori',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+   'Razer\\Desktop\\training_lab\\strategies\\builtins\
 siqui\\ori.py',
    'PYMODULE'),
-  ('trading_lab.strategies.builtins.rsiqui_v3_root',
+  ('training_lab.strategies.builtins.rsiqui_v3_root',
    'C:\\Users\\Maple '
-   'Razer\\Desktop\\trading_lab\\strategies\\builtins\
+   'Razer\\Desktop\\training_lab\\strategies\\builtins\
 siqui_v3_root.py',
    'PYMODULE'),
-  ('trading_lab.telegram_notifier',
-   'C:\\Users\\Maple Razer\\Desktop\\trading_lab\\telegram_notifier.py',
+  ('training_lab.telegram_notifier',
+   'C:\\Users\\Maple Razer\\Desktop\\training_lab\\telegram_notifier.py',
    'PYMODULE'),
   ('tty',
    'C:\\Users\\Maple '

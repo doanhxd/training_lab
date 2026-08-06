@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from trading_lab.backtest.execution.engine import _prepare_expression
-from trading_lab.features.engine import SUPPORTED_FEATURES
-from trading_lab.models import StrategySpec
-from trading_lab.strategies.compiler.expression import compile_expression
+from training_lab.backtest.execution.engine import _prepare_expression
+from training_lab.features.engine import SUPPORTED_FEATURES
+from training_lab.models import StrategySpec
+from training_lab.strategies.compiler.expression import compile_expression
 
 
 def validate_strategy_spec(spec: StrategySpec) -> None:

@@ -51,7 +51,7 @@ missing module named setuptools._vendor.backports.zstd - imported by setuptools.
 missing module named importlib_resources - imported by setuptools._vendor.jaraco.text (optional), tqdm.cli (delayed, conditional, optional)
 missing module named trove_classifiers - imported by setuptools.config._validate_pyproject.formats (optional)
 missing module named pyimod02_importers - imported by C:\Users\Maple Razer\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\PyInstaller\hooks\rthooks\pyi_rth_pkgutil.py (delayed)
-missing module named pydantic.BaseModel - imported by pydantic (conditional), pydantic._internal._typing_extra (conditional), pydantic._internal._core_utils (delayed), pydantic._internal._import_utils (delayed, conditional), pydantic.deprecated.copy_internals (delayed, conditional), trading_lab.models (top-level)
+missing module named pydantic.BaseModel - imported by pydantic (conditional), pydantic._internal._typing_extra (conditional), pydantic._internal._core_utils (delayed), pydantic._internal._import_utils (delayed, conditional), pydantic.deprecated.copy_internals (delayed, conditional), training_lab.models (top-level)
 missing module named cython - imported by pydantic.v1.version (optional)
 missing module named email_validator - imported by pydantic.networks (delayed, conditional, optional), pydantic.v1.networks (delayed, conditional, optional), pydantic.v1._hypothesis_plugin (optional)
 missing module named toml - imported by pydantic.v1.mypy (delayed, conditional, optional)

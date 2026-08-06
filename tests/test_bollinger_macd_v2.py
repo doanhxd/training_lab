@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 
 
 def test_long_signal_requires_midband_reclaim_and_increasing_positive_histogram():
-    from trading_lab.strategies.builtins.bollinger_macd_v2 import prepare_bollinger_macd_v2_frame
+    from training_lab.strategies.builtins.bollinger_macd_v2 import prepare_bollinger_macd_v2_frame
 
     candles = pd.DataFrame({
         "timestamp": pd.date_range("2026-01-01", periods=35, freq="5min", tz="UTC"),
@@ -25,7 +25,7 @@ def test_long_signal_requires_midband_reclaim_and_increasing_positive_histogram(
 
 
 def test_config_converts_five_usd_risk_and_reward_to_five_price_units_at_point_zero_one_lot():
-    from trading_lab.strategies.builtins.bollinger_macd_v2 import BollingerMacdV2Config
+    from training_lab.strategies.builtins.bollinger_macd_v2 import BollingerMacdV2Config
 
     config = BollingerMacdV2Config(
         volume_lots=0.01,

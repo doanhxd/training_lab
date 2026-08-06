@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(r"C:/Users/Maple Razer/Desktop/trading_lab")
+ROOT = Path(r"C:/Users/Maple Razer/Desktop/training_lab")
 OUTPUTS = Path(r"C:/Users/Maple Razer/outputs")
 REPORTS = OUTPUTS / "reports"
 BACKTESTS = OUTPUTS / "backtests"

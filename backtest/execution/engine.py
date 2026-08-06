@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from trading_lab.models import BacktestConfig, StrategySpec, TradeRecord
-from trading_lab.strategies.compiler.expression import CompiledExpression, compile_expression
+from training_lab.models import BacktestConfig, StrategySpec, TradeRecord
+from training_lab.strategies.compiler.expression import CompiledExpression, compile_expression
 
 
 @dataclass

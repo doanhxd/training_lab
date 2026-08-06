@@ -7,7 +7,7 @@ root implementation so FINAL cannot drift from `rsiqui_v3_root.py`. Runner and
 JSON config files may still define symbol/risk/spread execution guards.
 """
 
-from trading_lab.strategies.builtins.rsiqui_v3_root import (  # noqa: F401
+from training_lab.strategies.builtins.rsiqui_v3_root import (  # noqa: F401
     RsiquiV3Config,
     RsiquiV3Result,
     evaluate_rsiqui_v3_signal,

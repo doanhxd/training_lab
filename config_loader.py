@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from trading_lab.models import RunConfig
+from training_lab.models import RunConfig
 
 
 def load_run_config(path: Path | None) -> RunConfig:
