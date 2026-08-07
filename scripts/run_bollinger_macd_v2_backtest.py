@@ -12,8 +12,8 @@ import pandas as pd
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_DIR.parent))
 
-from trading_lab.data.loaders.csv_loader import load_raw_csv
-from trading_lab.strategies.builtins.bollinger_macd_v2 import (
+from training_lab.data.loaders.csv_loader import load_raw_csv
+from training_lab.strategies.builtins.bollinger_macd_v2 import (
     BollingerMacdV2Config,
     run_bollinger_macd_v2_backtest,
 )

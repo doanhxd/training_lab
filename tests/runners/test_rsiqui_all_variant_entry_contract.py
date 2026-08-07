@@ -5,8 +5,8 @@ import inspect
 from types import SimpleNamespace
 import unittest
 
-import trading_lab.runners.mt5.rsiqui_btcusd as btcusd_module
-import trading_lab.runners.mt5.rsiqui_final as final_module
+import training_lab.runners.mt5.rsiqui_btcusd as btcusd_module
+import training_lab.runners.mt5.rsiqui_final as final_module
 
 
 class FakeResult:

@@ -14,8 +14,8 @@ from typing import Callable
 
 import pandas as pd
 
-from trading_lab.monitoring.rsiqui.position_monitor import MonitorSnapshot, RsiquiV3PositionMonitor, RunnerView
-from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_signal_message
+from training_lab.monitoring.rsiqui.position_monitor import MonitorSnapshot, RsiquiV3PositionMonitor, RunnerView
+from training_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_signal_message
 
 
 
@@ -112,10 +112,10 @@ RUNNER_SCRIPT_BY_STRATEGY = {
 }
 
 RUNNER_MODULE_BY_STRATEGY = {
-    "rsiqui_v3_final": "trading_lab.runners.mt5.rsiqui_final",
-    "rsiqui_v3_final_trailing": "trading_lab.runners.mt5.rsiqui_final_trailing",
-    "rsiqui_v3_final_x": "trading_lab.runners.mt5.rsiqui_final_trailing",
-    "rsiqui_v3_btcusd": "trading_lab.runners.mt5.rsiqui_btcusd",
+    "rsiqui_v3_final": "training_lab.runners.mt5.rsiqui_final",
+    "rsiqui_v3_final_trailing": "training_lab.runners.mt5.rsiqui_final_trailing",
+    "rsiqui_v3_final_x": "training_lab.runners.mt5.rsiqui_final_trailing",
+    "rsiqui_v3_btcusd": "training_lab.runners.mt5.rsiqui_btcusd",
 }
 
 
@@ -127,15 +127,15 @@ def _load_json(path: str | Path) -> dict:
 def _strategy_loader_for_payload(payload: dict):
     strategy = str(payload.get("strategy", "")).strip().lower()
     if strategy == "rsiqui-v3-final":
-        from trading_lab.runners.mt5.rsiqui_final import load_config
+        from training_lab.runners.mt5.rsiqui_final import load_config
 
         return "rsiqui_v3_final", load_config
     if strategy in {"rsiqui-v3-final-trailing", "rsiqui-v3-final-x"}:
-        from trading_lab.runners.mt5.rsiqui_final_trailing import load_config
+        from training_lab.runners.mt5.rsiqui_final_trailing import load_config
 
         return ("rsiqui_v3_final_x" if strategy.endswith("-x") else "rsiqui_v3_final_trailing"), load_config
     if strategy == "rsiqui-v3-btcusd":
-        from trading_lab.runners.mt5.rsiqui_btcusd import load_config
+        from training_lab.runners.mt5.rsiqui_btcusd import load_config
 
         return "rsiqui_v3_btcusd", load_config
     raise ValueError(f"Unsupported RSIQUI strategy payload: {strategy or '<missing>'}")
@@ -143,11 +143,11 @@ def _strategy_loader_for_payload(payload: dict):
 
 def _strategy_runtime(strategy_key: str):
     if strategy_key in {"rsiqui_v3_final", "rsiqui_v3_final_trailing", "rsiqui_v3_final_x"}:
-        from trading_lab.strategies.builtins.rsiqui.final import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
+        from training_lab.strategies.builtins.rsiqui.final import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
     if strategy_key == "rsiqui_v3_btcusd":
-        from trading_lab.strategies.builtins.rsiqui.btcusd import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
+        from training_lab.strategies.builtins.rsiqui.btcusd import evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 
         return prepare_rsiqui_v3_frame, evaluate_rsiqui_v3_signal, rsiqui_v3_config_for_preset
     raise ValueError(f"Unsupported strategy runtime: {strategy_key}")

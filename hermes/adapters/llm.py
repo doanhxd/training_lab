@@ -5,10 +5,10 @@ import os
 import shlex
 import subprocess
 
-from trading_lab.hermes.memory import HermesMemoryStore
-from trading_lab.hermes.prompts.base import PROMPT_TEMPLATE
-from trading_lab.hermes.skills import get_skill_profile
-from trading_lab.models import StrategySpec
+from training_lab.hermes.memory import HermesMemoryStore
+from training_lab.hermes.prompts.base import PROMPT_TEMPLATE
+from training_lab.hermes.skills import get_skill_profile
+from training_lab.models import StrategySpec
 
 
 def generate_llm_strategy(skill_name: str | None = None, memory: HermesMemoryStore | None = None) -> StrategySpec:

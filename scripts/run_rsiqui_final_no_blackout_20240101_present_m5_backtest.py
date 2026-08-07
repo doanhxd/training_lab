@@ -12,10 +12,10 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
 
-from trading_lab.data.loaders.csv_loader import load_raw_csv
-from trading_lab.data.transforms.normalize import dataset_id_for, normalize_candles, write_processed_dataset
-from trading_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
-from trading_lab.strategies.builtins.rsiqui.final import rsiqui_v3_config_for_preset, run_rsiqui_v3_backtest
+from training_lab.data.loaders.csv_loader import load_raw_csv
+from training_lab.data.transforms.normalize import dataset_id_for, normalize_candles, write_processed_dataset
+from training_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
+from training_lab.strategies.builtins.rsiqui.final import rsiqui_v3_config_for_preset, run_rsiqui_v3_backtest
 
 RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "XAUUSD_M5_202401012305_202607312355_merged.csv"
 CONFIG_PATH = ROOT / "configs" / "strategies" / "rsiqui" / "backtests" / "final_no_blackout_20240101_present_m5.json"

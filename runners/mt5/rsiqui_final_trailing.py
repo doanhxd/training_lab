@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from trading_lab.runners.mt5.rsiqui_final import (
+from training_lab.runners.mt5.rsiqui_final import (
     PaperOnlyRsiquiMt5Runner as FinalRunner,
     Mt5Config,
 )

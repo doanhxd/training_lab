@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from trading_lab.models import StrategySpec
+from training_lab.models import StrategySpec
 
 
 @dataclass(frozen=True)

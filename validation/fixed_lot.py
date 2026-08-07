@@ -6,12 +6,12 @@ from typing import Any
 
 import pandas as pd
 
-from trading_lab.backtest.execution.engine import FixedLotConfig, run_fixed_lot_backtest
-from trading_lab.backtest.metrics.performance import compute_metrics
-from trading_lab.hermes.xauusd_knowledge import assess_strategy_against_policy
-from trading_lab.models import StrategySpec, ValidationConfig, ValidationSummary
-from trading_lab.validation.benchmarks.baselines import benchmark_summary
-from trading_lab.validation.walk_forward.windows import make_walk_forward_windows
+from training_lab.backtest.execution.engine import FixedLotConfig, run_fixed_lot_backtest
+from training_lab.backtest.metrics.performance import compute_metrics
+from training_lab.hermes.xauusd_knowledge import assess_strategy_against_policy
+from training_lab.models import StrategySpec, ValidationConfig, ValidationSummary
+from training_lab.validation.benchmarks.baselines import benchmark_summary
+from training_lab.validation.walk_forward.windows import make_walk_forward_windows
 
 
 def _metrics_for_segment(features: pd.DataFrame, spec: StrategySpec, config: FixedLotConfig):

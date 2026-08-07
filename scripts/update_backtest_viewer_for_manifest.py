@@ -1,6 +1,6 @@
 from pathlib import Path
 
-path = Path(r'C:/Users/Maple Razer/Desktop/trading_lab/backtest_report_viewer.html')
+path = Path(__file__).resolve().parents[1] / 'backtest_report_viewer.html'
 text = path.read_text(encoding='utf-8')
 
 text = text.replace(

@@ -12,12 +12,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from trading_lab.backtest.metrics.performance import compute_metrics
-from trading_lab.data.loaders.csv_loader import load_raw_csv
-from trading_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
-from trading_lab.models import TradeRecord
-from trading_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
-from trading_lab.strategies.builtins.rsiqui.final import prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
+from training_lab.backtest.metrics.performance import compute_metrics
+from training_lab.data.loaders.csv_loader import load_raw_csv
+from training_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
+from training_lab.models import TradeRecord
+from training_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
+from training_lab.strategies.builtins.rsiqui.final import prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
 from run_rsiqui_final_20260101_present_m5_sl27_tp9_vol003_eq1000_backtest import (
     evaluate_close_confirm_entry_condition,
     inspect_quality,

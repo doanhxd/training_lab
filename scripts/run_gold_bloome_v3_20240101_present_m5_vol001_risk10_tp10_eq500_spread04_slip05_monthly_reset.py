@@ -10,17 +10,17 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
 
-from trading_lab.backtest.metrics.performance import compute_metrics
-from trading_lab.data.loaders.csv_loader import load_raw_csv
-from trading_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
-from trading_lab.models import TradeRecord
-from trading_lab.storage.artifacts import (
+from training_lab.backtest.metrics.performance import compute_metrics
+from training_lab.data.loaders.csv_loader import load_raw_csv
+from training_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
+from training_lab.models import TradeRecord
+from training_lab.storage.artifacts import (
     build_leaderboard,
     persist_leaderboard,
     persist_run_artifacts,
     run_id_for,
 )
-from trading_lab.strategies.builtins.gold_bloome_v3 import calc_indicators
+from training_lab.strategies.builtins.gold_bloome_v3 import calc_indicators
 
 RAW_PATH = ROOT / "data" / "raw" / "mt5_exports" / "XAUUSD_M5_202401012300_202607312345.csv"
 CONFIG_PATH = ROOT / "configs" / "strategies" / "gold_bloome_v3_m5_20240101_present_vol001_risk10_tp10_eq500_spread04_slip05_monthly_reset.json"

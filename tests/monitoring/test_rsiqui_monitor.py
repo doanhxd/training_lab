@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 import unittest
 
-from trading_lab.monitoring.rsiqui.position_monitor import RsiquiV3PositionMonitor
+from training_lab.monitoring.rsiqui.position_monitor import RsiquiV3PositionMonitor
 
 
 class FakeMt5:
@@ -189,7 +189,7 @@ class RsiquiV3PositionMonitorTests(unittest.TestCase):
             mt5=mt5,
             process_iter=lambda: (
                 FakeProcess(1201, "python", "runners/mt5/rsiqui_final.py", "--config", "final_m5.json"),
-                FakeProcess(1203, "python", "-m", "trading_lab.runners.mt5.rsiqui_btcusd", "--config", "btcusd_m5.json"),
+                FakeProcess(1203, "python", "-m", "training_lab.runners.mt5.rsiqui_btcusd", "--config", "btcusd_m5.json"),
                 FakeProcess(1202, "python", "something_else.py"),
             ),
         )

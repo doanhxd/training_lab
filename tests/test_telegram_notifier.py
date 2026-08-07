@@ -4,7 +4,7 @@ from io import BytesIO
 import unittest
 from urllib.error import HTTPError
 
-from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings
+from training_lab.telegram_notifier import TelegramNotifier, TelegramSettings
 
 
 class TelegramNotifierTests(unittest.TestCase):

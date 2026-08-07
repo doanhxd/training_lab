@@ -4,7 +4,7 @@ from dataclasses import replace
 from types import SimpleNamespace
 import unittest
 
-from trading_lab.runners.mt5.rsiqui_final_trailing import (
+from training_lab.runners.mt5.rsiqui_final_trailing import (
     PaperOnlyRsiquiFinalTrailingMt5Runner,
     load_config,
 )

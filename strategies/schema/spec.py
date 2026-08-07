@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from trading_lab.models import StrategySpec
+from training_lab.models import StrategySpec
 
 
 def load_strategy_spec(path: Path) -> StrategySpec:

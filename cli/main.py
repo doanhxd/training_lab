@@ -6,37 +6,37 @@ from pathlib import Path
 
 import pandas as pd
 
-from trading_lab.backtest.execution.engine import FixedLotConfig, run_backtest, run_fixed_lot_backtest
-from trading_lab.backtest.metrics.performance import compute_metrics
-from trading_lab.config import DATA_PROCESSED_DIR
-from trading_lab.config_loader import load_run_config, run_config_hash
-from trading_lab.data.loaders.csv_loader import load_raw_csv
-from trading_lab.data.providers.yahoo import fetch_yahoo_xauusd, write_raw_yahoo_xauusd
-from trading_lab.data.quality import inspect_candles
-from trading_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
-from trading_lab.features.engine import build_features, write_feature_set
-from trading_lab.hermes.adapters.mock import generate_and_remember_strategy, generate_mock_strategy
-from trading_lab.hermes.adapters.llm import generate_llm_strategy
-from trading_lab.hermes.memory import HermesMemoryStore
-from trading_lab.hermes.research_agent import record_research_cycle, summarize_research_cycle
-from trading_lab.hermes.skills import get_skill_profile, list_skill_profiles
-from trading_lab.hermes.xauusd_knowledge import assess_strategy_against_policy, describe_policy
-from trading_lab.models import StrategySpec, ValidationConfig
-from trading_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
-from trading_lab.strategies.builtins.freqtrade_ewo_gold import freqtrade_ewo_config_for_preset, run_freqtrade_ewo_backtest
-from trading_lab.strategies.builtins.best5m import best5m_config_for_preset, run_best5m_backtest
-from trading_lab.strategies.builtins.e0v1e import e0v1e_config_for_preset, run_e0v1e_backtest
-from trading_lab.strategies.builtins.freqtrade_support import freqtrade_support_config_for_preset, run_freqtrade_support_backtest
-from trading_lab.strategies.builtins.gold_fusion import GoldFusionConfig, run_gold_fusion_backtest
-from trading_lab.strategies.builtins.h1_wick_fill import WickFillConfig, run_h1_upper_wick_fill_backtest
-from trading_lab.strategies.builtins.ichi_v1 import ichi_v1_config_for_preset, run_ichi_v1_backtest
-from trading_lab.strategies.builtins.m15_structure import FixedRiskConfig, run_m15_structure_backtest
-from trading_lab.strategies.builtins.rsiqui_v3 import rsiqui_v3_config_for_preset, run_rsiqui_v3_backtest
-from trading_lab.strategies.builtins.smart_liquidity import smart_liquidity_config_for_preset, run_smart_liquidity_backtest
-from trading_lab.strategies.compiler.validator import validate_strategy_spec
-from trading_lab.strategies.schema.spec import load_strategy_spec
-from trading_lab.validation.suite import validate_strategy
-from trading_lab.validation.fixed_lot import validate_fixed_lot_strategy
+from training_lab.backtest.execution.engine import FixedLotConfig, run_backtest, run_fixed_lot_backtest
+from training_lab.backtest.metrics.performance import compute_metrics
+from training_lab.config import DATA_PROCESSED_DIR
+from training_lab.config_loader import load_run_config, run_config_hash
+from training_lab.data.loaders.csv_loader import load_raw_csv
+from training_lab.data.providers.yahoo import fetch_yahoo_xauusd, write_raw_yahoo_xauusd
+from training_lab.data.quality import inspect_candles
+from training_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
+from training_lab.features.engine import build_features, write_feature_set
+from training_lab.hermes.adapters.mock import generate_and_remember_strategy, generate_mock_strategy
+from training_lab.hermes.adapters.llm import generate_llm_strategy
+from training_lab.hermes.memory import HermesMemoryStore
+from training_lab.hermes.research_agent import record_research_cycle, summarize_research_cycle
+from training_lab.hermes.skills import get_skill_profile, list_skill_profiles
+from training_lab.hermes.xauusd_knowledge import assess_strategy_against_policy, describe_policy
+from training_lab.models import StrategySpec, ValidationConfig
+from training_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
+from training_lab.strategies.builtins.freqtrade_ewo_gold import freqtrade_ewo_config_for_preset, run_freqtrade_ewo_backtest
+from training_lab.strategies.builtins.best5m import best5m_config_for_preset, run_best5m_backtest
+from training_lab.strategies.builtins.e0v1e import e0v1e_config_for_preset, run_e0v1e_backtest
+from training_lab.strategies.builtins.freqtrade_support import freqtrade_support_config_for_preset, run_freqtrade_support_backtest
+from training_lab.strategies.builtins.gold_fusion import GoldFusionConfig, run_gold_fusion_backtest
+from training_lab.strategies.builtins.h1_wick_fill import WickFillConfig, run_h1_upper_wick_fill_backtest
+from training_lab.strategies.builtins.ichi_v1 import ichi_v1_config_for_preset, run_ichi_v1_backtest
+from training_lab.strategies.builtins.m15_structure import FixedRiskConfig, run_m15_structure_backtest
+from training_lab.strategies.builtins.rsiqui_v3 import rsiqui_v3_config_for_preset, run_rsiqui_v3_backtest
+from training_lab.strategies.builtins.smart_liquidity import smart_liquidity_config_for_preset, run_smart_liquidity_backtest
+from training_lab.strategies.compiler.validator import validate_strategy_spec
+from training_lab.strategies.schema.spec import load_strategy_spec
+from training_lab.validation.suite import validate_strategy
+from training_lab.validation.fixed_lot import validate_fixed_lot_strategy
 
 
 def _load_dataset(dataset_id: str) -> tuple[pd.DataFrame, dict]:

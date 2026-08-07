@@ -7,9 +7,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from trading_lab.config import DATA_PROCESSED_DIR
-from trading_lab.io import write_json
-from trading_lab.models import FeatureSetMetadata
+from training_lab.config import DATA_PROCESSED_DIR
+from training_lab.io import write_json
+from training_lab.models import FeatureSetMetadata
 
 
 FEATURE_VERSION = "v1"

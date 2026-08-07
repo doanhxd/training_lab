@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from trading_lab.config import DATA_PROCESSED_DIR
-from trading_lab.io import write_json
-from trading_lab.models import DatasetMetadata
+from training_lab.config import DATA_PROCESSED_DIR
+from training_lab.io import write_json
+from training_lab.models import DatasetMetadata
 
 
 CANONICAL_COLUMNS = [

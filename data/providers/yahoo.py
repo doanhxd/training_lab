@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from trading_lab.config import DATA_RAW_DIR
+from training_lab.config import DATA_RAW_DIR
 
 
 YAHOO_XAUUSD_SYMBOL = "XAUUSD=X"

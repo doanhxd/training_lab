@@ -6,7 +6,7 @@ import unittest
 
 import pandas as pd
 
-from trading_lab.scripts import run_rsiqui_btcusd_20260101_m5_backtest as btc2026
+from training_lab.scripts import run_rsiqui_btcusd_20260101_m5_backtest as btc2026
 
 
 ROOT = Path(__file__).resolve().parents[2]

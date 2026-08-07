@@ -11,8 +11,8 @@ from typing import Any
 
 import pandas as pd
 
-from trading_lab.strategies.builtins.rsiqui.btcusd import RsiquiV3Config, evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
-from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_filled_order_message
+from training_lab.strategies.builtins.rsiqui.btcusd import RsiquiV3Config, evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
+from training_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_filled_order_message
 
 
 @dataclass(frozen=True)

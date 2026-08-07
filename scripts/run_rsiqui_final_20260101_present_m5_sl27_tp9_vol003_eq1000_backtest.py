@@ -13,12 +13,12 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
 
-from trading_lab.backtest.metrics.performance import compute_metrics
-from trading_lab.data.loaders.csv_loader import load_raw_csv
-from trading_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
-from trading_lab.models import TradeRecord
-from trading_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
-from trading_lab.strategies.builtins.rsiqui.final import (
+from training_lab.backtest.metrics.performance import compute_metrics
+from training_lab.data.loaders.csv_loader import load_raw_csv
+from training_lab.data.transforms.normalize import normalize_candles, write_processed_dataset
+from training_lab.models import TradeRecord
+from training_lab.storage.artifacts import build_leaderboard, persist_leaderboard, persist_run_artifacts, run_id_for
+from training_lab.strategies.builtins.rsiqui.final import (
     evaluate_rsiqui_v3_signal,
     prepare_rsiqui_v3_frame,
     rsiqui_v3_config_for_preset,

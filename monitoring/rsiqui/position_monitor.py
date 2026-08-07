@@ -14,8 +14,8 @@ BOT_MAGIC_LABELS = {
 
 }
 RUNNER_IDENTIFIERS = {
-    "rsiqui_v3_final": ("rsiqui_final.py", "trading_lab.runners.mt5.rsiqui_final", "rsiqui_final"),
-    "rsiqui_v3_btcusd": ("rsiqui_btcusd.py", "trading_lab.runners.mt5.rsiqui_btcusd", "rsiqui_btcusd"),
+    "rsiqui_v3_final": ("rsiqui_final.py", "training_lab.runners.mt5.rsiqui_final", "rsiqui_final"),
+    "rsiqui_v3_btcusd": ("rsiqui_btcusd.py", "training_lab.runners.mt5.rsiqui_btcusd", "rsiqui_btcusd"),
 }
 
 

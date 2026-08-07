@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pandas as pd
 
-from trading_lab.backtest.execution.engine import run_backtest
-from trading_lab.backtest.metrics.performance import compute_metrics
-from trading_lab.models import BacktestConfig, StrategySpec, ValidationConfig, ValidationSummary
-from trading_lab.validation.benchmarks.baselines import benchmark_summary
-from trading_lab.validation.walk_forward.windows import make_walk_forward_windows
+from training_lab.backtest.execution.engine import run_backtest
+from training_lab.backtest.metrics.performance import compute_metrics
+from training_lab.models import BacktestConfig, StrategySpec, ValidationConfig, ValidationSummary
+from training_lab.validation.benchmarks.baselines import benchmark_summary
+from training_lab.validation.walk_forward.windows import make_walk_forward_windows
 
 
 def _segment_metrics(features: pd.DataFrame, spec: StrategySpec, config: BacktestConfig) -> float:

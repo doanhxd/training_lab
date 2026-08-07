@@ -8,8 +8,8 @@ from typing import Any
 
 import pandas as pd
 
-from trading_lab.config import OUTPUT_BACKTESTS_DIR, OUTPUT_REPORTS_DIR, OUTPUT_SPECS_DIR
-from trading_lab.io import write_json
+from training_lab.config import OUTPUT_BACKTESTS_DIR, OUTPUT_REPORTS_DIR, OUTPUT_SPECS_DIR
+from training_lab.io import write_json
 
 
 def run_id_for(strategy_name: str, dataset_id: str, config_hash: str = "default") -> str:

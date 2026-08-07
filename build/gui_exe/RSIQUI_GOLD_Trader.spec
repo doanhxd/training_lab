@@ -1,11 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(SPECPATH).resolve().parents[1]
 
 a = Analysis(
-    ['..\\..\\monitoring\\rsiqui\\monitor_gui.py'],
-    pathex=['..'],
+    ['../../monitoring/rsiqui/monitor_gui.py'],
+    pathex=[str(PROJECT_ROOT.parent)],
     binaries=[],
-    datas=[('C:/Users/Maple Razer/Desktop/trading_lab/configs', 'configs')],
+    datas=[(str(PROJECT_ROOT / 'configs'), 'configs')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

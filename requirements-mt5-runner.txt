@@ -1,5 +1,5 @@
 # Runtime dependencies for the desktop FINAL and FINAL_TRAILING MT5 paper runners.
-# Installed into trading_lab/.venv by the launchers; do not use Hermes Agent's Python environment.
+# Install into the project's dedicated virtual environment; do not use Hermes Agent's Python environment.
 pandas>=2.0,<3
 MetaTrader5>=5.0.45,<6
 pydantic>=2.0,<3

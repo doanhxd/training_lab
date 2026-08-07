@@ -13,8 +13,8 @@ import pandas as pd
 
 GMT_PLUS_7 = timezone(timedelta(hours=7))
 
-from trading_lab.strategies.builtins.rsiqui.final import RsiquiV3Config, evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
-from trading_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_filled_order_message
+from training_lab.strategies.builtins.rsiqui.final import RsiquiV3Config, evaluate_rsiqui_v3_signal, prepare_rsiqui_v3_frame, rsiqui_v3_config_for_preset
+from training_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_filled_order_message
 
 
 @dataclass(frozen=True)

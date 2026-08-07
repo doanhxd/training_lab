@@ -5,8 +5,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from trading_lab.strategies.builtins import rsiqui_v3_root as root
-from trading_lab.strategies.builtins.rsiqui import btcusd, final, neg, ori
+from training_lab.strategies.builtins import rsiqui_v3_root as root
+from training_lab.strategies.builtins.rsiqui import btcusd, final, neg, ori
 
 
 VARIANTS = (final, ori, neg, btcusd)
