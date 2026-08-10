@@ -98,9 +98,9 @@ def format_telegram_signal_message(
 
 
 STRATEGY_SELECTIONS = {
+    "rsiqui_v3_final_x": StrategySelection("rsiqui_v3_final_x", "F X $5K", CONFIG_ROOT / "final_x_m5.json"),
     "rsiqui_v3_final": StrategySelection("rsiqui_v3_final", "F Root", CONFIG_ROOT / "final_m5.json"),
     "rsiqui_v3_final_trailing": StrategySelection("rsiqui_v3_final_trailing", "F TRL", CONFIG_ROOT / "final_trailing_m5.json"),
-    "rsiqui_v3_final_x": StrategySelection("rsiqui_v3_final_x", "F X · $5K", CONFIG_ROOT / "final_x_m5.json"),
     "rsiqui_v3_btcusd": StrategySelection("rsiqui_v3_btcusd", "BTC", CONFIG_ROOT / "btcusd_m5.json"),
 }
 
@@ -197,9 +197,9 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._telegram_notifier = TelegramNotifier(TelegramSettings.from_environment(enabled=True))
         self.shell: tk.Frame | None = None
         self._strategy_profiles = {key: load_read_only_profile(selection.config_path) for key, selection in STRATEGY_SELECTIONS.items()}
-        current_strategy_key = str(profile.get("strategy_key", "rsiqui_v3_final_trailing"))
+        current_strategy_key = str(profile.get("strategy_key", "rsiqui_v3_final_x"))
         if current_strategy_key not in self._strategy_profiles:
-            current_strategy_key = "rsiqui_v3_final_trailing"
+            current_strategy_key = "rsiqui_v3_final_x"
         self._selected_strategy_keys: list[str] = [current_strategy_key]
         self._profile_menu_vars: dict[str, tk.BooleanVar] = {}
 
@@ -1463,7 +1463,7 @@ class RsiquiV3MonitorApp(tk.Tk):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Read-only GOLD Trader dashboard for RSIQUI V3 paper positions.")
-    parser.add_argument("--config", default=str(CONFIG_ROOT / "final_trailing_m5.json"), help="RSIQUI V3 JSON read for display only")
+    parser.add_argument("--config", default=str(CONFIG_ROOT / "final_x_m5.json"), help="RSIQUI V3 JSON read for display only")
     parser.add_argument("--symbol", default="XAUUSD", help="MT5 symbol to observe")
     parser.add_argument("--refresh-seconds", type=float, default=2.0)
     args = parser.parse_args()

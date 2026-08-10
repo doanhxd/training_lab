@@ -6,7 +6,7 @@ if not exist "%PROJECT_ROOT%configs\strategies\rsiqui\final_x_m5.json" set "PROJ
 
 cd /d "%PROJECT_ROOT%"
 
-title RSIQUI FINAL_X - XAUUSDc - 0.10 lot - $5,000
+title RSIQUI FINAL_X - XAUUSD - 0.10 lot - $5,000
 
 set "VENV_DIR=%PROJECT_ROOT%.venv311"
 if not exist "%VENV_DIR%\Scripts\python.exe" set "VENV_DIR=%PROJECT_ROOT%.venv"
@@ -32,12 +32,12 @@ if not exist "%CONFIG%" (
 )
 
 echo ================================================================
-echo RSIQUI FINAL_X / XAUUSDc / M5
+echo RSIQUI FINAL_X / XAUUSD / M5
 echo Profile : $5,000 account contract
 echo Contract: 0.10 lot / SL $100 / TP $30 / spread cap $0.30
 echo Trailing: disabled (fixed SL/TP)
 echo Magic   : 573505
-echo Symbol  : XAUUSDc (fallback XAUUSD)
+echo Symbol  : XAUUSD (fallback XAUUSD)
 echo Account : runner uses the currently logged-in MT5 terminal
 echo Project : %PROJECT_ROOT%
 echo Safety  : this launcher starts the bot; it does not place a test order

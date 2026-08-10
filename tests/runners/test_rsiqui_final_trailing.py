@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
@@ -96,6 +97,20 @@ class FinalTrailingTests(unittest.TestCase):
         self.assertTrue(runner.start())
         self.assertFalse(runner._trail_open_position())
         self.assertEqual([], mt5.orders)
+
+    def test_final_x_terminal_logs_alias_xauusdc_as_xauusd(self) -> None:
+        config = load_config("configs/strategies/rsiqui/final_x_m5.json")
+        runner = PaperOnlyRsiquiFinalTrailingMt5Runner(config, mt5=FakeMt5(bid=2302.51))
+        runner.last_status = "READY: XAUUSDc M5 immediate-signal RSIQUI V3"
+
+        status_line = runner._terminal_status_line()
+
+        self.assertIn("XAUUSD", status_line)
+        self.assertNotIn("XAUUSDc", status_line)
+
+        launcher = Path("RUN_FINAL_X_5K_XAUUSDc.bat").read_text(encoding="utf-8")
+        self.assertIn("RSIQUI FINAL_X / XAUUSD / M5", launcher)
+        self.assertIn("Symbol  : XAUUSD (fallback XAUUSD)", launcher)
 
     def test_c_symbol_fallback_resolves_and_trails_on_xauusdc(self) -> None:
         config = replace(load_config(), symbol="XAUUSD", symbol_candidates=("XAUUSD",))

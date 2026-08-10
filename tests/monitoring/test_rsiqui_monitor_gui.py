@@ -3,6 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import inspect
+import os
+import subprocess
+import sys
 import unittest
 from datetime import UTC, datetime
 
@@ -16,6 +19,22 @@ from training_lab.monitoring.rsiqui.position_monitor import RunnerView
 
 
 class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
+    def test_monitor_module_help_runs_without_runpy_runtime_warning(self) -> None:
+        project_root = Path(__file__).resolve().parents[2]
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(project_root.parent)
+        result = subprocess.run(
+            [sys.executable, "-W", "error::RuntimeWarning", "-m", "training_lab.monitoring.rsiqui.monitor_gui", "--help"],
+            cwd=project_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertNotIn("found in sys.modules after import of package", result.stderr)
+
     def test_gui_timezone_is_gmt_plus_7_for_clock_and_timestamp_display(self) -> None:
         self.assertEqual(7 * 60 * 60, GMT_PLUS_7.utcoffset(None).total_seconds())
         utc_value = datetime(2026, 8, 5, 4, 45, 10, tzinfo=UTC)
@@ -190,11 +209,14 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
     def test_monitor_defaults_to_final_config_and_wider_log_column(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
-        self.assertIn('default=str(CONFIG_ROOT / "final_trailing_m5.json")', source)
-        self.assertIn('profile.get("strategy_key", "rsiqui_v3_final_trailing")', source)
+        self.assertIn('default=str(CONFIG_ROOT / "final_x_m5.json")', source)
+        self.assertIn('profile.get("strategy_key", "rsiqui_v3_final_x")', source)
         self.assertIn('body.grid_columnconfigure(0, weight=5, uniform="main")', source)
         self.assertIn('body.grid_columnconfigure(1, weight=6, uniform="main")', source)
         self.assertIn('message_wrap = max(560, self._log_canvas.winfo_width() - 170)', source)
+
+        launcher = Path("MONITOR.bat").read_text(encoding="utf-8")
+        self.assertIn("final_x_m5.json", launcher)
 
     def test_settings_fit_profile_timeframe_volume_sl_tp_in_one_row(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")

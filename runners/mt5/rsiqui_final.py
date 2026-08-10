@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 from pathlib import Path
+import re
 import time
 from typing import Any
 
@@ -517,8 +518,13 @@ class PaperOnlyRsiquiMt5Runner:
             return True
         return False
 
+    @staticmethod
+    def _display_log_text(message: str) -> str:
+        """Use the stable GOLD alias in operator-facing FINAL_X logs."""
+        return re.sub(r"(?i)\bXAUUSDc\b", "XAUUSD", str(message))
+
     def _terminal_status_line(self) -> str:
-        return f"[{datetime.now(tz=GMT_PLUS_7):%H:%M:%S}] {self.last_status}"
+        return f"[{datetime.now(tz=GMT_PLUS_7):%H:%M:%S}] {self._display_log_text(self.last_status)}"
 
     def run_forever(self) -> None:
         if not self.start():
