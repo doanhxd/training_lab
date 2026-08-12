@@ -37,9 +37,9 @@ def parse_trade_command(text: str, *, bot_username: str | None = None) -> TradeC
             raise ValueError("Command is addressed to another bot")
     elif bot_username:
         raise ValueError("Include the bot mention")
-    # The broker's preferred gold contract is XAUUSDc.  Keep explicit symbol
-    # aliases available, while making the short ``gold`` command use it too.
-    symbol = "XAUUSDc" if asset in {"gold", "xauusdc"} else "XAUUSD"
+    # Keep ``gold`` unresolved until MT5 is queried. Different brokers expose
+    # the contract as XAUUSD or XAUUSDc.
+    symbol = "gold" if asset == "gold" else ("XAUUSDc" if asset == "xauusdc" else "XAUUSD")
     return TradeCommand(side=command[1:], symbol=symbol)
 
 
@@ -51,6 +51,17 @@ def volume_for_symbol(symbol: str) -> float:
     if normalized == "XAUUSD":
         return 0.03
     raise ValueError(f"Unsupported trade symbol: {symbol}")
+
+
+def resolve_trade_symbol(mt5: Any, symbol: str) -> str:
+    """Resolve the ``gold`` alias against symbols actually available in MT5."""
+    if symbol.strip().lower() != "gold":
+        return symbol
+    for candidate in ("XAUUSDc", "XAUUSD"):
+        info = mt5.symbol_info(candidate)
+        if info is not None and mt5.symbol_select(candidate, True):
+            return candidate
+    raise ValueError("MT5 has neither XAUUSDc nor XAUUSD available")
 
 
 def parse_control_command(text: str, *, bot_username: str | None = None) -> tuple[str, int | str | None]:
@@ -163,13 +174,14 @@ class TelegramTradeBot:
     def execute(self, command: TradeCommand) -> str:
         if not self.enabled:
             raise RuntimeError("Bot is disabled")
-        if not self.mt5.symbol_select(command.symbol, True):
-            raise RuntimeError(f"Cannot select {command.symbol}")
-        tick = self.mt5.symbol_info_tick(command.symbol)
+        symbol = resolve_trade_symbol(self.mt5, command.symbol)
+        if not self.mt5.symbol_select(symbol, True):
+            raise RuntimeError(f"Cannot select {symbol}")
+        tick = self.mt5.symbol_info_tick(symbol)
         if tick is None:
             raise RuntimeError("MT5 tick unavailable")
-        volume = self.volume if self.volume is not None else volume_for_symbol(command.symbol)
-        request = build_market_order_request(mt5=self.mt5, symbol=command.symbol, side=command.side,
+        volume = self.volume if self.volume is not None else volume_for_symbol(symbol)
+        request = build_market_order_request(mt5=self.mt5, symbol=symbol, side=command.side,
                                              bid=float(tick.bid), ask=float(tick.ask),
                                              volume=volume, distance=self.distance)
         result = self.mt5.order_send(request)
@@ -179,7 +191,7 @@ class TelegramTradeBot:
             comment = "" if result is None else getattr(result, "comment", "")
             raise RuntimeError(f"MT5 rejected order: {code} {comment}".strip())
         ticket = getattr(result, "deal", None) or getattr(result, "order", "?")
-        return (f"{'LONG' if command.side == 'long' else 'SHORT'} {command.symbol} đã khớp\n"
+        return (f"{'LONG' if command.side == 'long' else 'SHORT'} {symbol} đã khớp\n"
                 f"Entry: {request['price']:.2f}\nSL: {request['sl']:.2f}\nTP: {request['tp']:.2f}\n"
                 f"Lot: {request['volume']:.2f}\nDeal/Order ID: {ticket}")
 
@@ -340,9 +352,11 @@ class TelegramTradeBot:
                 self.send(self._format_analytics(analytics, argument), chat_id=source_chat_id)
                 return
             command = parse_trade_command(text, bot_username=parser_bot_username)
-            volume = self.volume if self.volume is not None else volume_for_symbol(command.symbol)
-            self.send(f"Đã nhận lệnh {command.side.upper()} {command.symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED", chat_id=source_chat_id)
-            self.send(self.execute(command), chat_id=source_chat_id)
+            resolved_symbol = resolve_trade_symbol(self.mt5, command.symbol)
+            resolved_command = TradeCommand(side=command.side, symbol=resolved_symbol)
+            volume = self.volume if self.volume is not None else volume_for_symbol(resolved_symbol)
+            self.send(f"Đã nhận lệnh {command.side.upper()} {resolved_symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED", chat_id=source_chat_id)
+            self.send(self.execute(resolved_command), chat_id=source_chat_id)
         except ValueError as exc:
             self.send(f"Lệnh không hợp lệ: {exc}", chat_id=source_chat_id)
         except Exception as exc:

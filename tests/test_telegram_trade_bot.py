@@ -9,6 +9,7 @@ from training_lab.telegram_trade_bot import (
     parse_control_command,
     parse_period,
     parse_trade_command,
+    resolve_trade_symbol,
     volume_for_symbol,
 )
 
@@ -16,13 +17,27 @@ from training_lab.telegram_trade_bot import (
 class TelegramTradeBotTests(unittest.TestCase):
     def test_parse_short_gold_command_with_bot_mention(self) -> None:
         command = parse_trade_command("/short gold @rich_vjp_bot")
-        self.assertEqual(TradeCommand(side="short", symbol="XAUUSDc"), command)
-        self.assertEqual(0.1, volume_for_symbol(command.symbol))
+        self.assertEqual(TradeCommand(side="short", symbol="gold"), command)
 
     def test_parse_long_gold_command_maps_to_xauusdc(self) -> None:
         command = parse_trade_command("/long gold @rich_vjp_bot")
-        self.assertEqual(TradeCommand(side="long", symbol="XAUUSDc"), command)
-        self.assertEqual(0.1, volume_for_symbol(command.symbol))
+        self.assertEqual(TradeCommand(side="long", symbol="gold"), command)
+
+    def test_gold_resolves_to_available_broker_symbol(self) -> None:
+        class GoldMt5(FakeMt5):
+            def __init__(self, available):
+                self.available = available
+
+            def symbol_info(self, symbol: str):
+                return type("Info", (), {"digits": 2})() if symbol in self.available else None
+
+            def symbol_select(self, symbol: str, enable: bool):
+                return symbol in self.available and enable
+
+        self.assertEqual("XAUUSDc", resolve_trade_symbol(GoldMt5({"XAUUSDc"}), "gold"))
+        self.assertEqual("XAUUSD", resolve_trade_symbol(GoldMt5({"XAUUSD"}), "gold"))
+        with self.assertRaises(ValueError):
+            resolve_trade_symbol(GoldMt5(set()), "gold")
 
     def test_only_xauusdc_uses_010_lot(self) -> None:
         self.assertEqual(0.10, volume_for_symbol("XAUUSDc"))
