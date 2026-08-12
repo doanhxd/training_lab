@@ -9,8 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import os
+import socket
 import time
 from typing import Any
+from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -77,7 +79,7 @@ def build_market_order_request(*, mt5: Any, symbol: str, side: str, bid: float, 
 class TelegramTradeBot:
     def __init__(self, *, mt5: Any, token: str, chat_id: str, allowed_user_ids: set[int],
                  bot_username: str | None = None, volume: float | None = None,
-                 distance: float = 10.0, timeout: float = 20.0) -> None:
+                 distance: float = 10.0, timeout: float = 40.0) -> None:
         self.mt5, self.token, self.chat_id = mt5, token, str(chat_id)
         self.allowed_user_ids = allowed_user_ids
         self.bot_username = bot_username
@@ -138,7 +140,14 @@ class TelegramTradeBot:
     def run_forever(self) -> None:
         offset = 0
         while True:
-            updates = self._telegram("getUpdates", offset=offset, timeout=25, allowed_updates='["message"]') or []
+            try:
+                # The HTTP timeout must exceed Telegram's long-poll timeout.
+                # Otherwise urllib raises TimeoutError before getUpdates returns.
+                updates = self._telegram("getUpdates", offset=offset, timeout=25, allowed_updates='["message"]') or []
+            except (TimeoutError, socket.timeout, URLError):
+                # A transient network timeout must not stop the trading bridge.
+                time.sleep(2)
+                continue
             for update in updates:
                 offset = max(offset, int(update["update_id"]) + 1)
                 self.handle_update(update)
