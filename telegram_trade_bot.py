@@ -64,6 +64,20 @@ def resolve_trade_symbol(mt5: Any, symbol: str) -> str:
     raise ValueError("MT5 has neither XAUUSDc nor XAUUSD available")
 
 
+def guard_opposite_position(
+    positions: list[Any], *, symbol: str, side: str, position_type_buy: int,
+) -> None:
+    """Reject only a reverse-side entry for the same resolved symbol."""
+    wanted_buy = side == "long"
+    for position in positions:
+        if str(getattr(position, "symbol", "")) != symbol:
+            continue
+        position_buy = int(getattr(position, "type", -1)) == int(position_type_buy)
+        if position_buy != wanted_buy:
+            current = "LONG" if position_buy else "SHORT"
+            raise ValueError(f"Reverse order blocked: {symbol} already has {current}")
+
+
 def parse_control_command(text: str, *, bot_username: str | None = None) -> tuple[str, int | str | None]:
     """Parse non-trading commands; destructive close-all requires confirmation."""
     parts = text.strip().split()
@@ -175,6 +189,10 @@ class TelegramTradeBot:
         if not self.enabled:
             raise RuntimeError("Bot is disabled")
         symbol = resolve_trade_symbol(self.mt5, command.symbol)
+        guard_opposite_position(
+            self._positions(), symbol=symbol, side=command.side,
+            position_type_buy=int(getattr(self.mt5, "POSITION_TYPE_BUY", 0)),
+        )
         if not self.mt5.symbol_select(symbol, True):
             raise RuntimeError(f"Cannot select {symbol}")
         tick = self.mt5.symbol_info_tick(symbol)

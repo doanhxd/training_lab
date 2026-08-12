@@ -10,6 +10,7 @@ from training_lab.telegram_trade_bot import (
     parse_period,
     parse_trade_command,
     resolve_trade_symbol,
+    guard_opposite_position,
     volume_for_symbol,
 )
 
@@ -38,6 +39,21 @@ class TelegramTradeBotTests(unittest.TestCase):
         self.assertEqual("XAUUSD", resolve_trade_symbol(GoldMt5({"XAUUSD"}), "gold"))
         with self.assertRaises(ValueError):
             resolve_trade_symbol(GoldMt5(set()), "gold")
+
+    def test_rejects_opposite_side_but_allows_same_side_for_symbol(self) -> None:
+        positions = [
+            type("Position", (), {"symbol": "XAUUSDc", "type": 0})(),
+        ]
+        with self.assertRaises(ValueError):
+            guard_opposite_position(
+                positions, symbol="XAUUSDc", side="short", position_type_buy=0,
+            )
+        guard_opposite_position(
+            positions, symbol="XAUUSDc", side="long", position_type_buy=0,
+        )
+        guard_opposite_position(
+            positions, symbol="XAUUSD", side="short", position_type_buy=0,
+        )
 
     def test_only_xauusdc_uses_010_lot(self) -> None:
         self.assertEqual(0.10, volume_for_symbol("XAUUSDc"))
