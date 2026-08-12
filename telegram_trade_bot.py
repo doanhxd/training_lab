@@ -82,7 +82,7 @@ def guard_opposite_position(
             continue
         position_buy = int(getattr(position, "type", -1)) == int(position_type_buy)
         if position_buy != wanted_buy:
-            current = "LONG" if position_buy else "SHORT"
+            current = "🟢 LONG" if position_buy else "🔴 SHORT"
             raise ValueError(f"Reverse order blocked: {symbol} already has {current}")
 
 
@@ -221,9 +221,9 @@ class TelegramTradeBot:
             comment = "" if result is None else getattr(result, "comment", "")
             raise RuntimeError(f"MT5 rejected order: {code} {comment}".strip())
         ticket = getattr(result, "deal", None) or getattr(result, "order", "?")
-        return (f"{'LONG' if command.side == 'long' else 'SHORT'} XAUUSD đã khớp\n"
-                f"Entry: {request['price']:.2f}\nSL: {request['sl']:.2f}\nTP: {request['tp']:.2f}\n"
-                f"Lot: {request['volume']:.2f}\nDeal/Order ID: {ticket}")
+        return (f"{'🟢 LONG' if command.side == 'long' else '🔴 SHORT'} #XAUUSD đã khớp 0.1 lot\n"
+                f"Entry: {request['price']:.2f}\nSL: {request['sl']:.2f}\nTP: {request['tp']:.2f}\n")
+                # f"Lot: {request['volume']:.2f}\nDeal/Order ID: {ticket}")
 
     def _positions(self) -> list[Any]:
         return list(self.mt5.positions_get() or ())
@@ -261,10 +261,10 @@ class TelegramTradeBot:
                    + float(getattr(deal, "commission", 0.0))
                    + float(getattr(deal, "swap", 0.0)))
             message = (f"🔔 {reason} HIT — lệnh đã đóng\n"
-                       f"Symbol: {symbol}\n"
+                       f"Symbol: #XAUUSD\n"
                        f"Volume: {float(getattr(deal, 'volume', 0.0)):.2f}\n"
-                       f"Net P/L: {format_dollar_amount(pnl, show_plus=True)}\n"
-                       f"Deal: {deal_id}")
+                       f"Net P/L: {format_dollar_amount(pnl, show_plus=True)}")
+                    #    f"Deal: {deal_id}")
             self.send(message, chat_id=self.chat_id)
 
     def _format_status(self) -> str:
@@ -301,10 +301,11 @@ class TelegramTradeBot:
             return "📌 POSITIONS\nKhông có position đang mở."
         rows = ["📌 POSITIONS"]
         for position in positions:
-            side = "LONG" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "SHORT"
-            rows.append(f"#{getattr(position, 'ticket', '?')} {side} XAUUSD "
-                        f"Lot: {float(getattr(position, 'volume', 0.0)):.2f} "
-                        f"P/L: {format_dollar_amount(float(getattr(position, 'profit', 0.0)))}")
+            side = "🟢 LONG " if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "🔴 SHORT "
+            rows.append(f"{side} #XAUUSD "
+                # f"#{getattr(position, 'ticket', '?')} {side} #XAUUSD "
+                        f"| {float(getattr(position, 'volume', 0.0)):.2f} lot "
+                        f"| P/L: {format_dollar_amount(float(getattr(position, 'profit', 0.0)))}")
         return "\n".join(rows)
 
     def _close_position(self, ticket: int) -> str:
@@ -421,7 +422,8 @@ class TelegramTradeBot:
             resolved_symbol = resolve_trade_symbol(self.mt5, command.symbol)
             resolved_command = TradeCommand(side=command.side, symbol=resolved_symbol)
             volume = self.volume if self.volume is not None else volume_for_symbol(resolved_symbol)
-            self.send(f"Đã nhận lệnh {command.side.upper()} {resolved_symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED", chat_id=source_chat_id)
+            # Tạm ẩn message QUEUED trong lúc chờ lệnh khớp.
+            # self.send(f"Đã nhận lệnh {command.side.upper()} {resolved_symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED", chat_id=source_chat_id)
             self.send(self.execute(resolved_command), chat_id=source_chat_id)
         except ValueError as exc:
             self.send(f"Lệnh không hợp lệ: {exc}", chat_id=source_chat_id)
