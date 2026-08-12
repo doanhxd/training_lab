@@ -2,7 +2,7 @@
 
 Run only on a machine with the intended MT5 terminal already logged in.  The
 bot is fail-closed: token, chat, and user allowlists are required, and only
-explicit ``/buy gold`` / ``/sell gold`` commands are accepted.
+explicit ``/long gold`` / ``/short gold`` commands are accepted.
 """
 from __future__ import annotations
 
@@ -26,10 +26,10 @@ class TradeCommand:
 def parse_trade_command(text: str, *, bot_username: str | None = None) -> TradeCommand:
     parts = text.strip().split()
     if len(parts) not in (2, 3):
-        raise ValueError("Use /buy gold @bot or /sell gold @bot")
+        raise ValueError("Use /long gold @bot or /short gold @bot")
     command, asset = parts[0].lower(), parts[1].lower()
-    if command not in {"/buy", "/sell"} or asset not in {"gold", "xauusd", "xauusdc"}:
-        raise ValueError("Only /buy gold, /buy xauusd, and /buy xauusdc are supported")
+    if command not in {"/long", "/short"} or asset not in {"gold", "xauusd", "xauusdc"}:
+        raise ValueError("Only /long gold, /short gold, /long xauusd, and /short xauusdc are supported")
     if len(parts) == 3:
         mention = parts[2].lstrip("@").lower()
         if not mention or (bot_username and mention != bot_username.lstrip("@").lower()):
@@ -52,14 +52,14 @@ def volume_for_symbol(symbol: str) -> float:
 
 def build_market_order_request(*, mt5: Any, symbol: str, side: str, bid: float, ask: float,
                                volume: float, distance: float) -> dict[str, Any]:
-    if side not in {"buy", "sell"} or volume <= 0 or distance <= 0:
+    if side not in {"long", "short"} or volume <= 0 or distance <= 0:
         raise ValueError("Invalid trade parameters")
     info = mt5.symbol_info(symbol)
     if info is None:
         raise ValueError(f"MT5 symbol is unavailable: {symbol}")
     digits = int(getattr(info, "digits", 2))
-    price = float(ask if side == "buy" else bid)
-    is_buy = side == "buy"
+    price = float(ask if side == "long" else bid)
+    is_buy = side == "long"
     return {
         "action": mt5.TRADE_ACTION_DEAL,
         "symbol": symbol,
@@ -115,7 +115,7 @@ class TelegramTradeBot:
             comment = "" if result is None else getattr(result, "comment", "")
             raise RuntimeError(f"MT5 rejected order: {code} {comment}".strip())
         ticket = getattr(result, "deal", None) or getattr(result, "order", "?")
-        return (f"{'BUY' if command.side == 'buy' else 'SELL'} {command.symbol} đã khớp\n"
+        return (f"{'LONG' if command.side == 'long' else 'SHORT'} {command.symbol} đã khớp\n"
                 f"Entry: {request['price']:.2f}\nSL: {request['sl']:.2f}\nTP: {request['tp']:.2f}\n"
                 f"Lot: {request['volume']:.2f}\nDeal/Order ID: {ticket}")
 
