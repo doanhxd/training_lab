@@ -37,7 +37,9 @@ def parse_trade_command(text: str, *, bot_username: str | None = None) -> TradeC
             raise ValueError("Command is addressed to another bot")
     elif bot_username:
         raise ValueError("Include the bot mention")
-    symbol = "XAUUSDc" if asset == "xauusdc" else "XAUUSD"
+    # The broker's preferred gold contract is XAUUSDc.  Keep explicit symbol
+    # aliases available, while making the short ``gold`` command use it too.
+    symbol = "XAUUSDc" if asset in {"gold", "xauusdc"} else "XAUUSD"
     return TradeCommand(side=command[1:], symbol=symbol)
 
 
@@ -184,12 +186,25 @@ class TelegramTradeBot:
     def _positions(self) -> list[Any]:
         return list(self.mt5.positions_get() or ())
 
+    def _today_deals(self) -> list[Any]:
+        """Return deals since today's UTC midnight for status counters."""
+        now = datetime.now(timezone.utc)
+        start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+        return list(self.mt5.history_deals_get(start, now) or ())
+
     def _format_status(self) -> str:
         account = self.mt5.account_info()
         positions = self._positions()
         if account is None:
             raise RuntimeError("MT5 account information unavailable")
         floating = sum(float(getattr(position, "profit", 0.0)) for position in positions)
+        today_deals = self._today_deals()
+        today_pnl = sum(
+            float(getattr(deal, "profit", 0.0))
+            + float(getattr(deal, "commission", 0.0))
+            + float(getattr(deal, "swap", 0.0))
+            for deal in today_deals
+        )
         return ("📊 ACCOUNT STATUS\n"
                 f"Bot: {'🟢 ENABLED' if self.enabled else '🔴 DISABLED'}\n"
                 f"Account: MT5 #{getattr(account, 'login', '?')}\n"
@@ -198,6 +213,8 @@ class TelegramTradeBot:
                 f"Equity: ${float(getattr(account, 'equity', 0.0)):.2f}\n"
                 f"Floating P/L: ${floating:.2f}\n"
                 f"Open positions: {len(positions)}\n"
+                f"Trades today: {len(today_deals)}\n"
+                f"Today's net P/L: ${today_pnl:+.2f}\n"
                 f"SL/TP distance: {self.distance:g}")
 
     def _format_positions(self) -> str:

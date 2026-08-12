@@ -16,7 +16,17 @@ from training_lab.telegram_trade_bot import (
 class TelegramTradeBotTests(unittest.TestCase):
     def test_parse_short_gold_command_with_bot_mention(self) -> None:
         command = parse_trade_command("/short gold @rich_vjp_bot")
-        self.assertEqual(TradeCommand(side="short", symbol="XAUUSD"), command)
+        self.assertEqual(TradeCommand(side="short", symbol="XAUUSDc"), command)
+        self.assertEqual(0.1, volume_for_symbol(command.symbol))
+
+    def test_parse_long_gold_command_maps_to_xauusdc(self) -> None:
+        command = parse_trade_command("/long gold @rich_vjp_bot")
+        self.assertEqual(TradeCommand(side="long", symbol="XAUUSDc"), command)
+        self.assertEqual(0.1, volume_for_symbol(command.symbol))
+
+    def test_only_xauusdc_uses_010_lot(self) -> None:
+        self.assertEqual(0.10, volume_for_symbol("XAUUSDc"))
+        self.assertEqual(0.03, volume_for_symbol("XAUUSD"))
 
     def test_parse_xauusdc_command_and_use_larger_fixed_volume(self) -> None:
         command = parse_trade_command("/short xauusdc @rich_vjp_bot")
@@ -69,6 +79,30 @@ class TelegramTradeBotTests(unittest.TestCase):
         self.assertEqual(None, parse_period("all"))
         with self.assertRaises(ValueError):
             parse_analytics_command("/history 51")
+
+    def test_status_includes_today_trade_count_and_net_pnl(self) -> None:
+        from training_lab.telegram_trade_bot import TelegramTradeBot
+
+        class StatusMt5(FakeMt5):
+            def account_info(self):
+                return type("Account", (), {"login": 5043011, "trade_mode": 0, "balance": 10000.0, "equity": 10002.0})()
+
+            def positions_get(self):
+                return []
+
+            def history_deals_get(self, start, end):
+                return [
+                    type("Deal", (), {"profit": 12.5, "commission": -1.0, "swap": 0.0})(),
+                    type("Deal", (), {"profit": -3.0, "commission": 0.0, "swap": 0.0})(),
+                ]
+
+        bot = TelegramTradeBot(
+            mt5=StatusMt5(), token="token", chat_id="-5043082181",
+            allowed_user_ids={5165617890},
+        )
+        status = bot._format_status()
+        self.assertIn("Trades today: 2", status)
+        self.assertIn("Today's net P/L: $+8.50", status)
 
 
 class FakeMt5:
