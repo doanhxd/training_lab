@@ -212,10 +212,10 @@ class TelegramTradeBot:
                 f"Balance: ${float(getattr(account, 'balance', 0.0)):.2f}\n"
                 f"Equity: ${float(getattr(account, 'equity', 0.0)):.2f}\n"
                 f"Floating P/L: ${floating:.2f}\n"
+                f"SL/TP distance: {self.distance:g}\n"
                 f"Open positions: {len(positions)}\n"
                 f"Trades today: {len(today_deals)}\n"
-                f"Today's net P/L: ${today_pnl:+.2f}\n"
-                f"SL/TP distance: {self.distance:g}")
+                f"Today's net P/L: ${today_pnl:+.2f}")
 
     def _format_positions(self) -> str:
         positions = self._positions()
