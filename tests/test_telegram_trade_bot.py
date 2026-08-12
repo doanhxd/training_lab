@@ -45,6 +45,15 @@ class TelegramTradeBotTests(unittest.TestCase):
         self.assertEqual(2340.25, request["tp"])
         self.assertEqual(FakeMt5.ORDER_TYPE_SELL, request["type"])
 
+    def test_accepts_configured_group_and_private_chat_ids(self) -> None:
+        from training_lab.telegram_trade_bot import TelegramTradeBot
+
+        bot = TelegramTradeBot(
+            mt5=FakeMt5(), token="token", chat_id="-5043082181",
+            allowed_chat_ids={"5165617890"}, allowed_user_ids={5165617890},
+        )
+        self.assertEqual({"-5043082181", "5165617890"}, bot.allowed_chat_ids)
+
 
 class FakeMt5:
     ORDER_TYPE_BUY = 0
