@@ -26,15 +26,26 @@ def parse_trade_command(text: str, *, bot_username: str | None = None) -> TradeC
     if len(parts) not in (2, 3):
         raise ValueError("Use /buy gold @bot or /sell gold @bot")
     command, asset = parts[0].lower(), parts[1].lower()
-    if command not in {"/buy", "/sell"} or asset not in {"gold", "xauusd"}:
-        raise ValueError("Only /buy gold and /sell gold are supported")
+    if command not in {"/buy", "/sell"} or asset not in {"gold", "xauusd", "xauusdc"}:
+        raise ValueError("Only /buy gold, /buy xauusd, and /buy xauusdc are supported")
     if len(parts) == 3:
         mention = parts[2].lstrip("@").lower()
         if not mention or (bot_username and mention != bot_username.lstrip("@").lower()):
             raise ValueError("Command is addressed to another bot")
     elif bot_username:
         raise ValueError("Include the bot mention")
-    return TradeCommand(side=command[1:], symbol="XAUUSD")
+    symbol = "XAUUSDc" if asset == "xauusdc" else "XAUUSD"
+    return TradeCommand(side=command[1:], symbol=symbol)
+
+
+def volume_for_symbol(symbol: str) -> float:
+    """Return the fixed lot size for the supported gold symbol variants."""
+    normalized = symbol.strip().upper()
+    if normalized == "XAUUSDC":
+        return 0.1
+    if normalized == "XAUUSD":
+        return 0.03
+    raise ValueError(f"Unsupported trade symbol: {symbol}")
 
 
 def build_market_order_request(*, mt5: Any, symbol: str, side: str, bid: float, ask: float,
@@ -65,7 +76,7 @@ def build_market_order_request(*, mt5: Any, symbol: str, side: str, bid: float, 
 
 class TelegramTradeBot:
     def __init__(self, *, mt5: Any, token: str, chat_id: str, allowed_user_ids: set[int],
-                 bot_username: str | None = None, volume: float = 0.03,
+                 bot_username: str | None = None, volume: float | None = None,
                  distance: float = 10.0, timeout: float = 20.0) -> None:
         self.mt5, self.token, self.chat_id = mt5, token, str(chat_id)
         self.allowed_user_ids = allowed_user_ids
@@ -91,9 +102,10 @@ class TelegramTradeBot:
         tick = self.mt5.symbol_info_tick(command.symbol)
         if tick is None:
             raise RuntimeError("MT5 tick unavailable")
+        volume = self.volume if self.volume is not None else volume_for_symbol(command.symbol)
         request = build_market_order_request(mt5=self.mt5, symbol=command.symbol, side=command.side,
                                              bid=float(tick.bid), ask=float(tick.ask),
-                                             volume=self.volume, distance=self.distance)
+                                             volume=volume, distance=self.distance)
         result = self.mt5.order_send(request)
         done = getattr(self.mt5, "TRADE_RETCODE_DONE", 10009)
         if result is None or getattr(result, "retcode", None) != done:
@@ -115,7 +127,8 @@ class TelegramTradeBot:
         text = str(message.get("text", ""))
         try:
             command = parse_trade_command(text, bot_username=self.bot_username)
-            self.send(f"Đã nhận lệnh {command.side.upper()} {command.symbol}\nLot: {self.volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED")
+            volume = self.volume if self.volume is not None else volume_for_symbol(command.symbol)
+            self.send(f"Đã nhận lệnh {command.side.upper()} {command.symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED")
             self.send(self.execute(command))
         except ValueError as exc:
             self.send(f"Lệnh không hợp lệ: {exc}")

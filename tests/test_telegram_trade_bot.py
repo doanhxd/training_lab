@@ -6,6 +6,7 @@ from training_lab.telegram_trade_bot import (
     TradeCommand,
     build_market_order_request,
     parse_trade_command,
+    volume_for_symbol,
 )
 
 
@@ -13,6 +14,12 @@ class TelegramTradeBotTests(unittest.TestCase):
     def test_parse_sell_gold_command_with_bot_mention(self) -> None:
         command = parse_trade_command("/sell gold @rich_vjp_bot")
         self.assertEqual(TradeCommand(side="sell", symbol="XAUUSD"), command)
+
+    def test_parse_xauusdc_command_and_use_larger_fixed_volume(self) -> None:
+        command = parse_trade_command("/sell xauusdc @rich_vjp_bot")
+        self.assertEqual(TradeCommand(side="sell", symbol="XAUUSDc"), command)
+        self.assertEqual(0.1, volume_for_symbol(command.symbol))
+        self.assertEqual(0.03, volume_for_symbol("XAUUSD"))
 
     def test_rejects_unknown_symbol_and_missing_mention(self) -> None:
         with self.assertRaises(ValueError):
