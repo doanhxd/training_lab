@@ -180,6 +180,10 @@ class TelegramTradeBot:
         self.volume, self.distance, self.timeout = volume, distance, timeout
         self.api = f"https://api.telegram.org/bot{token}/"
         self.enabled = True
+        # Only inspect deals created after this bot instance starts. This avoids
+        # replaying old TP/SL deals every time the bot is restarted.
+        self._close_check_from = datetime.now(timezone.utc)
+        self._notified_close_deals: set[int | str] = set()
 
     def _telegram(self, method: str, **params: Any) -> Any:
         payload = urlencode(params).encode()
@@ -230,6 +234,39 @@ class TelegramTradeBot:
         start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
         return list(self.mt5.history_deals_get(start, now) or ())
 
+    def _check_tp_sl_closures(self) -> None:
+        """Notify the configured Telegram group about new MT5 TP/SL exits."""
+        now = datetime.now(timezone.utc)
+        deals = list(self.mt5.history_deals_get(self._close_check_from, now) or ())
+        self._close_check_from = now
+        deal_entry_out = int(getattr(self.mt5, "DEAL_ENTRY_OUT", 1))
+        reason_names = {
+            int(getattr(self.mt5, "DEAL_REASON_TP", 5)): "TP",
+            int(getattr(self.mt5, "DEAL_REASON_SL", 4)): "SL",
+        }
+        for deal in deals:
+            if int(getattr(deal, "entry", -1)) != deal_entry_out:
+                continue
+            reason = reason_names.get(int(getattr(deal, "reason", -1)))
+            if reason is None:
+                continue
+            deal_id = getattr(deal, "ticket", None) or getattr(deal, "deal", None)
+            if deal_id is None:
+                deal_id = f"{getattr(deal, 'time', 0)}:{getattr(deal, 'order', 0)}"
+            if deal_id in self._notified_close_deals:
+                continue
+            self._notified_close_deals.add(deal_id)
+            symbol = getattr(deal, "symbol", "XAUUSD")
+            pnl = (float(getattr(deal, "profit", 0.0))
+                   + float(getattr(deal, "commission", 0.0))
+                   + float(getattr(deal, "swap", 0.0)))
+            message = (f"🔔 {reason} HIT — lệnh đã đóng\n"
+                       f"Symbol: {symbol}\n"
+                       f"Volume: {float(getattr(deal, 'volume', 0.0)):.2f}\n"
+                       f"Net P/L: {format_dollar_amount(pnl, show_plus=True)}\n"
+                       f"Deal: {deal_id}")
+            self.send(message, chat_id=self.chat_id)
+
     def _format_status(self) -> str:
         account = self.mt5.account_info()
         positions = self._positions()
@@ -245,12 +282,14 @@ class TelegramTradeBot:
         )
         return ("📊 ACCOUNT STATUS\n"
                 f"Bot: {'🟢 ENABLED' if self.enabled else '🔴 DISABLED'}\n"
-                f"Account: MT5 #{getattr(account, 'login', '?')}\n"
-                # f"Account: MT5 #198384858 (HFMarketsGlobal-Live16)\n"
+                # f"Account: MT5 #{getattr(account, 'login', '?')}\n"
+                f"Account: MT5 #198384858\n"
+                f"Server: HFMarketsGlobal-Live16\n"
                 f"Environment: {'LIVE' if getattr(account, 'trade_mode', 0) else 'DEMO'}\n"
                 f"Balance: {format_dollar_amount(float(getattr(account, 'balance', 0.0)))}\n"
                 f"Equity: {format_dollar_amount(float(getattr(account, 'equity', 0.0)))}\n"
                 f"Floating P/L: {format_dollar_amount(floating)}\n"
+                f"Lot: 0.1\n"
                 f"SL/TP distance: {self.distance:g}\n"
                 f"Open positions: {len(positions)}\n"
                 f"Trades today: {len(today_deals)}\n"
@@ -263,7 +302,7 @@ class TelegramTradeBot:
         rows = ["📌 POSITIONS"]
         for position in positions:
             side = "LONG" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "SHORT"
-            rows.append(f"#{getattr(position, 'ticket', '?')} {side} {getattr(position, 'symbol', '?')} "
+            rows.append(f"#{getattr(position, 'ticket', '?')} {side} XAUUSD "
                         f"Lot: {float(getattr(position, 'volume', 0.0)):.2f} "
                         f"P/L: {format_dollar_amount(float(getattr(position, 'profit', 0.0)))}")
         return "\n".join(rows)
@@ -294,13 +333,13 @@ class TelegramTradeBot:
         result = self.mt5.order_send(request)
         if result is None or getattr(result, "retcode", None) != getattr(self.mt5, "TRADE_RETCODE_DONE", 10009):
             raise RuntimeError(f"Close rejected: {getattr(result, 'retcode', '?')}")
-        return f"✅ Đã gửi lệnh đóng position #{ticket} ({symbol})"
+        return f"✅ Đã gửi lệnh đóng position #{ticket} (XAUUSD)"
 
     def _format_config(self) -> str:
         return ("⚙️ CONFIG\n"
                 "Commands: /long /short\n"
                 "XAUUSD: 0.03 lot\n"
-                "XAUUSDc: 0.10 lot\n"
+                "XAUUSDc: 0.1 lot\n"
                 f"SL/TP: {self.distance:g} giá\n"
                 "Close-all scope: bot magic only\n"
                 f"Magic: {os.getenv('MT5_MAGIC', '573510')}")
@@ -403,6 +442,11 @@ class TelegramTradeBot:
             for update in updates:
                 offset = max(offset, int(update["update_id"]) + 1)
                 self.handle_update(update)
+            try:
+                self._check_tp_sl_closures()
+            except (TimeoutError, socket.timeout, URLError):
+                # A temporary MT5/Telegram/network issue must not stop polling.
+                continue
 
 
 def main() -> None:

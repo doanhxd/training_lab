@@ -140,6 +140,60 @@ class TelegramTradeBotTests(unittest.TestCase):
         self.assertIn("Trades today: 2", status)
         self.assertIn("Today's net P/L: +$8.50", status)
 
+    def test_tp_sl_closure_sends_one_deduplicated_group_notification(self) -> None:
+        from training_lab.telegram_trade_bot import TelegramTradeBot
+
+        class CloseMt5(FakeMt5):
+            DEAL_ENTRY_OUT = 1
+            DEAL_REASON_SL = 4
+            DEAL_REASON_TP = 5
+
+            def history_deals_get(self, start, end):
+                return [type("Deal", (), {
+                    "entry": 1, "reason": 6, "ticket": 987654,
+                    "symbol": "XAUUSD", "volume": 0.03,
+                    "profit": 25.0, "commission": -1.0, "swap": 0.0,
+                })()]
+
+        bot = TelegramTradeBot(
+            mt5=CloseMt5(), token="token", chat_id="-5043082181",
+            allowed_user_ids={5165617890},
+        )
+        sent = []
+        bot.send = lambda text, *, chat_id=None: sent.append((text, chat_id))
+
+        bot._check_tp_sl_closures()
+        bot._check_tp_sl_closures()
+
+        self.assertEqual(1, len(sent))
+        self.assertEqual("-5043082181", sent[0][1])
+        self.assertIn("🔔 TP HIT", sent[0][0])
+        self.assertIn("Net P/L: +$24.00", sent[0][0])
+
+    def test_non_tp_sl_exit_does_not_send_notification(self) -> None:
+        from training_lab.telegram_trade_bot import TelegramTradeBot
+
+        class ManualCloseMt5(FakeMt5):
+            DEAL_ENTRY_OUT = 1
+            DEAL_REASON_SL = 4
+            DEAL_REASON_TP = 5
+
+            def history_deals_get(self, start, end):
+                return [type("Deal", (), {
+                    "entry": 1, "reason": 0, "ticket": 123,
+                    "symbol": "XAUUSD", "volume": 0.03,
+                    "profit": 10.0, "commission": 0.0, "swap": 0.0,
+                })()]
+
+        bot = TelegramTradeBot(
+            mt5=ManualCloseMt5(), token="token", chat_id="-5043082181",
+            allowed_user_ids={5165617890},
+        )
+        sent = []
+        bot.send = lambda text, *, chat_id=None: sent.append((text, chat_id))
+        bot._check_tp_sl_closures()
+        self.assertEqual([], sent)
+
 
 class FakeMt5:
     ORDER_TYPE_BUY = 0
