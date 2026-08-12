@@ -43,6 +43,14 @@ def parse_trade_command(text: str, *, bot_username: str | None = None) -> TradeC
     return TradeCommand(side=command[1:], symbol=symbol)
 
 
+def format_dollar_amount(value: float, *, show_plus: bool = False) -> str:
+    """Format USD with the sign before the currency symbol (for example -$455.30)."""
+    amount = float(value)
+    if amount < 0:
+        return f"-${abs(amount):.2f}"
+    return f"{'+' if show_plus else ''}${amount:.2f}"
+
+
 def volume_for_symbol(symbol: str) -> float:
     """Return the fixed lot size for the supported gold symbol variants."""
     normalized = symbol.strip().upper()
@@ -154,7 +162,7 @@ def build_market_order_request(*, mt5: Any, symbol: str, side: str, bid: float, 
         "tp": round(price + distance if is_buy else price - distance, digits),
         "deviation": int(os.getenv("MT5_DEVIATION_POINTS", "30")),
         "magic": int(os.getenv("MT5_MAGIC", "573510")),
-        "comment": "TG_XAUUSD_CMD",
+        "comment": "GOLD_DoanhHD",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": getattr(mt5, "ORDER_FILLING_IOC", 1),
     }
@@ -209,7 +217,7 @@ class TelegramTradeBot:
             comment = "" if result is None else getattr(result, "comment", "")
             raise RuntimeError(f"MT5 rejected order: {code} {comment}".strip())
         ticket = getattr(result, "deal", None) or getattr(result, "order", "?")
-        return (f"{'LONG' if command.side == 'long' else 'SHORT'} {symbol} đã khớp\n"
+        return (f"{'LONG' if command.side == 'long' else 'SHORT'} XAUUSD đã khớp\n"
                 f"Entry: {request['price']:.2f}\nSL: {request['sl']:.2f}\nTP: {request['tp']:.2f}\n"
                 f"Lot: {request['volume']:.2f}\nDeal/Order ID: {ticket}")
 
@@ -238,14 +246,15 @@ class TelegramTradeBot:
         return ("📊 ACCOUNT STATUS\n"
                 f"Bot: {'🟢 ENABLED' if self.enabled else '🔴 DISABLED'}\n"
                 f"Account: MT5 #{getattr(account, 'login', '?')}\n"
+                # f"Account: MT5 #198384858 (HFMarketsGlobal-Live16)\n"
                 f"Environment: {'LIVE' if getattr(account, 'trade_mode', 0) else 'DEMO'}\n"
-                f"Balance: ${float(getattr(account, 'balance', 0.0)):.2f}\n"
-                f"Equity: ${float(getattr(account, 'equity', 0.0)):.2f}\n"
-                f"Floating P/L: ${floating:.2f}\n"
+                f"Balance: {format_dollar_amount(float(getattr(account, 'balance', 0.0)))}\n"
+                f"Equity: {format_dollar_amount(float(getattr(account, 'equity', 0.0)))}\n"
+                f"Floating P/L: {format_dollar_amount(floating)}\n"
                 f"SL/TP distance: {self.distance:g}\n"
                 f"Open positions: {len(positions)}\n"
                 f"Trades today: {len(today_deals)}\n"
-                f"Today's net P/L: ${today_pnl:+.2f}")
+                f"Today's net P/L: {format_dollar_amount(today_pnl, show_plus=True)}")
 
     def _format_positions(self) -> str:
         positions = self._positions()
@@ -256,7 +265,7 @@ class TelegramTradeBot:
             side = "LONG" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "SHORT"
             rows.append(f"#{getattr(position, 'ticket', '?')} {side} {getattr(position, 'symbol', '?')} "
                         f"Lot: {float(getattr(position, 'volume', 0.0)):.2f} "
-                        f"P/L: ${float(getattr(position, 'profit', 0.0)):.2f}")
+                        f"P/L: {format_dollar_amount(float(getattr(position, 'profit', 0.0)))}")
         return "\n".join(rows)
 
     def _close_position(self, ticket: int) -> str:
@@ -308,7 +317,7 @@ class TelegramTradeBot:
             rows = ["🧾 HISTORY"]
             for deal in deals[:int(argument or 10)]:
                 rows.append(f"#{getattr(deal, 'ticket', '?')} {getattr(deal, 'symbol', '?')} "
-                            f"P/L: ${float(getattr(deal, 'profit', 0.0)):.2f} "
+                            f"P/L: {format_dollar_amount(float(getattr(deal, 'profit', 0.0)))} "
                             f"Volume: {float(getattr(deal, 'volume', 0.0)):.2f}")
             return "\n".join(rows) if len(rows) > 1 else "🧾 HISTORY\nKhông có deal."
         deals = self._deal_history(argument)
@@ -316,17 +325,17 @@ class TelegramTradeBot:
         if kind == "stats":
             wins = sum(1 for deal in deals if float(getattr(deal, "profit", 0.0)) > 0)
             losses = sum(1 for deal in deals if float(getattr(deal, "profit", 0.0)) < 0)
-            return f"📈 STATS\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nDeals: {len(deals)}\nWins: {wins}\nLosses: {losses}\nNet P/L: ${pnl:.2f}"
+            return f"📈 STATS\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nDeals: {len(deals)}\nWins: {wins}\nLosses: {losses}\nNet P/L: {format_dollar_amount(pnl)}"
         if kind == "equity":
             account = self.mt5.account_info()
-            return f"💹 EQUITY\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nCurrent equity: ${float(getattr(account, 'equity', 0.0)):.2f}\nRealized P/L: ${pnl:.2f}"
+            return f"💹 EQUITY\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nCurrent equity: {format_dollar_amount(float(getattr(account, 'equity', 0.0)))}\nRealized P/L: {format_dollar_amount(pnl)}"
         if kind == "daily":
-            return f"📅 DAILY\nLast {argument} day(s)\nDeals: {len(deals)}\nNet P/L: ${pnl:.2f}"
+            return f"📅 DAILY\nLast {argument} day(s)\nDeals: {len(deals)}\nNet P/L: {format_dollar_amount(pnl)}"
         account = self.mt5.account_info()
         balance = float(getattr(account, "balance", 0.0))
         peak = balance - pnl if pnl < 0 else balance
         drawdown = max(0.0, peak - balance)
-        return f"📉 DRAWDOWN\nCurrent balance: ${balance:.2f}\nEstimated drawdown: ${drawdown:.2f}"
+        return f"📉 DRAWDOWN\nCurrent balance: {format_dollar_amount(balance)}\nEstimated drawdown: {format_dollar_amount(drawdown)}"
 
     def handle_update(self, update: dict[str, Any]) -> None:
         message = update.get("message") or update.get("edited_message")

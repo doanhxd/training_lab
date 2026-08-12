@@ -12,10 +12,15 @@ from training_lab.telegram_trade_bot import (
     resolve_trade_symbol,
     guard_opposite_position,
     volume_for_symbol,
+    format_dollar_amount,
 )
 
 
 class TelegramTradeBotTests(unittest.TestCase):
+    def test_formats_negative_dollars_with_sign_before_currency_symbol(self) -> None:
+        self.assertEqual("-$455.30", format_dollar_amount(-455.30))
+        self.assertEqual("+$8.50", format_dollar_amount(8.50, show_plus=True))
+
     def test_parse_short_gold_command_with_bot_mention(self) -> None:
         command = parse_trade_command("/short gold @rich_vjp_bot")
         self.assertEqual(TradeCommand(side="short", symbol="gold"), command)
@@ -133,7 +138,7 @@ class TelegramTradeBotTests(unittest.TestCase):
         )
         status = bot._format_status()
         self.assertIn("Trades today: 2", status)
-        self.assertIn("Today's net P/L: $+8.50", status)
+        self.assertIn("Today's net P/L: +$8.50", status)
 
 
 class FakeMt5:
