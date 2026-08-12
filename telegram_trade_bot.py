@@ -11,6 +11,7 @@ import json
 import os
 import socket
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.error import URLError
 from urllib.parse import urlencode
@@ -50,6 +51,62 @@ def volume_for_symbol(symbol: str) -> float:
     raise ValueError(f"Unsupported trade symbol: {symbol}")
 
 
+def parse_control_command(text: str, *, bot_username: str | None = None) -> tuple[str, int | str | None]:
+    """Parse non-trading commands; destructive close-all requires confirmation."""
+    parts = text.strip().split()
+    if not parts:
+        raise ValueError("Empty command")
+    raw_command = parts[0].lower()
+    command, _, mention = raw_command.partition("@")
+    if bot_username and mention != bot_username.lstrip("@").lower():
+        raise ValueError("Command is addressed to another bot")
+    if bot_username and not mention:
+        raise ValueError("Include the bot mention")
+    if command in {"/status", "/positions", "/enable", "/disable", "/config"} and len(parts) == 1:
+        return command[1:], None
+    if command == "/close" and len(parts) == 2 and parts[1].isdigit():
+        return "close", int(parts[1])
+    if command == "/closeall" and len(parts) == 2 and parts[1].lower() == "confirm":
+        return "closeall", "confirm"
+    raise ValueError("Use /status, /positions, /close <ticket>, /closeall confirm, /enable, /disable, or /config")
+
+
+def parse_period(value: str | None, *, default_days: int = 1) -> int | None:
+    if value is None:
+        return default_days
+    normalized = value.lower()
+    if normalized == "all":
+        return None
+    if normalized.endswith("d") and normalized[:-1].isdigit():
+        days = int(normalized[:-1])
+    elif normalized.isdigit():
+        days = int(normalized)
+    else:
+        raise ValueError("Period must be 1d, 7d, 30d, 90d, or all")
+    if days < 1 or days > 90:
+        raise ValueError("Period must be between 1 and 90 days")
+    return days
+
+
+def parse_analytics_command(text: str) -> tuple[str, int | None]:
+    parts = text.strip().split()
+    command = parts[0].lower().split("@", 1)[0] if parts else ""
+    if command in {"/stats", "/equity"} and len(parts) <= 2:
+        return command[1:], parse_period(parts[1] if len(parts) == 2 else None)
+    if command == "/history" and len(parts) <= 2:
+        if len(parts) == 1:
+            return "history", 10
+        if parts[1].isdigit() and 1 <= int(parts[1]) <= 50:
+            return "history", int(parts[1])
+    if command == "/drawdown" and len(parts) == 1:
+        return "drawdown", None
+    if command == "/daily" and len(parts) <= 2 and (len(parts) == 1 or parts[1].isdigit()):
+        days = 1 if len(parts) == 1 else int(parts[1])
+        if 1 <= days <= 30:
+            return "daily", days
+    raise ValueError("Use /stats [1d|7d|30d|90d|all], /history [1-50], /equity [period], /drawdown, or /daily [1-30]")
+
+
 def build_market_order_request(*, mt5: Any, symbol: str, side: str, bid: float, ask: float,
                                volume: float, distance: float) -> dict[str, Any]:
     if side not in {"long", "short"} or volume <= 0 or distance <= 0:
@@ -87,6 +144,7 @@ class TelegramTradeBot:
         self.bot_username = bot_username
         self.volume, self.distance, self.timeout = volume, distance, timeout
         self.api = f"https://api.telegram.org/bot{token}/"
+        self.enabled = True
 
     def _telegram(self, method: str, **params: Any) -> Any:
         payload = urlencode(params).encode()
@@ -101,6 +159,8 @@ class TelegramTradeBot:
         self._telegram("sendMessage", chat_id=chat_id or self.chat_id, text=text)
 
     def execute(self, command: TradeCommand) -> str:
+        if not self.enabled:
+            raise RuntimeError("Bot is disabled")
         if not self.mt5.symbol_select(command.symbol, True):
             raise RuntimeError(f"Cannot select {command.symbol}")
         tick = self.mt5.symbol_info_tick(command.symbol)
@@ -121,6 +181,106 @@ class TelegramTradeBot:
                 f"Entry: {request['price']:.2f}\nSL: {request['sl']:.2f}\nTP: {request['tp']:.2f}\n"
                 f"Lot: {request['volume']:.2f}\nDeal/Order ID: {ticket}")
 
+    def _positions(self) -> list[Any]:
+        return list(self.mt5.positions_get() or ())
+
+    def _format_status(self) -> str:
+        account = self.mt5.account_info()
+        positions = self._positions()
+        if account is None:
+            raise RuntimeError("MT5 account information unavailable")
+        floating = sum(float(getattr(position, "profit", 0.0)) for position in positions)
+        return ("📊 ACCOUNT STATUS\n"
+                f"Bot: {'🟢 ENABLED' if self.enabled else '🔴 DISABLED'}\n"
+                f"Account: MT5 #{getattr(account, 'login', '?')}\n"
+                f"Environment: {'LIVE' if getattr(account, 'trade_mode', 0) else 'DEMO'}\n"
+                f"Balance: ${float(getattr(account, 'balance', 0.0)):.2f}\n"
+                f"Equity: ${float(getattr(account, 'equity', 0.0)):.2f}\n"
+                f"Floating P/L: ${floating:.2f}\n"
+                f"Open positions: {len(positions)}\n"
+                f"SL/TP distance: {self.distance:g}")
+
+    def _format_positions(self) -> str:
+        positions = self._positions()
+        if not positions:
+            return "📌 POSITIONS\nKhông có position đang mở."
+        rows = ["📌 POSITIONS"]
+        for position in positions:
+            side = "LONG" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "SHORT"
+            rows.append(f"#{getattr(position, 'ticket', '?')} {side} {getattr(position, 'symbol', '?')} "
+                        f"Lot: {float(getattr(position, 'volume', 0.0)):.2f} "
+                        f"P/L: ${float(getattr(position, 'profit', 0.0)):.2f}")
+        return "\n".join(rows)
+
+    def _close_position(self, ticket: int) -> str:
+        positions = [p for p in self._positions() if int(getattr(p, "ticket", -1)) == ticket]
+        if not positions:
+            raise ValueError(f"Position {ticket} không tồn tại")
+        position = positions[0]
+        symbol = str(position.symbol)
+        tick = self.mt5.symbol_info_tick(symbol)
+        if tick is None:
+            raise RuntimeError(f"Tick unavailable: {symbol}")
+        is_buy = int(getattr(position, "type", 0)) == int(getattr(self.mt5, "POSITION_TYPE_BUY", 0))
+        request = {
+            "action": self.mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(position.volume),
+            "type": self.mt5.ORDER_TYPE_SELL if is_buy else self.mt5.ORDER_TYPE_BUY,
+            "position": ticket,
+            "price": float(tick.bid if is_buy else tick.ask),
+            "deviation": int(os.getenv("MT5_DEVIATION_POINTS", "30")),
+            "magic": int(os.getenv("MT5_MAGIC", "573510")),
+            "comment": "TG_CLOSE",
+            "type_time": self.mt5.ORDER_TIME_GTC,
+            "type_filling": getattr(self.mt5, "ORDER_FILLING_IOC", 1),
+        }
+        result = self.mt5.order_send(request)
+        if result is None or getattr(result, "retcode", None) != getattr(self.mt5, "TRADE_RETCODE_DONE", 10009):
+            raise RuntimeError(f"Close rejected: {getattr(result, 'retcode', '?')}")
+        return f"✅ Đã gửi lệnh đóng position #{ticket} ({symbol})"
+
+    def _format_config(self) -> str:
+        return ("⚙️ CONFIG\n"
+                "Commands: /long /short\n"
+                "XAUUSD: 0.03 lot\n"
+                "XAUUSDc: 0.10 lot\n"
+                f"SL/TP: {self.distance:g} giá\n"
+                "Close-all scope: bot magic only\n"
+                f"Magic: {os.getenv('MT5_MAGIC', '573510')}")
+
+    def _deal_history(self, days: int | None) -> list[Any]:
+        end = datetime.now(timezone.utc)
+        start = datetime(1970, 1, 1, tzinfo=timezone.utc) if days is None else end - timedelta(days=days)
+        return list(self.mt5.history_deals_get(start, end) or ())
+
+    def _format_analytics(self, kind: str, argument: int | None) -> str:
+        if kind == "history":
+            deals = self._deal_history(90)
+            deals.sort(key=lambda deal: getattr(deal, "time", 0), reverse=True)
+            rows = ["🧾 HISTORY"]
+            for deal in deals[:int(argument or 10)]:
+                rows.append(f"#{getattr(deal, 'ticket', '?')} {getattr(deal, 'symbol', '?')} "
+                            f"P/L: ${float(getattr(deal, 'profit', 0.0)):.2f} "
+                            f"Volume: {float(getattr(deal, 'volume', 0.0)):.2f}")
+            return "\n".join(rows) if len(rows) > 1 else "🧾 HISTORY\nKhông có deal."
+        deals = self._deal_history(argument)
+        pnl = sum(float(getattr(deal, "profit", 0.0)) + float(getattr(deal, "commission", 0.0)) + float(getattr(deal, "swap", 0.0)) for deal in deals)
+        if kind == "stats":
+            wins = sum(1 for deal in deals if float(getattr(deal, "profit", 0.0)) > 0)
+            losses = sum(1 for deal in deals if float(getattr(deal, "profit", 0.0)) < 0)
+            return f"📈 STATS\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nDeals: {len(deals)}\nWins: {wins}\nLosses: {losses}\nNet P/L: ${pnl:.2f}"
+        if kind == "equity":
+            account = self.mt5.account_info()
+            return f"💹 EQUITY\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nCurrent equity: ${float(getattr(account, 'equity', 0.0)):.2f}\nRealized P/L: ${pnl:.2f}"
+        if kind == "daily":
+            return f"📅 DAILY\nLast {argument} day(s)\nDeals: {len(deals)}\nNet P/L: ${pnl:.2f}"
+        account = self.mt5.account_info()
+        balance = float(getattr(account, "balance", 0.0))
+        peak = balance - pnl if pnl < 0 else balance
+        drawdown = max(0.0, peak - balance)
+        return f"📉 DRAWDOWN\nCurrent balance: ${balance:.2f}\nEstimated drawdown: ${drawdown:.2f}"
+
     def handle_update(self, update: dict[str, Any]) -> None:
         message = update.get("message") or update.get("edited_message")
         if not message or str(message.get("chat", {}).get("id")) not in self.allowed_chat_ids:
@@ -132,6 +292,36 @@ class TelegramTradeBot:
         parser_bot_username = None if message.get("chat", {}).get("type") == "private" else self.bot_username
         text = str(message.get("text", ""))
         try:
+            command_name = text.lower().split()[0].split("@", 1)[0] if text.strip() else ""
+            if command_name in {"/status", "/positions", "/close", "/closeall", "/enable", "/disable", "/config"}:
+                control, argument = parse_control_command(text, bot_username=parser_bot_username)
+                if control == "status":
+                    self.send(self._format_status(), chat_id=source_chat_id)
+                elif control == "positions":
+                    self.send(self._format_positions(), chat_id=source_chat_id)
+                elif control == "config":
+                    self.send(self._format_config(), chat_id=source_chat_id)
+                elif control == "enable":
+                    self.enabled = True
+                    self.send("🟢 Bot đã ENABLED", chat_id=source_chat_id)
+                elif control == "disable":
+                    self.enabled = False
+                    self.send("🔴 Bot đã DISABLED; position đang mở không bị đóng", chat_id=source_chat_id)
+                elif control == "close":
+                    self.send(self._close_position(int(argument)), chat_id=source_chat_id)
+                elif control == "closeall":
+                    positions = [p for p in self._positions() if int(getattr(p, "magic", -1)) == int(os.getenv("MT5_MAGIC", "573510"))]
+                    results = [self._close_position(int(p.ticket)) for p in positions]
+                    self.send("✅ CLOSEALL\n" + ("\n".join(results) if results else "Không có position của bot."), chat_id=source_chat_id)
+                return
+            if command_name in {"/stats", "/history", "/equity", "/drawdown", "/daily"}:
+                analytics, argument = parse_analytics_command(text)
+                if parser_bot_username and message.get("chat", {}).get("type") != "private":
+                    mention = text.split()[0].split("@", 1)[1] if "@" in text.split()[0] else ""
+                    if mention.lower() != parser_bot_username.lstrip("@").lower():
+                        raise ValueError("Command is addressed to another bot")
+                self.send(self._format_analytics(analytics, argument), chat_id=source_chat_id)
+                return
             command = parse_trade_command(text, bot_username=parser_bot_username)
             volume = self.volume if self.volume is not None else volume_for_symbol(command.symbol)
             self.send(f"Đã nhận lệnh {command.side.upper()} {command.symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED", chat_id=source_chat_id)

@@ -5,6 +5,9 @@ import unittest
 from training_lab.telegram_trade_bot import (
     TradeCommand,
     build_market_order_request,
+    parse_analytics_command,
+    parse_control_command,
+    parse_period,
     parse_trade_command,
     volume_for_symbol,
 )
@@ -31,13 +34,8 @@ class TelegramTradeBotTests(unittest.TestCase):
 
     def test_builds_short_request_with_fixed_volume_and_10_price_sl_tp(self) -> None:
         request = build_market_order_request(
-            mt5=FakeMt5(),
-            symbol="XAUUSD",
-            side="short",
-            bid=2350.25,
-            ask=2350.45,
-            volume=0.03,
-            distance=10.0,
+            mt5=FakeMt5(), symbol="XAUUSD", side="short", bid=2350.25,
+            ask=2350.45, volume=0.03, distance=10.0,
         )
         self.assertEqual(0.03, request["volume"])
         self.assertEqual(2350.25, request["price"])
@@ -47,12 +45,30 @@ class TelegramTradeBotTests(unittest.TestCase):
 
     def test_accepts_configured_group_and_private_chat_ids(self) -> None:
         from training_lab.telegram_trade_bot import TelegramTradeBot
-
         bot = TelegramTradeBot(
             mt5=FakeMt5(), token="token", chat_id="-5043082181",
             allowed_chat_ids={"5165617890"}, allowed_user_ids={5165617890},
         )
         self.assertEqual({"-5043082181", "5165617890"}, bot.allowed_chat_ids)
+
+    def test_parses_control_commands(self) -> None:
+        self.assertEqual(("status", None), parse_control_command("/status"))
+        self.assertEqual(("positions", None), parse_control_command("/positions"))
+        self.assertEqual(("close", 123456), parse_control_command("/close 123456"))
+        self.assertEqual(("closeall", "confirm"), parse_control_command("/closeall confirm"))
+        self.assertEqual(("disable", None), parse_control_command("/disable"))
+        with self.assertRaises(ValueError):
+            parse_control_command("/closeall")
+
+    def test_parses_analytics_commands_and_periods(self) -> None:
+        self.assertEqual(("stats", 7), parse_analytics_command("/stats 7d"))
+        self.assertEqual(("equity", None), parse_analytics_command("/equity all"))
+        self.assertEqual(("history", 25), parse_analytics_command("/history 25"))
+        self.assertEqual(("drawdown", None), parse_analytics_command("/drawdown"))
+        self.assertEqual(("daily", 3), parse_analytics_command("/daily 3"))
+        self.assertEqual(None, parse_period("all"))
+        with self.assertRaises(ValueError):
+            parse_analytics_command("/history 51")
 
 
 class FakeMt5:
