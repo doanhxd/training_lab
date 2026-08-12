@@ -140,6 +140,27 @@ class TelegramTradeBotTests(unittest.TestCase):
         self.assertIn("Trades today: 2", status)
         self.assertIn("Today's net P/L: +$8.50", status)
 
+    def test_positions_include_sl_and_tp(self) -> None:
+        from training_lab.telegram_trade_bot import TelegramTradeBot
+
+        class PositionsMt5(FakeMt5):
+            POSITION_TYPE_BUY = 0
+
+            def positions_get(self):
+                return [type("Position", (), {
+                    "type": 1, "volume": 0.03, "sl": 4406.13,
+                    "tp": 4386.13, "price_open": 4396.13, "profit": -11.04,
+                })()]
+
+        bot = TelegramTradeBot(
+            mt5=PositionsMt5(), token="token", chat_id="-5043082181",
+            allowed_user_ids={5165617890},
+        )
+        positions = bot._format_positions()
+        self.assertIn("Entry: 4396.13", positions)
+        self.assertIn("SL: 4406.13", positions)
+        self.assertIn("TP: 4386.13", positions)
+
     def test_tp_sl_closure_sends_one_deduplicated_group_notification(self) -> None:
         from training_lab.telegram_trade_bot import TelegramTradeBot
 

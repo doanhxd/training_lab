@@ -82,7 +82,7 @@ def guard_opposite_position(
             continue
         position_buy = int(getattr(position, "type", -1)) == int(position_type_buy)
         if position_buy != wanted_buy:
-            current = "🟢 LONG" if position_buy else "🔴 SHORT"
+            current = "LONG" if position_buy else "SHORT"
             raise ValueError(f"Reverse order blocked: {symbol} already has {current}")
 
 
@@ -221,7 +221,9 @@ class TelegramTradeBot:
             comment = "" if result is None else getattr(result, "comment", "")
             raise RuntimeError(f"MT5 rejected order: {code} {comment}".strip())
         ticket = getattr(result, "deal", None) or getattr(result, "order", "?")
-        return (f"{'🟢 LONG' if command.side == 'long' else '🔴 SHORT'} #XAUUSD đã khớp 0.1 lot\n"
+        return (f"✅ LỆNH ĐÃ KHỚP\n"
+                f"{'LONG' if command.side == 'long' else 'SHORT'} #XAUUSD\n"
+                f"Volume: 0.10 lot\n"
                 f"Entry: {request['price']:.2f}\nSL: {request['sl']:.2f}\nTP: {request['tp']:.2f}\n")
                 # f"Lot: {request['volume']:.2f}\nDeal/Order ID: {ticket}")
 
@@ -263,7 +265,7 @@ class TelegramTradeBot:
             message = (f"🔔 {reason} HIT — lệnh đã đóng\n"
                        f"Symbol: #XAUUSD\n"
                        f"Volume: {float(getattr(deal, 'volume', 0.0)):.2f}\n"
-                       f"Net P/L: {format_dollar_amount(pnl, show_plus=True)}")
+                       f"Net PnL: {format_dollar_amount(pnl, show_plus=True)}")
                     #    f"Deal: {deal_id}")
             self.send(message, chat_id=self.chat_id)
 
@@ -288,24 +290,28 @@ class TelegramTradeBot:
                 f"Environment: {'LIVE' if getattr(account, 'trade_mode', 0) else 'DEMO'}\n"
                 f"Balance: {format_dollar_amount(float(getattr(account, 'balance', 0.0)))}\n"
                 f"Equity: {format_dollar_amount(float(getattr(account, 'equity', 0.0)))}\n"
-                f"Floating P/L: {format_dollar_amount(floating)}\n"
+                f"Floating PnL: {format_dollar_amount(floating)}\n"
                 f"Lot: 0.1\n"
                 f"SL/TP distance: {self.distance:g}\n"
                 f"Open positions: {len(positions)}\n"
                 f"Trades today: {len(today_deals)}\n"
-                f"Today's net P/L: {format_dollar_amount(today_pnl, show_plus=True)}")
+                f"Today's net PnL: {format_dollar_amount(today_pnl, show_plus=True)}")
 
     def _format_positions(self) -> str:
         positions = self._positions()
         if not positions:
             return "📌 POSITIONS\nKhông có position đang mở."
         rows = ["📌 POSITIONS"]
-        for position in positions:
-            side = "🟢 LONG " if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "🔴 SHORT "
-            rows.append(f"{side} #XAUUSD "
-                # f"#{getattr(position, 'ticket', '?')} {side} #XAUUSD "
-                        f"| {float(getattr(position, 'volume', 0.0)):.2f} lot "
-                        f"| P/L: {format_dollar_amount(float(getattr(position, 'profit', 0.0)))}")
+        for index, position in enumerate(positions, start=1):
+            side = "LONG" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "SHORT"
+            entry_price = float(getattr(position, "price_open", getattr(position, "entry", 0.0)))
+            rows.append(f"{index}. {side} #XAUUSD\n"
+                        # f"#{getattr(position, 'ticket', '?')} {side} #XAUUSD "
+                        f"Volume: {float(getattr(position, 'volume', 0.0)):.2f} lot\n"
+                        f"Entry: {entry_price:.2f}\n"
+                        f"SL: {float(getattr(position, 'sl', 0.0)):.2f}\n"
+                        f"TP: {float(getattr(position, 'tp', 0.0)):.2f}\n"
+                        f"PnL: {format_dollar_amount(float(getattr(position, 'profit', 0.0)))}")
         return "\n".join(rows)
 
     def _close_position(self, ticket: int) -> str:
@@ -356,8 +362,8 @@ class TelegramTradeBot:
             deals.sort(key=lambda deal: getattr(deal, "time", 0), reverse=True)
             rows = ["🧾 HISTORY"]
             for deal in deals[:int(argument or 10)]:
-                rows.append(f"#{getattr(deal, 'ticket', '?')} {getattr(deal, 'symbol', '?')} "
-                            f"P/L: {format_dollar_amount(float(getattr(deal, 'profit', 0.0)))} "
+                rows.append(f"#{getattr(deal, 'ticket', '?')} #XAUUSD "
+                            f"PnL: {format_dollar_amount(float(getattr(deal, 'profit', 0.0)))} "
                             f"Volume: {float(getattr(deal, 'volume', 0.0)):.2f}")
             return "\n".join(rows) if len(rows) > 1 else "🧾 HISTORY\nKhông có deal."
         deals = self._deal_history(argument)
@@ -365,12 +371,12 @@ class TelegramTradeBot:
         if kind == "stats":
             wins = sum(1 for deal in deals if float(getattr(deal, "profit", 0.0)) > 0)
             losses = sum(1 for deal in deals if float(getattr(deal, "profit", 0.0)) < 0)
-            return f"📈 STATS\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nDeals: {len(deals)}\nWins: {wins}\nLosses: {losses}\nNet P/L: {format_dollar_amount(pnl)}"
+            return f"📈 STATS\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nDeals: {len(deals)}\nWins: {wins}\nLosses: {losses}\nNet PnL: {format_dollar_amount(pnl)}"
         if kind == "equity":
             account = self.mt5.account_info()
-            return f"💹 EQUITY\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nCurrent equity: {format_dollar_amount(float(getattr(account, 'equity', 0.0)))}\nRealized P/L: {format_dollar_amount(pnl)}"
+            return f"💹 EQUITY\nPeriod: {'all' if argument is None else str(argument) + 'd'}\nCurrent equity: {format_dollar_amount(float(getattr(account, 'equity', 0.0)))}\nRealized PnL: {format_dollar_amount(pnl)}"
         if kind == "daily":
-            return f"📅 DAILY\nLast {argument} day(s)\nDeals: {len(deals)}\nNet P/L: {format_dollar_amount(pnl)}"
+            return f"📅 DAILY\nLast {argument} day(s)\nDeals: {len(deals)}\nNet PnL: {format_dollar_amount(pnl)}"
         account = self.mt5.account_info()
         balance = float(getattr(account, "balance", 0.0))
         peak = balance - pnl if pnl < 0 else balance
