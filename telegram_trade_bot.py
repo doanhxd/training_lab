@@ -79,8 +79,10 @@ def build_market_order_request(*, mt5: Any, symbol: str, side: str, bid: float, 
 class TelegramTradeBot:
     def __init__(self, *, mt5: Any, token: str, chat_id: str, allowed_user_ids: set[int],
                  bot_username: str | None = None, volume: float | None = None,
-                 distance: float = 10.0, timeout: float = 40.0) -> None:
+                 distance: float = 10.0, timeout: float = 40.0,
+                 allowed_chat_ids: set[str] | None = None) -> None:
         self.mt5, self.token, self.chat_id = mt5, token, str(chat_id)
+        self.allowed_chat_ids = {self.chat_id, *(allowed_chat_ids or set())}
         self.allowed_user_ids = allowed_user_ids
         self.bot_username = bot_username
         self.volume, self.distance, self.timeout = volume, distance, timeout
@@ -95,8 +97,8 @@ class TelegramTradeBot:
             raise RuntimeError(result.get("description", "Telegram API error"))
         return result.get("result")
 
-    def send(self, text: str) -> None:
-        self._telegram("sendMessage", chat_id=self.chat_id, text=text)
+    def send(self, text: str, *, chat_id: str | None = None) -> None:
+        self._telegram("sendMessage", chat_id=chat_id or self.chat_id, text=text)
 
     def execute(self, command: TradeCommand) -> str:
         if not self.mt5.symbol_select(command.symbol, True):
@@ -121,21 +123,23 @@ class TelegramTradeBot:
 
     def handle_update(self, update: dict[str, Any]) -> None:
         message = update.get("message") or update.get("edited_message")
-        if not message or str(message.get("chat", {}).get("id")) != self.chat_id:
+        if not message or str(message.get("chat", {}).get("id")) not in self.allowed_chat_ids:
             return
         user_id = int(message.get("from", {}).get("id", -1))
         if user_id not in self.allowed_user_ids:
             return
+        source_chat_id = str(message["chat"]["id"])
+        parser_bot_username = None if message.get("chat", {}).get("type") == "private" else self.bot_username
         text = str(message.get("text", ""))
         try:
-            command = parse_trade_command(text, bot_username=self.bot_username)
+            command = parse_trade_command(text, bot_username=parser_bot_username)
             volume = self.volume if self.volume is not None else volume_for_symbol(command.symbol)
-            self.send(f"Đã nhận lệnh {command.side.upper()} {command.symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED")
-            self.send(self.execute(command))
+            self.send(f"Đã nhận lệnh {command.side.upper()} {command.symbol}\nLot: {volume:.2f}\nSL: {self.distance:g}\nTP: {self.distance:g}\nTrạng thái: QUEUED", chat_id=source_chat_id)
+            self.send(self.execute(command), chat_id=source_chat_id)
         except ValueError as exc:
-            self.send(f"Lệnh không hợp lệ: {exc}")
+            self.send(f"Lệnh không hợp lệ: {exc}", chat_id=source_chat_id)
         except Exception as exc:
-            self.send(f"Lệnh thất bại: {type(exc).__name__}: {exc}")
+            self.send(f"Lệnh thất bại: {type(exc).__name__}: {exc}", chat_id=source_chat_id)
 
     def run_forever(self) -> None:
         offset = 0
@@ -160,12 +164,15 @@ def main() -> None:
     if not token or not chat_id or not raw_users:
         raise SystemExit("Set TELEGRAM_TRADE_BOT_TOKEN, TELEGRAM_TRADE_CHAT_ID, and TELEGRAM_TRADE_ALLOWED_USER_IDS")
     allowed = {int(value.strip()) for value in raw_users.split(",") if value.strip()}
+    raw_chats = os.environ.get("TELEGRAM_TRADE_ALLOWED_CHAT_IDS", "").strip()
+    allowed_chats = {value.strip() for value in raw_chats.split(",") if value.strip()}
     import MetaTrader5 as mt5
     if not mt5.initialize():
         raise SystemExit(f"MT5 initialize failed: {mt5.last_error()}")
     try:
         TelegramTradeBot(mt5=mt5, token=token, chat_id=chat_id, allowed_user_ids=allowed,
-                         bot_username=os.environ.get("TELEGRAM_TRADE_BOT_USERNAME")).run_forever()
+                         bot_username=os.environ.get("TELEGRAM_TRADE_BOT_USERNAME"),
+                         allowed_chat_ids=allowed_chats).run_forever()
     finally:
         mt5.shutdown()
 
