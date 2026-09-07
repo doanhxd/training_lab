@@ -314,7 +314,8 @@ class GoldMonitorApp(tk.Tk):
                 self._selected_account_snapshots = []
                 primary = self.monitor.refresh()
             self._latest_snapshot = primary
-            self._position_day_value.set(self._clock_gmt7().strftime("%d/%m")); self._updated_value.set(self._clock_gmt7().strftime("CẬP NHẬT\n%H:%M:%S"))
+            now = self._clock_gmt7()
+            self._position_day_value.set(now.strftime("%d/%m")); self._updated_value.set(f"CẬP NHẬT\n{now:%H:%M:%S}")
             self._render_cards()
             records = [(str(snapshot.login), position) for _candidate, snapshot in (self._selected_account_snapshots or [(Mt5TerminalCandidate(Path("current"), "Current"), primary)]) for position in snapshot.positions]
             self._render_positions(records)

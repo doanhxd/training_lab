@@ -66,6 +66,11 @@ class GoldMonitorTests(TestCase):
         self.assertEqual("XAUUSD", GoldMonitorApp._display_symbol("XAUUSDm"))
         self.assertEqual("USD", GoldMonitorApp._display_currency("USC"))
 
+    def test_refresh_keeps_unicode_label_outside_locale_sensitive_strftime_format(self):
+        source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
+        self.assertNotIn('strftime("CẬP NHẬT', source)
+        self.assertIn('self._updated_value.set(f"CẬP NHẬT\\n{now:%H:%M:%S}")', source)
+
     def test_rdp_rejects_blank_host(self):
         with self.assertRaises(ValueError):
             open_remote_desktop("")
