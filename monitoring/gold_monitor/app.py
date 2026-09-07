@@ -255,7 +255,7 @@ class GoldMonitorApp(tk.Tk):
                 for column in range(3): row.grid_columnconfigure(column, weight=1, uniform="account")
                 fields: list[tk.Label] = []
                 for column, caption in enumerate(("TÀI KHOẢN MT5", "EQUITY", "LỆNH XAU/BTC")):
-                    card = self._card(row, padding=6); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
+                    card = self._card(row, padding=0); card.configure(padx=10, pady=7); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
                     self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w")
                     if column == 0:
                         account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w")

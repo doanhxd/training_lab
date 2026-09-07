@@ -126,7 +126,7 @@ class GoldMonitorTests(TestCase):
         self.assertNotIn('text="XAU / BTC • read-only"', source)
         self.assertIn('self._center_window(self)', source)
         self.assertIn('row.pack(fill="x", pady=(0, 3))', source)
-        self.assertIn('card = self._card(row, padding=6)', source)
+        self.assertIn('card = self._card(row, padding=0); card.configure(padx=10, pady=7)', source)
         self.assertIn('account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w")', source)
         self.assertIn('value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(2, 0))', source)
         self.assertIn('value.pack(anchor="w")', source)
