@@ -65,11 +65,19 @@ class GoldMonitorTests(TestCase):
         self.assertEqual("MetaTrader 5\\terminal64.exe", GoldMonitorApp._display_terminal_path(r"C:\Program Files\MetaTrader 5\terminal64.exe"))
         self.assertEqual("XAUUSD", GoldMonitorApp._display_symbol("XAUUSDm"))
         self.assertEqual("USD", GoldMonitorApp._display_currency("USC"))
+        self.assertEqual("USC", GoldMonitorApp._display_currency("USC", preserve_broker_currency=True))
 
     def test_refresh_keeps_unicode_label_outside_locale_sensitive_strftime_format(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
         self.assertNotIn('strftime("CẬP NHẬT', source)
-        self.assertIn('self._updated_value.set(f"CẬP NHẬT\\n{now:%H:%M:%S}")', source)
+        self.assertIn("{'USC GỐC' if self._show_broker_currency else 'CẬP NHẬT'}", source)
+
+    def test_update_button_disables_usc_alias_without_trading_side_effects(self):
+        source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
+        self.assertIn("def _disable_currency_alias(self)", source)
+        self.assertIn("self._show_broker_currency = True", source)
+        self.assertIn("command=self._disable_currency_alias", source)
+        self.assertIn("preserve_broker_currency=self._show_broker_currency", source)
 
     def test_history_time_range_normalizes_and_recovers_invalid_values(self):
         class Value:

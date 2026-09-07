@@ -93,6 +93,7 @@ class GoldMonitorApp(tk.Tk):
         self._history_net_value = tk.StringVar(value="0.00 USD")
         self._history_volume_value = tk.StringVar(value="0.00")
         self._account_cards_host: tk.Frame | None = None
+        self._show_broker_currency = False
         self._position_day_value = tk.StringVar(value=today.strftime("%d/%m"))
         self._updated_value = tk.StringVar(value="CHƯA CẬP NHẬT")
 
@@ -143,8 +144,9 @@ class GoldMonitorApp(tk.Tk):
         return upper
 
     @staticmethod
-    def _display_currency(currency: str) -> str:
-        return "USD" if str(currency or "").upper() == "USC" else str(currency or "USD").upper()
+    def _display_currency(currency: str, *, preserve_broker_currency: bool = False) -> str:
+        value = str(currency or "USD").upper()
+        return value if preserve_broker_currency else ("USD" if value == "USC" else value)
 
     @staticmethod
     def _display_terminal_path(path: Path | str) -> str:
@@ -174,6 +176,16 @@ class GoldMonitorApp(tk.Tk):
         now = self.clock()
         return now.replace(tzinfo=GMT_PLUS_7) if now.tzinfo is None else now.astimezone(GMT_PLUS_7)
 
+    def _disable_currency_alias(self) -> None:
+        """Show the broker's actual currency code instead of the USC→USD alias."""
+        self._show_broker_currency = True
+        self._schedule_refresh(0)
+        if self._history_table is not None:
+            if self._history_loading:
+                self._history_pending = True
+            else:
+                self._refresh_history()
+
     def _build_ui(self) -> None:
         shell = tk.Frame(self, bg=Palette.APP)
         shell.pack(fill="both", expand=True)
@@ -192,7 +204,7 @@ class GoldMonitorApp(tk.Tk):
         header.pack(fill="x", pady=(0, 18))
         self._label(header, text="GOLD MONITOR", font=("Segoe UI", 20, "bold"), bg=Palette.APP).pack(side="left")
         self._label(header, text="Theo dõi Local MT5 account, vị thế và lịch sử đóng lệnh.", font=("Segoe UI", 10), fg=Palette.MUTED, bg=Palette.APP).pack(side="left", padx=(16, 0), pady=(7, 0))
-        tk.Button(header, textvariable=self._updated_value, command=lambda: self._schedule_refresh(0), font=("Consolas", 9, "bold"), fg=Palette.ACCENT, bg=Palette.CARD_ALT, activeforeground=Palette.ACCENT, activebackground=Palette.BORDER, relief="flat", bd=0, padx=12, pady=9, cursor="hand2").pack(side="right")
+        tk.Button(header, textvariable=self._updated_value, command=self._disable_currency_alias, font=("Consolas", 9, "bold"), fg=Palette.ACCENT, bg=Palette.CARD_ALT, activeforeground=Palette.ACCENT, activebackground=Palette.BORDER, relief="flat", bd=0, padx=12, pady=9, cursor="hand2").pack(side="right")
         self._account_cards_host = tk.Frame(content, bg=Palette.APP)
         self._account_cards_host.pack(fill="x", pady=(0, 14))
 
@@ -259,7 +271,7 @@ class GoldMonitorApp(tk.Tk):
         for index, (candidate, snapshot) in enumerate(rows):
             account, account_detail, equity, _equity_detail, positions, _positions_detail = self._card_values[index]
             account.configure(text=f"#{snapshot.login}"); account_detail.configure(text=f"ONLINE • {snapshot.server}")
-            equity.configure(text=f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency)}")
+            equity.configure(text=f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency, preserve_broker_currency=self._show_broker_currency)}")
             positions.configure(text=f"{len(snapshot.positions)} ({candidate.name or 'Read-only'})")
 
     def _render_positions(self, records: list[tuple[str, object]]) -> None:
@@ -338,7 +350,7 @@ class GoldMonitorApp(tk.Tk):
                 primary = self.monitor.refresh()
             self._latest_snapshot = primary
             now = self._clock_gmt7()
-            self._position_day_value.set(now.strftime("%d/%m")); self._updated_value.set(f"CẬP NHẬT\n{now:%H:%M:%S}")
+            self._position_day_value.set(now.strftime("%d/%m")); self._updated_value.set(f"{'USC GỐC' if self._show_broker_currency else 'CẬP NHẬT'}\n{now:%H:%M:%S}")
             self._render_cards()
             records = [(str(snapshot.login), position) for _candidate, snapshot in (self._selected_account_snapshots or [(Mt5TerminalCandidate(Path("current"), "Current"), primary)]) for position in snapshot.positions]
             self._render_positions(records)
@@ -487,7 +499,7 @@ class GoldMonitorApp(tk.Tk):
         if selected != "TẤT CẢ": records = [(account, deal) for account, deal in records if str(deal.symbol).upper().startswith(selected)]
         start_time, end_time = self._history_time_range()
         records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]
-        deals = tuple(deal for _, deal in records); stats = GoldPositionMonitor.history_stats(deals, raw_deals=raw); currency = self._display_currency(self._latest_snapshot.currency if self._latest_snapshot else "USD")
+        deals = tuple(deal for _, deal in records); stats = GoldPositionMonitor.history_stats(deals, raw_deals=raw); currency = self._display_currency(self._latest_snapshot.currency if self._latest_snapshot else "USD", preserve_broker_currency=self._show_broker_currency)
         self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(f"{stats.max_daily_drawdown:,.2f} {currency}"); self._history_net_value.set(f"{stats.net_profit:+,.2f} {currency}"); self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")
         if not deals: self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", "Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")); return
         for account, deal in records:
