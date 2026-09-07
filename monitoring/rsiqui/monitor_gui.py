@@ -5,9 +5,11 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta, timezone
 import json
 from pathlib import Path
+import queue
 import re
 import subprocess
 import sys
+import threading
 import tkinter as tk
 from tkinter import ttk
 from typing import Callable
@@ -15,11 +17,16 @@ from typing import Callable
 import pandas as pd
 
 from training_lab.monitoring.rsiqui.position_monitor import MonitorSnapshot, RsiquiV3PositionMonitor, RunnerView
+from training_lab.monitoring.rsiqui.mt5_account_scanner import Mt5TerminalCandidate, load_cached_candidates, open_remote_desktop, scan_mt5_terminals
 from training_lab.telegram_notifier import TelegramNotifier, TelegramSettings, format_signal_message
 
 
 
 APP_TITLE = "RSIQUI V3 • GOLD Trader"
+# Display-only account identity for the GUI card. The live MT5 snapshot is not
+# used for these two labels until the hard-coded display is intentionally removed.
+DISPLAY_ACCOUNT_LOGIN = "#198384858"
+DISPLAY_ACCOUNT_SERVER = "HFMarketsGlobal-Live16"
 REFRESH_MILLISECONDS = 2_000
 if getattr(sys, "frozen", False):
     PROJECT_ROOT = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
@@ -36,16 +43,16 @@ class UiPalette:
     TELEGRAM_BLUE = "#2AABEE"
 
     DARK = {
-        "mode": "dark", "app": "#09111F", "sidebar": "#0D192B", "card": "#111F33", "card_alt": "#14263D",
-        "border": "#233853", "text": "#F3F7FC", "muted": "#91A5BD", "nav_text": "#F3F7FC", "nav_muted": "#A8BDD6", "accent": "#D9AA54", "close": "#B4235A",
-        "accent_dark": "#B9842B", "success": "#35C78A", "danger": "#F0727F", "warning": "#E3A64D", "info": "#5AA8FF",
-        "table": "#101C2D", "table_alt": "#132238", "badge_fg": "#F8FBFF",
+        "mode": "dark", "app": "#0F1722", "sidebar": "#111C2C", "card": "#172334", "card_alt": "#1C2B3F",
+        "border": "#2B3B50", "text": "#F7FAFC", "muted": "#9AAAC0", "nav_text": "#F7FAFC", "nav_muted": "#B7C5D8", "accent": "#D9AA54", "close": "#B4235A",
+        "accent_dark": "#B9842B", "success": "#35C78A", "danger": "#F0727F", "warning": "#E3A64D", "info": "#69A8FF",
+        "table": "#142132", "table_alt": "#192A3F", "badge_fg": "#F8FBFF",
     }
     LIGHT = {
-        "mode": "light", "app": "#F5F7FB", "sidebar": "#10233F", "card": "#FFFFFF", "card_alt": "#EAF0F8",
-        "border": "#D2DCE9", "text": "#14253C", "muted": "#60758F", "nav_text": "#F3F7FC", "nav_muted": "#A8BDD6", "accent": "#B7791F", "close": "#B4235A",
-        "accent_dark": "#926017", "success": "#168A60", "danger": "#CC4151", "warning": "#B7791F", "info": "#2563EB",
-        "table": "#FFFFFF", "table_alt": "#F0F4F9", "badge_fg": "#FFFFFF",
+        "mode": "light", "app": "#F5F7FB", "sidebar": "#111C2C", "card": "#FFFFFF", "card_alt": "#EEF2F6",
+        "border": "#DCE3EB", "text": "#142235", "muted": "#687B91", "nav_text": "#F3F7FC", "nav_muted": "#B7C5D8", "accent": "#B7791F", "close": "#B4235A",
+        "accent_dark": "#926017", "success": "#118A61", "danger": "#D04454", "warning": "#B7791F", "info": "#2563EB",
+        "table": "#FFFFFF", "table_alt": "#F5F7FA", "badge_fg": "#FFFFFF",
     }
 
     @classmethod
@@ -190,6 +197,8 @@ class RsiquiV3MonitorApp(tk.Tk):
         self.refresh_ms = refresh_ms
         self.clock = clock
         self._closed = False
+        self._refresh_after_id: str | None = None
+        self._refresh_in_progress = False
         self._theme_mode = "light"
         self._latest_snapshot: MonitorSnapshot | None = None
         self._log_history: list[LogEntry] = []
@@ -202,6 +211,11 @@ class RsiquiV3MonitorApp(tk.Tk):
             current_strategy_key = "rsiqui_v3_final_x"
         self._selected_strategy_keys: list[str] = [current_strategy_key]
         self._profile_menu_vars: dict[str, tk.BooleanVar] = {}
+        self._selected_local_accounts: list[Mt5TerminalCandidate] = []
+        self._selected_account_snapshots: list[tuple[Mt5TerminalCandidate, MonitorSnapshot]] = []
+        self._selected_accounts_host: tk.Frame | None = None
+        self._selected_account_card_keys: tuple[str, ...] = ()
+        self._selected_account_card_values: list[tuple[tk.Label, tk.Label, tk.Label, tk.Label, tk.Label, tk.Label]] = []
 
         self._account_value = tk.StringVar(value="—")
         self._equity_value = tk.StringVar(value="—")
@@ -213,6 +227,9 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._last_signal_value = tk.StringVar(value="NONE")
         self._last_signal_detail_value = tk.StringVar(value="Chưa thấy signal mới.")
         self._updated_value = tk.StringVar(value="CHƯA CẬP NHẬT")
+        self._updated_button_value = tk.StringVar(value="CẬP NHẬT\nCHƯA CẬP NHẬT")
+        self._currency_alias_enabled = False
+        self._raw_currency = "USC"
         self._profile_line_value = tk.StringVar(value="")
         self._strategy_choice = tk.StringVar(value=current_strategy_key)
         self._profile_choice = tk.StringVar(value=STRATEGY_SELECTIONS[current_strategy_key].label)
@@ -233,11 +250,17 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._history_range_value = tk.StringVar(value="—")
         self._history_deals_value = tk.StringVar(value="0")
         self._history_winrate_value = tk.StringVar(value="0.0%")
-        self._history_daily_dd_value = tk.StringVar(value="0.00 USD")
-        self._history_net_value = tk.StringVar(value="0.00 USD")
+        self._history_daily_dd_value = tk.StringVar(value="0.00 USC")
+        self._history_net_value = tk.StringVar(value="0.00 USC")
+        self._history_volume_value = tk.StringVar(value="0 RATE")
         self._position_day_value = tk.StringVar(value=gmt7_today.strftime("%d/%m"))
         self._history_window: tk.Toplevel | None = None
         self._history_table: ttk.Treeview | None = None
+        self._history_status_value = tk.StringVar(value="Sẵn sàng quét lịch sử read-only.")
+        self._history_loading = False
+        self._history_refresh_pending = False
+        self._history_request_id = 0
+        self._history_results: queue.Queue = queue.Queue()
         self._history_custom_start_wrap: tk.Frame | None = None
         self._history_custom_end_wrap: tk.Frame | None = None
         self._history_flr_enabled = False
@@ -258,7 +281,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._append_log("Observer mode active. No trade orders are sent from this app.", badge="INFO")
-        self._refresh()
+        self._schedule_refresh(0)
 
     def _configure_style(self) -> None:
         style = ttk.Style(self)
@@ -269,20 +292,47 @@ class RsiquiV3MonitorApp(tk.Tk):
             fieldbackground=UiPalette.TABLE,
             foreground=UiPalette.TEXT,
             borderwidth=0,
-            rowheight=34,
-            font=("Segoe UI", 10),
+            rowheight=32,
+            font=("Segoe UI", 9),
         )
-        style.map("Monitor.Treeview", background=[("selected", UiPalette.ACCENT_DARK)], foreground=[("selected", UiPalette.TEXT)])
+        style.map(
+            "Monitor.Treeview",
+            background=[("selected", UiPalette.ACCENT_DARK)],
+            foreground=[("selected", UiPalette.TEXT)],
+        )
         style.configure(
             "Monitor.Treeview.Heading",
-            background=UiPalette.CARD_ALT,
-            foreground=UiPalette.MUTED,
+            background=UiPalette.SIDEBAR,
+            foreground=UiPalette.NAV_TEXT,
             borderwidth=0,
             relief="flat",
             font=("Segoe UI", 9, "bold"),
+            padding=(10, 8),
+        )
+        style.map("Monitor.Treeview.Heading", background=[("active", UiPalette.ACCENT_DARK)], foreground=[("active", UiPalette.NAV_TEXT)])
+        style.configure("LocalAccount.Treeview", rowheight=38, font=("Segoe UI Symbol", 11))
+        style.configure("LocalAccount.Treeview.Heading", font=("Segoe UI", 9, "bold"), padding=(12, 9))
+        style.configure(
+            "Monitor.TCombobox",
+            fieldbackground=UiPalette.TABLE,
+            background=UiPalette.CARD_ALT,
+            foreground=UiPalette.TEXT,
+            arrowcolor=UiPalette.ACCENT,
+            bordercolor=UiPalette.BORDER,
+            lightcolor=UiPalette.BORDER,
+            darkcolor=UiPalette.BORDER,
+            padding=(10, 6),
+            font=("Segoe UI", 10),
+        )
+        style.map(
+            "Monitor.TCombobox",
+            fieldbackground=[("readonly", UiPalette.TABLE), ("focus", UiPalette.TABLE)],
+            selectbackground=[("readonly", UiPalette.ACCENT_DARK)],
+            selectforeground=[("readonly", UiPalette.TEXT)],
+            bordercolor=[("focus", UiPalette.ACCENT), ("active", UiPalette.ACCENT)],
         )
 
-    def _label(self, parent: tk.Misc, text: str = "", *, font: tuple, fg: str | None = None, bg: str | None = None, **kwargs) -> tk.Label:
+    def _label(self, parent: tk.Misc, text: str = "", *, font: tuple = ("Segoe UI", 10), fg: str | None = None, bg: str | None = None, **kwargs) -> tk.Label:
         return tk.Label(parent, text=text, font=font, fg=fg or UiPalette.TEXT, bg=bg or UiPalette.CARD, bd=0, highlightthickness=0, **kwargs)
 
     def _card(self, parent: tk.Misc, *, padding: int = 18, bg: str | None = None) -> tk.Frame:
@@ -352,7 +402,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
         self._label(sidebar, text="GOLD", font=("Segoe UI", 20, "bold"), fg=UiPalette.ACCENT, bg=UiPalette.SIDEBAR).pack(anchor="w")
-        self._label(sidebar, text="TRADER", font=("Segoe UI", 20, "bold"), fg=UiPalette.NAV_TEXT, bg=UiPalette.SIDEBAR).pack(anchor="w", pady=(0, 6))
+        self._label(sidebar, text="VIEWER", font=("Segoe UI", 20, "bold"), fg=UiPalette.NAV_TEXT, bg=UiPalette.SIDEBAR).pack(anchor="w", pady=(0, 6))
         self._label(sidebar, text="DOANHHD", font=("Segoe UI", 9, "bold"), fg=UiPalette.NAV_MUTED, bg=UiPalette.SIDEBAR).pack(anchor="w")
 
         nav_line = tk.Frame(sidebar, bg=UiPalette.ACCENT, height=2)
@@ -374,6 +424,18 @@ class RsiquiV3MonitorApp(tk.Tk):
             cursor="hand2",
         )
         monitor_button.pack(fill="x")
+        tk.Button(
+            sidebar, text="▣  MT5 LOCAL", command=self._open_local_accounts_window,
+            font=("Segoe UI", 10, "bold"), fg=UiPalette.NAV_TEXT, bg=UiPalette.SIDEBAR,
+            activeforeground=UiPalette.NAV_TEXT, activebackground=UiPalette.CARD_ALT,
+            relief="flat", bd=0, padx=12, pady=11, anchor="w", cursor="hand2",
+        ).pack(fill="x", pady=(8, 0))
+        tk.Button(
+            sidebar, text="▤  VPS / RDP", command=self._open_vps_window,
+            font=("Segoe UI", 10, "bold"), fg=UiPalette.NAV_TEXT, bg=UiPalette.SIDEBAR,
+            activeforeground=UiPalette.NAV_TEXT, activebackground=UiPalette.CARD_ALT,
+            relief="flat", bd=0, padx=12, pady=11, anchor="w", cursor="hand2",
+        ).pack(fill="x", pady=(8, 0))
         history_button = tk.Button(
             sidebar,
             text="◷  LỊCH SỬ LỆNH",
@@ -419,45 +481,28 @@ class RsiquiV3MonitorApp(tk.Tk):
         title_group = tk.Frame(header, bg=UiPalette.APP)
         title_group.pack(side="left")
         self._label(title_group, text="TRẠM QUAN SÁT DOANHHD", font=("Segoe UI", 19, "bold"), bg=UiPalette.APP).pack(anchor="w")
-        self._label(title_group, text="GOLD Trader • theo dõi lệnh, preset và signal nội bộ", font=("Segoe UI", 10), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(4, 0))
-        updated = tk.Frame(header, bg=UiPalette.CARD_ALT, padx=12, pady=9)
-        updated.pack(side="right", anchor="s")
-        self._label(updated, text="CẬP NHẬT", font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT).pack(anchor="e")
-        self._label(updated, textvariable=self._updated_value, font=("Consolas", 10, "bold"), fg=UiPalette.ACCENT, bg=UiPalette.CARD_ALT).pack(anchor="e", pady=(2, 0))
-
-        profile = self._card(content, padding=15, bg=UiPalette.CARD_ALT)
-        profile.pack(fill="x", pady=(0, 14))
-        self._label(profile, text="PROFILE ĐANG THEO DÕI", font=("Segoe UI", 9, "bold"), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT).pack(anchor="w")
-        self._label(profile, textvariable=self._profile_line_value, font=("Segoe UI", 11, "bold"), fg=UiPalette.ACCENT, bg=UiPalette.CARD_ALT).pack(anchor="w", pady=(5, 0))
-
-        metrics = tk.Frame(content, bg=UiPalette.APP)
-        metrics.pack(fill="x", pady=(0, 14))
-        for column in range(3):
-            metrics.grid_columnconfigure(column, weight=1, uniform="metric")
-        self._account_metric(metrics, 0)
-        self._metric(metrics, 1, "EQUITY", self._equity_value, UiPalette.SUCCESS)
-        self._metric(metrics, 2, "LỆNH XAU/BTC", self._position_count_value, UiPalette.ACCENT)
-
-        strategy_card = self._card(content, padding=16)
-        strategy_card.pack(fill="x", pady=(0, 14))
-        self._label(strategy_card, text="SETTINGS", font=("Segoe UI", 11, "bold")).pack(anchor="w")
-        self._label(strategy_card, text="Thông số đang áp dụng cho profile theo dõi.", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(anchor="w", pady=(4, 12))
-
-        fields = tk.Frame(strategy_card, bg=UiPalette.CARD)
-        fields.pack(fill="x")
-        for column in range(5):
-            fields.grid_columnconfigure(column, weight=1, uniform="settings")
-        self._labeled_multi_profile_selector(
-            fields,
-            0,
-            0,
-            "PROFILE THEO DÕI",
-            self._profile_choice,
+        self._label(title_group, text="GOLD VIEWER • Theo dõi lệnh, preset và signal nội bộ", font=("Segoe UI", 10), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(4, 0))
+        updated = tk.Button(
+            header,
+            text="CẬP NHẬT\nCHƯA CẬP NHẬT",
+            textvariable=self._updated_button_value,
+            command=self._toggle_currency_alias,
+            font=("Consolas", 9, "bold"),
+            fg=UiPalette.ACCENT,
+            bg=UiPalette.CARD_ALT,
+            activeforeground=UiPalette.ACCENT,
+            activebackground=UiPalette.BORDER,
+            relief="flat",
+            bd=0,
+            padx=12,
+            pady=9,
+            cursor="hand2",
+            justify="right",
         )
-        self._labeled_entry(fields, 0, 1, "TIMEFRAME", self._timeframe_value)
-        self._labeled_entry(fields, 0, 2, "VOLUME LOT", self._volume_value)
-        self._labeled_entry(fields, 0, 3, "SL USD", self._risk_value)
-        self._labeled_entry(fields, 0, 4, "TP USD", self._reward_value)
+        updated.pack(side="right", anchor="s")
+
+        self._selected_accounts_host = tk.Frame(content, bg=UiPalette.APP)
+        self._selected_accounts_host.pack(fill="x", pady=(0, 14))
 
         body = tk.Frame(content, bg=UiPalette.APP)
         body.pack(fill="both", expand=True)
@@ -472,9 +517,9 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._label(section, text="LỆNH ĐANG MỞ", font=("Segoe UI", 11, "bold")).pack(side="left")
         self._label(section, textvariable=self._position_day_value, font=("Segoe UI", 9, "bold"), fg=UiPalette.MUTED).pack(side="left", padx=(10, 0), pady=(1, 0))
         self._label(section, text="Tất cả vị thế XAU / BTC • read-only", font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="right")
-        columns = ("time", "symbol", "side", "volume", "entry", "sl", "tp", "profit")
+        columns = ("time", "account", "symbol", "side", "volume", "entry", "sl", "tp", "profit")
         self.positions = ttk.Treeview(positions_card, columns=columns, show="headings", style="Monitor.Treeview", height=9)
-        specs = (("time", 62, "TIME"), ("symbol", 56, "SYMBOL"), ("side", 50, "TYPE"), ("volume", 42, "LOT"), ("entry", 72, "ENTRY"), ("sl", 66, "SL"), ("tp", 66, "TP"), ("profit", 70, "PnL"))
+        specs = (("time", 62, "TIME"), ("account", 94, "ACCOUNT"), ("symbol", 56, "SYMBOL"), ("side", 50, "TYPE"), ("volume", 42, "LOT"), ("entry", 72, "ENTRY"), ("sl", 66, "SL"), ("tp", 66, "TP"), ("profit", 70, "PnL"))
         for key, width, title in specs:
             self.positions.heading(key, text=title)
             self.positions.column(key, width=width, anchor="center", stretch=True)
@@ -510,9 +555,62 @@ class RsiquiV3MonitorApp(tk.Tk):
 
         footer = tk.Frame(content, bg=UiPalette.APP)
         footer.pack(fill="x", pady=(14, 0))
-        refresh = tk.Button(footer, text="↻  LÀM MỚI NGAY", command=self._refresh, font=("Segoe UI", 10, "bold"), fg="#101722", bg=UiPalette.ACCENT, activeforeground="#101722", activebackground="#E8C270", relief="flat", bd=0, padx=16, pady=9, cursor="hand2")
+        refresh = tk.Button(footer, text="↻  LÀM MỚI NGAY", command=lambda: self._schedule_refresh(0), font=("Segoe UI", 10, "bold"), fg="#101722", bg=UiPalette.ACCENT, activeforeground="#101722", activebackground="#E8C270", relief="flat", bd=0, padx=16, pady=9, cursor="hand2")
         refresh.pack(side="left")
         self._label(footer, text="Không gửi lệnh MT5 • chỉ giám sát và hiển thị signal nội bộ", font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="right")
+
+    def _render_selected_account_cards(self) -> None:
+        """Render every observed MT5 account using one fixed read-only card layout."""
+        host = self._selected_accounts_host
+        if host is None:
+            return
+        rows: list[tuple[Mt5TerminalCandidate | None, MonitorSnapshot]] = list(self._selected_account_snapshots)
+        if not rows and self._latest_snapshot is not None:
+            rows = [(None, self._latest_snapshot)]
+        if not rows:
+            for child in host.winfo_children():
+                child.destroy()
+            self._selected_account_card_keys = ()
+            self._selected_account_card_values = []
+            return
+        keys = tuple(str(candidate.path).casefold() if candidate is not None else f"current:{snapshot.login}" for candidate, snapshot in rows)
+        if keys != self._selected_account_card_keys:
+            for child in host.winfo_children():
+                child.destroy()
+            self._selected_account_card_keys = keys
+            self._selected_account_card_values = []
+            for _candidate, _snapshot in rows:
+                row = tk.Frame(host, bg=UiPalette.APP)
+                row.pack(fill="x", pady=(0, 8))
+                for column in range(3):
+                    row.grid_columnconfigure(column, weight=1, uniform="selected_account")
+                fields: list[tk.Label] = []
+                for column, caption in enumerate(("TÀI KHOẢN MT5", "EQUITY", "LỆNH XAU/BTC")):
+                    card = self._card(row, padding=10)
+                    card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
+                    self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
+                    if column == 0:
+                        account_line = tk.Frame(card, bg=UiPalette.CARD)
+                        account_line.pack(anchor="w", pady=(5, 0))
+                        value = self._label(account_line, font=("Segoe UI", 14, "bold"), fg=UiPalette.TEXT)
+                        value.pack(side="left")
+                        detail = self._label(account_line, text="", font=("Segoe UI", 8), fg=UiPalette.MUTED)
+                        detail.pack(side="left", padx=(9, 0), pady=(3, 0))
+                    else:
+                        value = self._label(card, font=("Segoe UI", 12 if column == 2 else 14, "bold"), fg=(UiPalette.SUCCESS, UiPalette.ACCENT)[column - 1])
+                        value.pack(anchor="w", pady=(5, 0))
+                        detail = self._label(card, text=" ", font=("Segoe UI", 8), fg=UiPalette.MUTED)
+                    fields.extend((value, detail))
+                self._selected_account_card_values.append(tuple(fields))
+        for index, (candidate, snapshot) in enumerate(rows):
+            account_value, account_detail, equity_value, equity_detail, positions_value, positions_detail = self._selected_account_card_values[index]
+            account_value.configure(text=f"#{snapshot.login}")
+            account_detail.configure(text=f"ONLINE • {snapshot.server}")
+            equity_value.configure(text=f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency)}")
+            equity_detail.configure(text=" ")
+            account_name = (candidate.name if candidate is not None else "Read-only") or "Read-only"
+            positions_value.configure(text=f"{len(snapshot.positions)} ({account_name})")
+            positions_detail.configure(text=" ")
 
     def _labeled_entry(self, parent: tk.Misc, row: int, column: int, caption: str, variable: tk.StringVar, *, state: str = "normal") -> None:
         wrap = tk.Frame(parent, bg=UiPalette.CARD)
@@ -548,7 +646,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         wrap.grid(row=row, column=column, sticky="ew", padx=6, pady=6)
         self._label(wrap, text=caption, font=("Segoe UI", 8, "bold"), fg=UiPalette.MUTED).pack(anchor="w")
         combo_values = [""] + values if allow_blank else values
-        combo = ttk.Combobox(wrap, textvariable=variable, values=combo_values, state="readonly", font=("Segoe UI", 10))
+        combo = ttk.Combobox(wrap, textvariable=variable, values=combo_values, state="readonly", style="Monitor.TCombobox", font=("Segoe UI", 10))
         combo.pack(fill="x", pady=(6, 0), ipady=5)
         combo.bind("<<ComboboxSelected>>", handler)
         return combo
@@ -646,7 +744,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         header = tk.Frame(shell, bg=UiPalette.APP)
         header.pack(fill="x", pady=(0, 14))
         self._label(header, text="LỊCH SỬ LỆNH", font=("Segoe UI", 18, "bold"), bg=UiPalette.APP).pack(side="left")
-        self._label(header, text="Tài khoản MT5 đang đăng nhập • chỉ đọc history_deals_get", font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
+        self._label(header, textvariable=self._history_status_value, font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
         self._history_flr_button = tk.Button(
             header,
             text="RESET LỌC",
@@ -743,12 +841,13 @@ class RsiquiV3MonitorApp(tk.Tk):
 
         stats = tk.Frame(shell, bg=UiPalette.APP)
         stats.pack(fill="x", pady=(0, 12))
-        for column in range(4):
+        for column in range(5):
             stats.grid_columnconfigure(column, weight=1, uniform="history_metric")
         self._metric(stats, 0, "DEALS", self._history_deals_value, UiPalette.ACCENT)
         self._metric(stats, 1, "WINRATE", self._history_winrate_value, UiPalette.SUCCESS)
         self._metric(stats, 2, "MAX DD NGÀY", self._history_daily_dd_value, UiPalette.DANGER)
         self._metric(stats, 3, "NET P/L", self._history_net_value, UiPalette.SUCCESS)
+        self._metric(stats, 4, "FOLLOW TREND RATE", self._history_volume_value, UiPalette.ACCENT)
 
         history_card = self._card(shell, padding=0)
         history_card.pack(fill="both", expand=True)
@@ -757,12 +856,12 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._label(history_header, text="DEAL HISTORY", font=("Segoe UI", 11, "bold")).pack(side="left")
         self._label(history_header, textvariable=self._history_range_value, font=("Segoe UI", 9), fg=UiPalette.MUTED).pack(side="right")
 
-        columns = ("time", "symbol", "side", "volume", "price", "net", "comment")
+        columns = ("time", "account", "symbol", "side", "volume", "price", "net")
         self._history_table = ttk.Treeview(history_card, columns=columns, show="headings", style="Monitor.Treeview", height=12)
-        specs = (("time", 154, "TIME"), ("symbol", 108, "SYMBOL"), ("side", 64, "SIDE"), ("volume", 72, "LOT"), ("price", 92, "PRICE"), ("net", 92, "NET $"), ("comment", 300, "COMMENT"))
+        specs = (("time", 154, "TIME"), ("account", 102, "ACCOUNT"), ("symbol", 108, "SYMBOL"), ("side", 64, "SIDE"), ("volume", 72, "LOT"), ("price", 92, "PRICE"), ("net", 92, "NET $"))
         for key, width, title in specs:
             self._history_table.heading(key, text=title)
-            self._history_table.column(key, width=width, anchor="center" if key != "comment" else "w", stretch=True)
+            self._history_table.column(key, width=width, anchor="center", stretch=True)
         self._history_table.tag_configure("profit", foreground=UiPalette.SUCCESS)
         self._history_table.tag_configure("loss", foreground=UiPalette.DANGER)
         self._history_table.pack(fill="both", expand=True, padx=1, pady=(0, 1))
@@ -853,6 +952,9 @@ class RsiquiV3MonitorApp(tk.Tk):
                 wrap.grid_remove()
 
     def _close_history_window(self) -> None:
+        self._history_request_id += 1
+        self._history_loading = False
+        self._history_refresh_pending = False
         if self._history_window is not None:
             self._history_window.destroy()
         self._history_window = None
@@ -863,28 +965,77 @@ class RsiquiV3MonitorApp(tk.Tk):
     def _refresh_history(self) -> None:
         if self._history_table is None:
             return
+        if self._history_loading:
+            self._history_refresh_pending = True
+            self._history_status_value.set("Đang quét lịch sử… thay đổi lọc sẽ áp dụng sau lượt hiện tại.")
+            return
         start, end = self._history_date_range()
         start_time, end_time = self._history_time_range()
         self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d} • {start_time:%H:%M}–{end_time:%H:%M}")
         self._history_table.delete(*self._history_table.get_children())
+        self._history_loading = True
+        self._history_request_id += 1
+        request_id = self._history_request_id
+        symbol = self._selected_symbol()
+        candidates = tuple(self._selected_local_accounts)
+        current_account = str(self._latest_snapshot.login) if self._latest_snapshot is not None else "CURRENT"
+        self._history_status_value.set(f"Đang quét lịch sử read-only • {len(candidates) or 1} MT5 account…")
+
+        def worker() -> None:
+            try:
+                records, raw_deals = self._history_records(start, end, symbol=symbol, candidates=candidates, current_account=current_account)
+                self._history_results.put((request_id, records, raw_deals, None))
+            except Exception as exc:
+                self._history_results.put((request_id, (), 0, exc))
+
+        threading.Thread(target=worker, name="mt5-history-read", daemon=True).start()
+        self.after(40, self._poll_history_result)
+
+    def _poll_history_result(self) -> None:
+        if not self._history_loading:
+            return
         try:
-            deals, stats = self.monitor.history(start, end)
-        except Exception as exc:
+            request_id, records, raw_deals, error = self._history_results.get_nowait()
+        except queue.Empty:
+            self.after(40, self._poll_history_result)
+            return
+        if request_id != self._history_request_id:
+            self.after(0, self._poll_history_result)
+            return
+        self._history_loading = False
+        if self._history_table is None or self._history_window is None or not self._history_window.winfo_exists():
+            return
+        if error is not None:
             self._history_deals_value.set("0")
             self._history_winrate_value.set("0.0%")
-            self._history_daily_dd_value.set("0.00 USD")
-            self._history_net_value.set("0.00 USD")
-            self._history_table.insert("", "end", values=("LỖI", "", "", "", "", "", str(exc)), tags=("loss",))
+            self._history_daily_dd_value.set(f"0.00 {self._display_currency(self._raw_currency)}")
+            self._history_net_value.set(f"0.00 {self._display_currency(self._raw_currency)}")
+            self._history_volume_value.set("0 LOT")
+            self._history_table.insert("", "end", values=("LỖI", "", "", "", "", "", str(error)), tags=("loss",))
+            self._history_status_value.set("Không quét được lịch sử MT5.")
+        else:
+            self._render_history_records(records, raw_deals)
+            self._history_status_value.set(f"Đã quét {len(records)} deal đóng • read-only history_deals_get.")
+        if self._history_refresh_pending:
+            self._history_refresh_pending = False
+            self._refresh_history()
+
+    def _render_history_records(self, records: list[tuple[str, object]], raw_deals: int) -> None:
+        """Apply UI filters and render a completed background history scan."""
+        if self._history_table is None:
             return
-        deals = self._filter_history_deals_by_symbol(deals)
-        deals = self._filter_history_deals_by_time_gmt7(deals)
+        records = [(account, deal) for account, deal in records if deal in self._filter_history_deals_by_symbol(tuple(deal for _, deal in records))]
+        records = [(account, deal) for account, deal in records if deal in self._filter_history_deals_by_time_gmt7(tuple(deal for _, deal in records))]
         if self._history_flr_enabled:
-            deals = tuple(deal for deal in deals if float(getattr(deal, "net_profit", 0.0) or 0.0) > 0.0)
-        stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=stats.raw_deals)
+            records = [(account, deal) for account, deal in records if float(getattr(deal, "net_profit", 0.0) or 0.0) > 0.0]
+        deals = tuple(deal for _, deal in records)
+        stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=raw_deals)
         self._history_deals_value.set(str(stats.deals))
         self._history_winrate_value.set(f"{stats.winrate:.1f}%")
-        self._history_daily_dd_value.set(f"{stats.max_daily_drawdown:,.2f} USD")
-        self._history_net_value.set(f"{stats.net_profit:+,.2f} USD")
+        currency = self._display_currency(self._raw_currency)
+        self._history_daily_dd_value.set(f"{stats.max_daily_drawdown:,.2f} {currency}")
+        self._history_net_value.set(f"{stats.net_profit:+,.2f} {currency}")
+        self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):g}")
         if not deals:
             selected_symbol = self._history_symbol_value.get().strip()
             if stats.raw_deals:
@@ -894,14 +1045,64 @@ class RsiquiV3MonitorApp(tk.Tk):
                 empty_message = "MT5 không trả về deal nào trong khoảng đã chọn."
             self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", empty_message))
             return
-        for deal in deals:
+        for account, deal in records:
             tag = "profit" if deal.net_profit >= 0 else "loss"
             self._history_table.insert(
                 "",
                 "end",
                 tags=(tag,),
-                values=(self._format_gmt7_datetime(deal.time), self._history_display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}", self._format_history_comment(deal.comment)),
+                values=(self._format_gmt7_datetime(deal.time), account, self._history_display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}"),
             )
+
+    def _read_local_account(
+        self,
+        candidate: Mt5TerminalCandidate,
+        *,
+        history_range: tuple[datetime, datetime] | None = None,
+        symbol: str | None = None,
+        include_snapshot: bool = True,
+    ) -> tuple[MonitorSnapshot | None, tuple, int]:
+        """Read one local terminal sequentially; never logs in, sends, or modifies orders."""
+        import MetaTrader5 as mt5
+
+        mt5.shutdown()
+        if not mt5.initialize(path=str(candidate.path)):
+            raise RuntimeError(f"{candidate.login or candidate.path.name}: {mt5.last_error()}")
+        probe = RsiquiV3PositionMonitor(symbol=symbol or self._selected_symbol(), mt5=mt5)
+        probe._connected = True
+        try:
+            if history_range is None:
+                snapshot = probe.refresh()
+                return snapshot, (), 0
+            deals, stats = probe.history(*history_range)
+            snapshot = probe.refresh() if include_snapshot else None
+            return snapshot, deals, stats.raw_deals
+        finally:
+            probe.stop()
+
+    def _history_records(
+        self,
+        start: datetime,
+        end: datetime,
+        *,
+        symbol: str | None = None,
+        candidates: tuple[Mt5TerminalCandidate, ...] | None = None,
+        current_account: str | None = None,
+    ) -> tuple[list[tuple[str, object]], int]:
+        selected_accounts = tuple(self._selected_local_accounts) if candidates is None else candidates
+        if not selected_accounts:
+            deals, stats = self.monitor.history(start, end)
+            account = current_account or (str(self._latest_snapshot.login) if self._latest_snapshot is not None else "CURRENT")
+            return [(account, deal) for deal in deals], stats.raw_deals
+        records: list[tuple[str, object]] = []
+        raw_deals = 0
+        for candidate in selected_accounts:
+            snapshot, deals, raw_count = self._read_local_account(candidate, history_range=(start, end), symbol=symbol, include_snapshot=False)
+            account = candidate.login or (str(snapshot.login) if snapshot is not None else "CURRENT")
+            records.extend((account, deal) for deal in deals)
+            raw_deals += raw_count
+        records.sort(key=lambda item: item[1].time, reverse=True)
+        return records, raw_deals
 
     @staticmethod
     def _format_gmt7_timestamp(value: datetime | None) -> str:
@@ -931,7 +1132,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         if upper.startswith("BTC"):
             return "BTC"
         if upper.startswith("XAU"):
-            return "XAU"
+            return "XAUUSD"
         if upper.endswith("USDT"):
             return upper[:-4]
         if upper.endswith("USD"):
@@ -942,6 +1143,23 @@ class RsiquiV3MonitorApp(tk.Tk):
     def _display_currency(currency: str) -> str:
         upper = str(currency or "").upper()
         return "USD" if upper == "USC" else upper
+
+    @staticmethod
+    def _display_terminal_path(path: str | Path) -> str:
+        """Keep the Local picker readable by omitting the common Program Files root."""
+        value = str(path or "").replace("/", "\\")
+        for prefix in ("C:\\Program Files\\", "C:\\Program Files (x86)\\"):
+            if value.casefold().startswith(prefix.casefold()):
+                return value[len(prefix):]
+        return value
+
+    def _toggle_currency_alias(self) -> None:
+        """Toggle the USC -> USD display alias for the whole GUI."""
+        self._currency_alias_enabled = not self._currency_alias_enabled
+        if self._latest_snapshot is not None:
+            self._render_snapshot(self._latest_snapshot, include_log_entries=False)
+        if self._history_table is not None:
+            self._refresh_history()
 
     @staticmethod
     def _history_display_symbol(symbol: str) -> str:
@@ -1143,7 +1361,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._run_button_label.set("STARTING")
         if self._run_button is not None:
             self._run_button.configure(state="disabled", bg=UiPalette.BORDER, activebackground=UiPalette.BORDER, disabledforeground=UiPalette.MUTED)
-        self.after(800, self._refresh)
+        self._schedule_refresh(800)
 
     def _build_signal_preview_request(self, side: str, config) -> dict | None:
         mt5 = self.monitor.mt5
@@ -1246,40 +1464,119 @@ class RsiquiV3MonitorApp(tk.Tk):
             badge=badge,
             telegram_message=telegram_message,
         )
-    def _refresh(self) -> None:
+    def _schedule_refresh(self, delay_ms: int | None = None) -> None:
+        """Keep exactly one Tk refresh callback queued to prevent refresh storms."""
         if self._closed:
             return
+        if self._refresh_after_id is not None:
+            try:
+                self.after_cancel(self._refresh_after_id)
+            except tk.TclError:
+                pass
+        self._refresh_after_id = self.after(self.refresh_ms if delay_ms is None else delay_ms, self._refresh)
+
+    def _refresh(self) -> None:
+        self._refresh_after_id = None
+        if self._closed:
+            return
+        if self._refresh_in_progress:
+            return
+        self._refresh_in_progress = True
         try:
-            self._render_snapshot(self.monitor.refresh())
-            self._evaluate_signal_preview()
+            # MetaTrader5 exposes one active terminal connection.  History owns
+            # that connection while its background read is in progress.
+            if self._history_loading:
+                return
+            if self._selected_local_accounts:
+                snapshots: list[tuple[Mt5TerminalCandidate, MonitorSnapshot]] = []
+                for candidate in self._selected_local_accounts:
+                    try:
+                        snapshot, _deals, _raw = self._read_local_account(candidate)
+                        snapshots.append((candidate, snapshot))
+                    except Exception as exc:
+                        self._append_log(f"Không đọc được MT5 local {candidate.login or candidate.path.name}: {exc}", badge="ERROR")
+                self._selected_account_snapshots = snapshots
+                if not snapshots:
+                    raise RuntimeError("Không đọc được account MT5 local nào đã chọn.")
+                self._render_snapshot(snapshots[0][1], include_log_entries=False)
+                self._render_selected_account_cards()
+                self._render_open_positions(
+                    [
+                        (str(snapshot.login), position)
+                        for _candidate, snapshot in snapshots
+                        for position in snapshot.positions
+                    ]
+                )
+                # Signal preview remains bound to the primary runner only; do not
+                # evaluate against whichever terminal happened to be read last.
+                self._set_last_signal_state("NONE", "Đang theo dõi nhiều MT5 local read-only.", UiPalette.INFO)
+            else:
+                self._selected_account_snapshots = []
+                self._render_selected_account_cards()
+                self._render_snapshot(self.monitor.refresh())
+                self._evaluate_signal_preview()
         except Exception as exc:
             self._mt5_status_value.set("MT5 OFFLINE")
             self._set_bot_status_state("ERROR", "Không cập nhật được trạng thái bot vì refresh MT5 lỗi.", UiPalette.DANGER)
             self._append_log(f"Lỗi kết nối: {exc}", badge="ERROR")
         finally:
-            if not self._closed:
-                self.after(self.refresh_ms, self._refresh)
+            self._refresh_in_progress = False
+            self._schedule_refresh()
 
     def _render_snapshot(self, snapshot: MonitorSnapshot, *, include_log_entries: bool = True) -> None:
         self._latest_snapshot = snapshot
+        self._raw_currency = str(snapshot.currency or "USD").upper()
+        # Tạm hard-code thông tin hiển thị trên GUI theo yêu cầu.
         self._account_value.set(f"#{snapshot.login}")
+        # self._account_value.set(DISPLAY_ACCOUNT_LOGIN)
         self._equity_value.set(f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency)}")
         self._position_count_value.set(str(len(snapshot.positions)))
         self._mt5_status_value.set(f"ONLINE • {snapshot.server}")
+        # self._mt5_status_value.set(f"ONLINE • {DISPLAY_ACCOUNT_SERVER}")
         if snapshot.positions and snapshot.positions[0].opened_at is not None:
             opened = self._format_gmt7_datetime(snapshot.positions[0].opened_at)
             self._position_day_value.set(f"{opened[8:10]}/{opened[5:7]}")
         else:
             self._position_day_value.set(self._clock_gmt7().strftime("%d/%m"))
         self._updated_value.set(self._clock_gmt7().strftime("%H:%M:%S"))
+        self._updated_button_value.set(f"CẬP NHẬT\n{self._updated_value.get()}")
         self._apply_bot_status(snapshot)
-        self.positions.delete(*self.positions.get_children())
-        for position in snapshot.positions:
-            tag = "profit" if position.profit >= 0 else "loss"
-            self.positions.insert("", "end", tags=(tag,), values=(self._format_gmt7_timestamp(position.opened_at), self._display_symbol(position.symbol), position.side, f"{position.volume:.2f}", f"{position.price_open:.2f}", f"{position.stop_loss:.2f}", f"{position.take_profit:.2f}", f"{position.profit:+.2f}"))
+        self._render_open_positions([(str(snapshot.login), position) for position in snapshot.positions])
         if include_log_entries:
             for entry in snapshot.log_entries:
                 self._append_log(entry)
+
+    def _render_open_positions(self, records: list[tuple[str, object]]) -> None:
+        """Render all observed positions with account provenance; display only."""
+        self.positions.delete(*self.positions.get_children())
+        def opened_timestamp(record: tuple[str, object]) -> float:
+            opened_at = getattr(record[1], "opened_at", None)
+            if opened_at is None:
+                return 0.0
+            if opened_at.tzinfo is None:
+                opened_at = opened_at.replace(tzinfo=UTC)
+            return opened_at.timestamp()
+
+        ordered = sorted(records, key=opened_timestamp, reverse=True)
+        for account, position in ordered:
+            profit = float(getattr(position, "profit", 0.0) or 0.0)
+            tag = "profit" if profit >= 0 else "loss"
+            self.positions.insert(
+                "",
+                "end",
+                tags=(tag,),
+                values=(
+                    self._format_gmt7_timestamp(getattr(position, "opened_at", None)),
+                    f"#{account}",
+                    self._display_symbol(str(getattr(position, "symbol", ""))),
+                    str(getattr(position, "side", "")),
+                    f"{float(getattr(position, 'volume', 0.0) or 0.0):.2f}",
+                    f"{float(getattr(position, 'price_open', 0.0) or 0.0):.2f}",
+                    f"{float(getattr(position, 'stop_loss', 0.0) or 0.0):.2f}",
+                    f"{float(getattr(position, 'take_profit', 0.0) or 0.0):.2f}",
+                    f"{profit:+.2f}",
+                ),
+            )
 
     @staticmethod
     def _classify_log_badge(message: str, explicit_badge: str | None = None) -> tuple[str, str]:
@@ -1457,8 +1754,171 @@ class RsiquiV3MonitorApp(tk.Tk):
 
     def _on_close(self) -> None:
         self._closed = True
+        if self._refresh_after_id is not None:
+            try:
+                self.after_cancel(self._refresh_after_id)
+            except tk.TclError:
+                pass
+            self._refresh_after_id = None
         self.monitor.stop()
         self.destroy()
+
+    def _open_local_accounts_window(self) -> None:
+        window = tk.Toplevel(self)
+        window.title("MT5 LOCAL — chọn account read-only")
+        window.geometry("1180x570")
+        window.minsize(1040, 520)
+        window.configure(bg=UiPalette.APP)
+        shell = tk.Frame(window, bg=UiPalette.APP, padx=20, pady=18)
+        shell.pack(fill="both", expand=True)
+        self._label(shell, text="MT5 LOCAL ACCOUNTS", font=("Segoe UI", 15, "bold"), bg=UiPalette.APP).pack(anchor="w")
+        self._label(shell, text="Quét terminal MT5 local và đọc account_info() — không gửi lệnh.", fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(4, 12))
+        tree = ttk.Treeview(shell, columns=("selected", "account", "name", "server", "path"), show="headings", style="LocalAccount.Treeview", height=8)
+        for key, title, width in (("selected", "THEO DÕI", 108), ("account", "ACCOUNT", 118), ("name", "ACCOUNT NAME", 210), ("server", "SERVER", 220), ("path", "TERMINAL", 390)):
+            tree.heading(key, text=title); tree.column(key, width=width, anchor="w")
+        tree.tag_configure("local_selected", background=UiPalette.CARD_ALT, foreground=UiPalette.TEXT)
+        tree.tag_configure("local_alt", background=UiPalette.TABLE_ALT, foreground=UiPalette.TEXT)
+        tree.pack(fill="both", expand=True)
+        status = tk.StringVar(value="Chưa quét")
+        self._label(shell, textvariable=status, fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(8, 6))
+        actions = tk.Frame(shell, bg=UiPalette.APP); actions.pack(fill="x")
+
+        candidates_by_iid: dict[str, Mt5TerminalCandidate] = {}
+        selected_paths = {str(candidate.path).casefold() for candidate in self._selected_local_accounts}
+
+        def render_candidates(candidates, message: str) -> None:
+            tree.delete(*tree.get_children())
+            candidates_by_iid.clear()
+            for index, candidate in enumerate(candidates):
+                iid = str(index)
+                candidates_by_iid[iid] = candidate
+                checked = "☑" if str(candidate.path).casefold() in selected_paths else "☐"
+                tag = "local_selected" if checked == "☑" else ("local_alt" if index % 2 else "")
+                tree.insert("", "end", iid=iid, values=(checked, candidate.login or "—", candidate.name or "—", candidate.server or "—", self._display_terminal_path(candidate.path)), tags=(tag,) if tag else ())
+            status.set(message)
+
+        def toggle_candidate(event) -> str | None:
+            row = tree.identify_row(event.y)
+            column = tree.identify_column(event.x)
+            if not row or column != "#1":
+                return None
+            candidate = candidates_by_iid.get(row)
+            if candidate is None:
+                return None
+            key = str(candidate.path).casefold()
+            if key in selected_paths:
+                selected_paths.remove(key)
+            else:
+                selected_paths.add(key)
+            values = list(tree.item(row, "values"))
+            values[0] = "☑" if key in selected_paths else "☐"
+            tree.item(row, values=values)
+            tree.item(row, tags=("local_selected",) if key in selected_paths else ())
+            return "break"
+
+        tree.bind("<Button-1>", toggle_candidate)
+
+        def refresh() -> None:
+            status.set("Đang cập nhật account MT5 local…"); window.update_idletasks()
+
+            def worker() -> None:
+                try:
+                    import MetaTrader5 as mt5
+                    candidates = scan_mt5_terminals(mt5)
+                    error = None
+                except Exception as exc:
+                    candidates = ()
+                    error = exc
+
+                def render() -> None:
+                    if not window.winfo_exists():
+                        return
+                    if error is not None:
+                        status.set(f"Không quét được MT5: {error}")
+                    else:
+                        connected = sum(1 for candidate in candidates if candidate.login)
+                        render_candidates(candidates, f"Tìm thấy {len(candidates)} terminal, đọc được {connected} account. Tick các account cần theo dõi read-only.")
+
+                window.after(0, render)
+
+            threading.Thread(target=worker, name="mt5-local-scan", daemon=True).start()
+
+        def apply_selection() -> None:
+            selected = [candidate for candidate in candidates_by_iid.values() if str(candidate.path).casefold() in selected_paths]
+            if not selected:
+                status.set("Tick ít nhất một account để theo dõi.")
+                return
+            self._selected_local_accounts = selected
+            self._selected_account_snapshots = []
+            status.set(f"Đã áp dụng {len(selected)} account theo dõi read-only.")
+            self._append_log(f"Đang theo dõi {len(selected)} MT5 local: {', '.join(candidate.login or candidate.path.name for candidate in selected)}.", badge="INFO")
+            self._schedule_refresh(0)
+
+        tk.Button(actions, text="QUÉT LẠI", command=refresh, bg=UiPalette.ACCENT, fg="#101722", relief="flat", bd=0, padx=14, pady=7).pack(side="left")
+        tk.Button(actions, text="ÁP DỤNG THEO DÕI", command=apply_selection, bg=UiPalette.CARD_ALT, fg=UiPalette.TEXT, relief="flat", bd=0, padx=14, pady=7).pack(side="left", padx=8)
+        cached = load_cached_candidates()
+        if cached:
+            render_candidates(cached, f"Hiển thị nhanh {len(cached)} account từ lần quét trước; đang cập nhật live…")
+        refresh()
+
+    def _open_vps_window(self) -> None:
+        window = tk.Toplevel(self)
+        window.title("VPS / RDP")
+        window.geometry("720x420")
+        window.minsize(640, 380)
+        window.configure(bg=UiPalette.APP)
+        shell = tk.Frame(window, bg=UiPalette.APP, padx=28, pady=26)
+        shell.pack(fill="both", expand=True)
+
+        header = tk.Frame(shell, bg=UiPalette.APP)
+        header.pack(fill="x", pady=(0, 18))
+        self._label(header, text="VPS / REMOTE DESKTOP", font=("Segoe UI", 17, "bold"), bg=UiPalette.APP).pack(anchor="w")
+        self._label(header, text="Kết nối phiên Windows Remote Desktop tới VPS đã được cấp quyền.", fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(5, 0))
+
+        host = tk.StringVar()
+        username = tk.StringVar()
+        result = tk.StringVar(value="Password được nhập trong hộp thoại Windows native; GOLD Trader không lưu password.")
+
+        form = self._card(shell, padding=18)
+        form.pack(fill="x")
+        form.grid_columnconfigure(0, weight=1, uniform="rdp_field")
+        form.grid_columnconfigure(1, weight=1, uniform="rdp_field")
+        self._labeled_entry(form, 0, 0, "IP / HOSTNAME VPS", host)
+        self._labeled_entry(form, 0, 1, "USERNAME", username)
+        self._label(form, text="Ví dụ: 192.0.2.10 hoặc vps.example.com", font=("Segoe UI", 8), fg=UiPalette.MUTED).grid(row=1, column=0, columnspan=2, sticky="w", padx=6, pady=(4, 0))
+
+        notice = tk.Frame(shell, bg=UiPalette.CARD_ALT, padx=14, pady=12, highlightbackground=UiPalette.BORDER, highlightthickness=1)
+        notice.pack(fill="x", pady=(14, 0))
+        self._label(notice, text="THÔNG TIN BẢO MẬT", font=("Segoe UI", 8, "bold"), fg=UiPalette.ACCENT, bg=UiPalette.CARD_ALT).pack(anchor="w")
+        self._label(notice, textvariable=result, font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.CARD_ALT, wraplength=620, justify="left").pack(anchor="w", pady=(4, 0))
+
+        actions = tk.Frame(shell, bg=UiPalette.APP)
+        actions.pack(fill="x", pady=(18, 0))
+
+        def connect() -> None:
+            try:
+                open_remote_desktop(host.get(), username.get())
+                result.set("Đã mở Windows Remote Desktop. Nhập password trong cửa sổ RDP native.")
+            except Exception as exc:
+                result.set(f"Không mở được RDP: {exc}")
+
+        tk.Button(
+            actions,
+            text="MỞ REMOTE DESKTOP  →",
+            command=connect,
+            font=("Segoe UI", 10, "bold"),
+            fg="#101722",
+            bg=UiPalette.ACCENT,
+            activeforeground="#101722",
+            activebackground="#E8C270",
+            relief="flat",
+            bd=0,
+            padx=18,
+            pady=10,
+            cursor="hand2",
+        ).pack(side="left")
+        self._label(actions, text="Mở mstsc trên máy này", font=("Segoe UI", 9), fg=UiPalette.MUTED, bg=UiPalette.APP).pack(side="right", pady=(8, 0))
+        self._center_window(window)
 
 
 def main() -> None:

@@ -193,17 +193,19 @@ def trade_sample(trades: pd.DataFrame, count: int = 10) -> list[dict]:
 
 def main() -> None:
     entries: list[dict] = []
-    for report_path in REPORTS.glob("*.json"):
+    report_paths = list(REPORTS.glob("*.json")) + list((OUTPUTS / "ethan_xauusd").glob("*/report.json"))
+    for report_path in report_paths:
         if report_path.name == "leaderboard.json":
             continue
         try:
             report = json.loads(report_path.read_text(encoding="utf-8"))
         except Exception:
             continue
-        run_id = report_path.stem
+        run_id = str(report.get("run_id") or report_path.stem)
+        artifacts = report.get("artifacts", {})
         backtest_dir = BACKTESTS / run_id
-        trades_path = backtest_dir / "trades.csv"
-        equity_path = backtest_dir / "equity_curve.csv"
+        trades_path = Path(artifacts.get("trades") or backtest_dir / "trades.csv")
+        equity_path = Path(artifacts.get("equity") or backtest_dir / "equity_curve.csv")
         trades_df = pd.read_csv(trades_path) if trades_path.exists() else pd.DataFrame()
         equity_df = pd.read_csv(equity_path) if equity_path.exists() else pd.DataFrame()
         initial_equity = float(report.get("backtest_config", {}).get("initial_equity", 0.0) or 0.0)
@@ -223,7 +225,7 @@ def main() -> None:
                 "equity_file": str(equity_path) if equity_path.exists() else None,
                 "modified_at": fmt_iso(created_ts),
                 "modified_ts": created_ts,
-                "strategy_name": report.get("strategy_name"),
+                "strategy_name": report.get("strategy_name") or report.get("strategy"),
                 "dataset_id": report.get("dataset_id"),
                 "feature_set_id": report.get("feature_set_id"),
                 "backtest_config": report.get("backtest_config", {}),

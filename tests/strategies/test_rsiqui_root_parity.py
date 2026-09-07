@@ -49,6 +49,17 @@ class RsiquiRootParityTests(unittest.TestCase):
                     signals = [module.evaluate_rsiqui_v3_signal(row, config) for _, row in prepared.iterrows()]
                     self.assertEqual(root_signals, signals)
 
+    def test_causal_prefix_invariance_when_future_candles_change(self) -> None:
+        frame = sample_frame()
+        config = root.rsiqui_v3_config_for_preset("gold-loose")
+        cutoff = 120
+        altered = frame.copy()
+        altered.loc[cutoff:, "close"] += 37.0
+        before = root.prepare_rsiqui_v3_frame(frame, config).iloc[:cutoff]
+        after = root.prepare_rsiqui_v3_frame(altered, config).iloc[:cutoff]
+        for column in ("rsi", "rsi_gra", "rsi_gra_cross_above_0", "rsi_gra_cross_below_0"):
+            np.testing.assert_allclose(before[column].to_numpy(dtype=float), after[column].to_numpy(dtype=float), equal_nan=True)
+
     def test_ori_and_neg_keep_blackout_as_execution_only_field(self) -> None:
         for module in (ori, neg):
             with self.subTest(module=module.__name__):

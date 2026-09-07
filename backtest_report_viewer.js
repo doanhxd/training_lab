@@ -62,7 +62,7 @@
     const execution = String(r.execution_enabled ?? c.execution_enabled ?? false).toLowerCase() === 'true';
     $('executionBadge').textContent = execution ? 'EXECUTION ON' : 'EXECUTION OFF';
     $('executionBadge').className = `badge ${execution ? 'warn' : 'safe'}`;
-    $('coverageBadge').textContent = `${int(r.data_coverage?.row_count ?? r.data_coverage?.bars ?? r.equity_rows)} M5 bars`;
+    $('coverageBadge').textContent = `${int(r.data_coverage?.row_count ?? r.data_coverage?.bars ?? r.data_coverage?.rows ?? r.equity_rows)} M5 bars`;
     $('mNet').textContent = money(totalProfit(r));
     $('mGross').textContent = `from ${String(r.data_coverage?.first_timestamp || 'start').slice(0, 10)} → ${String(r.data_coverage?.last_timestamp || 'end').slice(0, 10)}`;
     $('mPf').textContent = Number.isFinite(n(m.profit_factor)) ? fmt(m.profit_factor, 3) : '—';
@@ -78,7 +78,20 @@
   }
   function cell(label, value) { return `<div class="contract-cell"><label>${esc(label)}</label><strong>${value}</strong></div>`; }
   function renderContract(r) {
-    const c = cfg(r), block = (c.no_trade_start_hour_gmt7 === 24 && c.no_trade_end_hour_gmt7 === 24) ? 'Không block' : `${fmt(c.no_trade_start_hour_gmt7, 0)}:00–${fmt(c.no_trade_end_hour_gmt7, 0)}:00 GMT+7`;
+    const c = cfg(r);
+    if (c.ethan_parameters) {
+      const e = c.ethan_parameters;
+      $('contractGrid').innerHTML = [
+        cell('Symbol', esc(c.symbol || 'XAUUSD')), cell('Timeframe', esc(c.timeframe || 'M5')),
+        cell('Volume', `${fmt(c.volume_lots, 2)} lot`), cell('Initial equity', money(c.initial_equity)),
+        cell('D1 reference', esc(c.daily_reference_policy || '—')), cell('Causal policy', esc(c.lookahead_policy || '—')),
+        cell('Pip size', fmt(c.pip_size, 3)), cell('Long SL / TP', `${int(e.long_sl_pips)} / ${int(e.long_tp_pips)} pips`),
+        cell('Short SL / TP', `${int(e.short_sl_pips)} / ${int(e.short_tp_pips)} pips`), cell('Short time exit', `${int(e.short_max_bars)} M5 bars`),
+        cell('Costs', `observed spread · slip ${fmt(c.slippage_per_side_price, 3)}`), cell('Commission', money(c.commission_per_trade_usd ?? 0)),
+      ].join('');
+      return;
+    }
+    const block = (c.no_trade_start_hour_gmt7 === 24 && c.no_trade_end_hour_gmt7 === 24) ? 'Không block' : `${fmt(c.no_trade_start_hour_gmt7, 0)}:00–${fmt(c.no_trade_end_hour_gmt7, 0)}:00 GMT+7`;
     $('contractGrid').innerHTML = [cell('Symbol', esc(c.symbol || 'XAUUSD')), cell('Timeframe', esc(c.timeframe || 'M5')), cell('Volume', `${fmt(c.volume_lots, 2)} lot`), cell('TP distance', `${fmt(c.tp_price, 2)} giá`), cell('SL distance', `${fmt(c.sl_price, 2)} giá`), cell('Trailing', c.trailing_enabled === false ? 'OFF' : `+$${fmt(c.trailing_trigger_usd)} → +$${fmt(c.trailing_lock_usd)}`), cell('Trailing step', c.trailing_enabled === false ? '—' : `+$${fmt(c.trailing_step_usd)}`), cell('OPEN block', block), cell('Entry', `RSI<${esc(c.rsi_entry_long ?? 55)} / RSI>${esc(c.rsi_entry_short ?? 45)}`), cell('Gradient / warmup', `${esc(c.gradient_periods ?? 30)} / ${esc(c.warmup_bars ?? 120)} bars`), cell('Costs', `spread ${fmt(c.max_spread, 3)} · slip ${fmt(c.slippage_per_side, 3)}`), cell('Commission', money(c.commission_per_trade_usd ?? 0))].join('');
   }
   function sampleEquity(r) { return Array.isArray(r.equity_sample) ? r.equity_sample.map(x => n(x.equity ?? x.value ?? x)) : []; }

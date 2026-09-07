@@ -95,7 +95,10 @@ def prepare_rsiqui_v3_frame(features: pd.DataFrame, config: RsiquiV3Config) -> p
     data["timestamp"] = pd.to_datetime(data["timestamp"], utc=True)
     data = data.sort_values("timestamp").reset_index(drop=True)
     data["rsi"] = _rsi(data["close"], config.rsi_length)
-    data["rsi_gra"] = np.gradient(data["rsi"].to_numpy(dtype=float), config.gradient_periods)
+    # Causal replacement for centered np.gradient: bar t may use only RSI[t]
+    # and RSI[t-period], never any future RSI sample.
+    periods = max(1, int(config.gradient_periods))
+    data["rsi_gra"] = (data["rsi"] - data["rsi"].shift(periods)) / periods
     data["rsi_gra_cross_above_0"] = _crossed_above(data["rsi_gra"], 0)
     data["rsi_gra_cross_below_0"] = _crossed_below(data["rsi_gra"], 0)
     return data

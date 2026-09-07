@@ -243,8 +243,8 @@ class TelegramTradeBot:
         self._close_check_from = now
         deal_entry_out = int(getattr(self.mt5, "DEAL_ENTRY_OUT", 1))
         reason_names = {
-            int(getattr(self.mt5, "DEAL_REASON_TP", 5)): "TP",
-            int(getattr(self.mt5, "DEAL_REASON_SL", 4)): "SL",
+            int(getattr(self.mt5, "DEAL_REASON_TP", 5)): "✅ TP",
+            int(getattr(self.mt5, "DEAL_REASON_SL", 4)): "⛔️ SL",
         }
         for deal in deals:
             if int(getattr(deal, "entry", -1)) != deal_entry_out:
@@ -262,7 +262,7 @@ class TelegramTradeBot:
             pnl = (float(getattr(deal, "profit", 0.0))
                    + float(getattr(deal, "commission", 0.0))
                    + float(getattr(deal, "swap", 0.0)))
-            message = (f"🔔 {reason} HIT — lệnh đã đóng\n"
+            message = (f"🔔 {reason} HIT - LỆNH ĐÃ ĐÓNG\n"
                        f"Symbol: #XAUUSD\n"
                        f"Volume: {float(getattr(deal, 'volume', 0.0)):.2f}\n"
                        f"Net PnL: {format_dollar_amount(pnl, show_plus=True)}")
@@ -291,7 +291,7 @@ class TelegramTradeBot:
                 f"Balance: {format_dollar_amount(float(getattr(account, 'balance', 0.0)))}\n"
                 f"Equity: {format_dollar_amount(float(getattr(account, 'equity', 0.0)))}\n"
                 f"Floating PnL: {format_dollar_amount(floating)}\n"
-                f"Lot: 0.1\n"
+                # f"Lot: 0.1\n"
                 f"SL/TP distance: {self.distance:g}\n"
                 f"Open positions: {len(positions)}\n"
                 f"Trades today: {len(today_deals)}\n"
@@ -301,17 +301,24 @@ class TelegramTradeBot:
         positions = self._positions()
         if not positions:
             return "📌 POSITIONS\nKhông có position đang mở."
+        
         rows = ["📌 POSITIONS"]
         for index, position in enumerate(positions, start=1):
-            side = "LONG" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "SHORT"
+            # side = "LONG" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "SHORT"
+            side = "🟢 L" if getattr(position, "type", 0) == getattr(self.mt5, "POSITION_TYPE_BUY", 0) else "🔴 S"
+            symbol = getattr(position, "symbol", "XAUUSD").removesuffix("c")
             entry_price = float(getattr(position, "price_open", getattr(position, "entry", 0.0)))
-            rows.append(f"{index}. {side} #XAUUSD\n"
+            stop_loss = float(getattr(position, "sl", 0.0))
+            take_profit = float(getattr(position, "tp", 0.0))
+            pnl = format_dollar_amount(float(getattr(position, 'profit', 0.0)))
+            
+            rows.append(f"{index}. {side} #{symbol} " # rows.append(f"{index}. {side} {symbol_x} #XAUUSD\n"
                         # f"#{getattr(position, 'ticket', '?')} {side} #XAUUSD "
-                        f"Volume: {float(getattr(position, 'volume', 0.0)):.2f} lot\n"
+                        f"({float(getattr(position, 'volume', 0.0)):.2f} lot)\n"
                         f"Entry: {entry_price:.2f}\n"
-                        f"SL: {float(getattr(position, 'sl', 0.0)):.2f}\n"
-                        f"TP: {float(getattr(position, 'tp', 0.0)):.2f}\n"
-                        f"PnL: {format_dollar_amount(float(getattr(position, 'profit', 0.0)))}")
+                        f"SL: {stop_loss:.2f} | "
+                        f"TP: {take_profit:.2f}\n"
+                        f"PnL: {pnl}\n")
         return "\n".join(rows)
 
     def _close_position(self, ticket: int) -> str:

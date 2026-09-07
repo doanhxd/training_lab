@@ -58,6 +58,7 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
 
         self.assertIsNone(label_signature.parameters["fg"].default)
         self.assertIsNone(label_signature.parameters["bg"].default)
+        self.assertEqual(("Segoe UI", 10), label_signature.parameters["font"].default)
         self.assertIsNone(card_signature.parameters["bg"].default)
 
     def test_label_helper_allows_textvariable_only_labels(self) -> None:
@@ -218,20 +219,80 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         launcher = Path("MONITOR.bat").read_text(encoding="utf-8")
         self.assertIn("final_x_m5.json", launcher)
 
-    def test_settings_fit_profile_timeframe_volume_sl_tp_in_one_row(self) -> None:
+    def test_home_hides_profile_and_uses_one_equal_card_layout_for_selected_local_accounts(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
 
-        settings_start = source.index('strategy_card = self._card(content, padding=16)')
-        settings_block = source[settings_start:source.index('body = tk.Frame(content, bg=UiPalette.APP)', settings_start)]
-        self.assertIn('for column in range(5):', settings_block)
-        self.assertIn('uniform="settings"', settings_block)
-        self.assertIn('"PROFILE THEO DÕI"', settings_block)
-        self.assertIn('"TIMEFRAME", self._timeframe_value)', settings_block)
-        self.assertNotIn('"TIMEFRAME", self._timeframe_value, state="readonly"', settings_block)
-        self.assertIn('"VOLUME LOT", self._volume_value)', settings_block)
-        self.assertIn('"SL USD", self._risk_value)', settings_block)
-        self.assertIn('"TP USD", self._reward_value)', settings_block)
-        self.assertNotIn('"SIDE", self._side_value)', settings_block)
+        home_start = source.index("    def _build_ui")
+        home_block = source[home_start:source.index("    def _render_selected_account_cards", home_start)]
+        self.assertNotIn('text="SETTINGS"', home_block)
+        self.assertNotIn('text="PROFILE ĐANG THEO DÕI"', home_block)
+        self.assertIn("self._selected_accounts_host", home_block)
+        self.assertIn("def _render_selected_account_cards", source)
+        self.assertIn('rows: list[tuple[Mt5TerminalCandidate | None, MonitorSnapshot]]', source)
+        self.assertIn('uniform="selected_account"', source)
+        self.assertIn('sticky="nsew"', source)
+        self.assertIn('card = self._card(row, padding=10)', source)
+        self.assertIn('detail = self._label(card, text=" "', source)
+        self.assertNotIn('detail.pack(anchor="w", pady=(3, 0))', source)
+        self.assertIn('account_line = tk.Frame(card, bg=UiPalette.CARD)', source)
+        self.assertIn('account_detail.configure(text=f"ONLINE • {snapshot.server}")', source)
+        self.assertIn('positions_value.configure(text=f"{len(snapshot.positions)} ({account_name})")', source)
+        self.assertIn('font=("Segoe UI", 12 if column == 2 else 14, "bold")', source)
+
+    def test_local_account_picker_supports_checkbox_multi_select_and_read_only_aggregation(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn('("selected", "THEO DÕI", 108)', source)
+        self.assertIn('checked = "☑"', source)
+        self.assertIn('tree.bind("<Button-1>", toggle_candidate)', source)
+        self.assertIn('text="ÁP DỤNG THEO DÕI"', source)
+        self.assertIn('window.geometry("1180x570")', source)
+        self.assertIn('style="LocalAccount.Treeview", height=8', source)
+        self.assertIn("def _read_local_account", source)
+        self.assertIn("mt5.initialize(path=str(candidate.path))", source)
+        self.assertIn("def _history_records", source)
+        self.assertIn('("time", "account", "symbol", "side", "volume", "price", "net")', source)
+        self.assertIn('("time", "account", "symbol", "side", "volume", "entry", "sl", "tp", "profit")', source)
+        self.assertIn("def _render_open_positions", source)
+        self.assertIn("for _candidate, snapshot in snapshots", source)
+        self.assertIn('f"#{account}"', source)
+        self.assertNotIn("mt5.login(", source)
+
+    def test_refresh_scheduler_prevents_multi_account_refresh_storms_and_card_rebuild_flicker(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn("def _schedule_refresh", source)
+        self.assertIn("self.after_cancel(self._refresh_after_id)", source)
+        self.assertIn("self._refresh_after_id = self.after", source)
+        self.assertIn("self._refresh_in_progress", source)
+        apply_start = source.index("        def apply_selection()")
+        apply_block = source[apply_start:source.index("        tk.Button(actions", apply_start)]
+        self.assertIn("self._schedule_refresh(0)", apply_block)
+        self.assertNotIn("self._refresh()", apply_block)
+        cards_start = source.index("    def _render_selected_account_cards")
+        cards_block = source[cards_start:source.index("    def _labeled_entry", cards_start)]
+        self.assertIn("if keys != self._selected_account_card_keys:", cards_block)
+        self.assertIn(".configure(text=", cards_block)
+
+    def test_local_terminal_path_display_omits_program_files_root(self) -> None:
+        self.assertEqual("MetaTrader 5\\terminal64.exe", RsiquiV3MonitorApp._display_terminal_path(r"C:\Program Files\MetaTrader 5\terminal64.exe"))
+        self.assertEqual("MT5\\terminal.exe", RsiquiV3MonitorApp._display_terminal_path(r"C:\Program Files (x86)\MT5\terminal.exe"))
+        self.assertEqual(r"D:\MT5\terminal64.exe", RsiquiV3MonitorApp._display_terminal_path(r"D:\MT5\terminal64.exe"))
+
+    def test_vps_rdp_dialog_uses_wide_two_column_form_and_preserves_native_password_flow(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+        vps_start = source.index("    def _open_vps_window")
+        vps_block = source[vps_start:source.index("\n\ndef main", vps_start)]
+
+        self.assertIn('window.geometry("720x420")', vps_block)
+        self.assertIn('form.grid_columnconfigure(0, weight=1, uniform="rdp_field")', vps_block)
+        self.assertIn('form.grid_columnconfigure(1, weight=1, uniform="rdp_field")', vps_block)
+        self.assertIn('self._labeled_entry(form, 0, 0, "IP / HOSTNAME VPS", host)', vps_block)
+        self.assertIn('self._labeled_entry(form, 0, 1, "USERNAME", username)', vps_block)
+        self.assertIn('text="THÔNG TIN BẢO MẬT"', vps_block)
+        self.assertIn('text="MỞ REMOTE DESKTOP  →"', vps_block)
+        self.assertIn('open_remote_desktop(host.get(), username.get())', vps_block)
+        self.assertIn('không lưu password', vps_block)
 
     def test_signal_preview_uses_profile_price_value_and_blocks_when_position_open(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
@@ -278,6 +339,24 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertIn("MAX DD NGÀY", source)
         self.assertIn("WINRATE", source)
         self.assertIn("NET P/L", source)
+        self.assertIn("def _poll_history_result", source)
+        self.assertIn('threading.Thread(target=worker, name="mt5-history-read", daemon=True).start()', source)
+        self.assertIn("self._history_results.put", source)
+        self.assertIn("except queue.Empty:", source)
+        self.assertIn("self._history_refresh_pending", source)
+        self.assertIn("include_snapshot=False", source)
+        self.assertIn("if self._history_loading:", source)
+
+    def test_modern_ttk_styles_apply_to_selectboxes_and_local_account_table(self) -> None:
+        source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
+
+        self.assertIn('"Monitor.TCombobox"', source)
+        self.assertIn('style="Monitor.TCombobox"', source)
+        self.assertIn("arrowcolor=UiPalette.ACCENT", source)
+        self.assertIn('style="Monitor.Treeview", height=12', source)
+        self.assertIn('"Monitor.Treeview.Heading"', source)
+        self.assertIn("tree.tag_configure(\"local_selected\"", source)
+        self.assertIn("tags=(\"local_selected\",) if key in selected_paths", source)
 
     def test_flr_history_filter_is_today_gmt7_profit_only_and_recomputes_stats(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
@@ -289,7 +368,7 @@ class RsiquiV3MonitorGuiContractTests(unittest.TestCase):
         self.assertIn('self._history_end_time_value.set("23:59")', source)
         self.assertIn("self._history_flr_enabled", source)
         self.assertIn('float(getattr(deal, "net_profit", 0.0) or 0.0) > 0.0', source)
-        self.assertIn("stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=stats.raw_deals)", source)
+        self.assertIn("stats = RsiquiV3PositionMonitor.history_stats(deals, raw_deals=raw_deals)", source)
 
     def test_monitor_source_keeps_order_submission_out_of_the_dashboard(self) -> None:
         source = Path("monitoring/rsiqui/monitor_gui.py").read_text(encoding="utf-8")
