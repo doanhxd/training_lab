@@ -70,14 +70,35 @@ class GoldMonitorTests(TestCase):
     def test_refresh_keeps_unicode_label_outside_locale_sensitive_strftime_format(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
         self.assertNotIn('strftime("CẬP NHẬT', source)
-        self.assertIn("{'USC GỐC' if self._show_broker_currency else 'CẬP NHẬT'}", source)
+        self.assertIn('self._updated_value.set(f"CẬP NHẬT\\n{now:%H:%M:%S}")', source)
 
-    def test_update_button_disables_usc_alias_without_trading_side_effects(self):
+    def test_update_button_toggles_usc_alias_without_trading_side_effects(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
-        self.assertIn("def _disable_currency_alias(self)", source)
-        self.assertIn("self._show_broker_currency = True", source)
-        self.assertIn("command=self._disable_currency_alias", source)
+        self.assertIn("def _toggle_currency_alias(self)", source)
+        self.assertIn("self._show_broker_currency = not self._show_broker_currency", source)
+        self.assertIn("command=self._toggle_currency_alias", source)
         self.assertIn("preserve_broker_currency=self._show_broker_currency", source)
+        app = object.__new__(GoldMonitorApp)
+        app._show_broker_currency, app._history_table = False, None
+        calls = []
+        app._schedule_refresh = lambda delay: calls.append(delay)
+        app._toggle_currency_alias()
+        self.assertTrue(app._show_broker_currency)
+        app._toggle_currency_alias()
+        self.assertFalse(app._show_broker_currency)
+        self.assertEqual([0, 0], calls)
+
+    def test_total_equity_sums_selected_accounts_per_currency(self):
+        app = object.__new__(GoldMonitorApp)
+        accounts = [
+            AccountSnapshot(1, "A", 0.0, 500.0, "USC", (), ()),
+            AccountSnapshot(2, "B", 0.0, 250.0, "USC", (), ()),
+            AccountSnapshot(3, "C", 0.0, 20.0, "USD", (), ()),
+        ]
+        app._show_broker_currency = False
+        self.assertEqual("750.00 USD • 20.00 USD", app._format_total_equity(accounts))
+        app._show_broker_currency = True
+        self.assertEqual("750.00 USC • 20.00 USD", app._format_total_equity(accounts))
 
     def test_history_money_adds_usd_equivalent_only_in_raw_usc_mode(self):
         app = object.__new__(GoldMonitorApp)
@@ -114,6 +135,8 @@ class GoldMonitorTests(TestCase):
         self.assertIn('"MAX DD"', source)
         self.assertNotIn('"MAX DD NGÀY"', source)
         self.assertIn('for column, weight in enumerate((3, 3, 5, 5, 4))', source)
+        self.assertIn('text="TỔNG VỐN"', source)
+        self.assertIn('textvariable=self._total_equity_value', source)
         self.assertIn('records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]', source)
         self.assertIn('self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")', source)
         self.assertNotIn('sum(float(deal.volume) for deal in deals):,.2f} LOT', source)
