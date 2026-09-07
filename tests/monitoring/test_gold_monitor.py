@@ -119,7 +119,8 @@ class GoldMonitorTests(TestCase):
         self.assertIn('text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF"', source)
         self.assertIn('text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF"', source)
         self.assertIn('text="MỞ REMOTE DESKTOP  →", command=connect', source)
-        self.assertIn('bg="#E8EEF7", relief="flat", bd=0, highlightthickness=1, highlightbackground=Palette.INFO', source)
+        self.assertIn('field = tk.Frame(wrap, bg=Palette.INFO, padx=1, pady=1)', source)
+        self.assertIn('highlightthickness=0, insertbackground=Palette.TEXT).pack(fill="x", padx=10, pady=1, ipady=8)', source)
 
     def test_rdp_rejects_blank_host(self):
         with self.assertRaises(ValueError):

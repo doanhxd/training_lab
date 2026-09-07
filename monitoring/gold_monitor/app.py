@@ -501,7 +501,12 @@ class GoldMonitorApp(tk.Tk):
         tk.Button(shell, text="MỞ REMOTE DESKTOP  →", command=connect, font=("Segoe UI", 10, "bold"), fg="#FFFFFF", bg=Palette.INFO, activeforeground="#FFFFFF", activebackground="#1D4ED8", relief="flat", bd=0, padx=18, pady=10, cursor="hand2").pack(anchor="w", pady=(18, 0)); self._center_window(window)
 
     def _rdp_entry(self, parent: tk.Misc, column: int, caption: str, variable: tk.StringVar) -> None:
-        wrap = tk.Frame(parent, bg=Palette.CARD); wrap.grid(row=0, column=column, sticky="ew", padx=6, pady=6); self._label(wrap, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w"); tk.Entry(wrap, textvariable=variable, font=("Segoe UI", 10, "bold"), fg=Palette.TEXT, bg="#E8EEF7", relief="flat", bd=0, highlightthickness=1, highlightbackground=Palette.INFO, highlightcolor=Palette.INFO, insertbackground=Palette.TEXT).pack(fill="x", pady=(6, 0), ipady=8)
+        wrap = tk.Frame(parent, bg=Palette.CARD)
+        wrap.grid(row=0, column=column, sticky="ew", padx=6, pady=6)
+        self._label(wrap, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w")
+        field = tk.Frame(wrap, bg=Palette.INFO, padx=1, pady=1)
+        field.pack(fill="x", pady=(6, 0))
+        tk.Entry(field, textvariable=variable, font=("Segoe UI", 10, "bold"), fg=Palette.TEXT, bg="#E8EEF7", relief="flat", bd=0, highlightthickness=0, insertbackground=Palette.TEXT).pack(fill="x", padx=10, pady=1, ipady=8)
 
     def _on_close(self) -> None:
         self._closed = True
