@@ -17,6 +17,7 @@ from training_lab.monitoring.gold_monitor.mt5_accounts import Mt5TerminalCandida
 APP_TITLE = "GOLD Monitor • Read-only"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
 REFRESH_MILLISECONDS = 2_000
+ACCOUNT_VIEWPORT_HEIGHT = 256
 
 
 class Palette:
@@ -231,14 +232,28 @@ class GoldMonitorApp(tk.Tk):
         self._label(total_card, text="TỔNG VỐN", font=("Segoe UI", 8, "bold"), fg=Palette.MUTED, bg=Palette.CARD_ALT).pack(anchor="w")
         self._label(total_card, textvariable=self._total_equity_value, font=("Segoe UI", 12, "bold"), fg=Palette.SUCCESS, bg=Palette.CARD_ALT).pack(anchor="w", pady=(2, 0))
         tk.Button(header_actions, textvariable=self._updated_value, command=self._toggle_currency_alias, font=("Consolas", 9, "bold"), fg=Palette.ACCENT, bg=Palette.CARD_ALT, activeforeground=Palette.ACCENT, activebackground=Palette.BORDER, relief="flat", bd=0, padx=12, pady=9, cursor="hand2").pack(side="left")
-        self._account_cards_host = tk.Frame(content, bg=Palette.APP)
-        self._account_cards_host.pack(fill="x", pady=(0, 14))
+        account_viewport = tk.Frame(content, bg=Palette.APP, height=ACCOUNT_VIEWPORT_HEIGHT)
+        account_viewport.pack(fill="x", pady=(0, 14)); account_viewport.pack_propagate(False)
+        account_scrollbar = ttk.Scrollbar(account_viewport, orient="vertical")
+        account_canvas = tk.Canvas(account_viewport, bg=Palette.APP, highlightthickness=0, bd=0, yscrollcommand=account_scrollbar.set)
+        account_scrollbar.configure(command=account_canvas.yview)
+        account_scrollbar.pack(side="right", fill="y"); account_canvas.pack(side="left", fill="both", expand=True)
+        self._account_cards_host = tk.Frame(account_canvas, bg=Palette.APP)
+        account_window = account_canvas.create_window((0, 0), window=self._account_cards_host, anchor="nw")
+        self._account_cards_host.bind("<Configure>", lambda _event: account_canvas.configure(scrollregion=account_canvas.bbox("all")))
+        account_canvas.bind("<Configure>", lambda event: account_canvas.itemconfigure(account_window, width=event.width))
 
         body = tk.Frame(content, bg=Palette.APP)
-        body.pack(fill="both", expand=True)
-        body.grid_columnconfigure(0, weight=6)
-        body.grid_columnconfigure(1, weight=4)
+        body.pack(fill="both", expand=True); body.grid_propagate(False)
+        body.grid_columnconfigure(0, weight=0)
+        body.grid_columnconfigure(1, weight=0)
         body.grid_rowconfigure(0, weight=1)
+        def lock_body_columns(event: tk.Event) -> None:
+            available = max(0, event.width - 14)
+            left_width = round(available * 0.60)
+            body.grid_columnconfigure(0, minsize=left_width)
+            body.grid_columnconfigure(1, minsize=available - left_width)
+        body.bind("<Configure>", lock_body_columns)
         positions_card = self._card(body, padding=0)
         positions_card.grid(row=0, column=0, sticky="nsew", padx=(0, 7))
         section = tk.Frame(positions_card, bg=Palette.CARD, padx=18, pady=15)
