@@ -238,15 +238,21 @@ class GoldMonitorApp(tk.Tk):
             for child in host.winfo_children(): child.destroy()
             self._card_keys, self._card_values = keys, []
             for _candidate, _snapshot in rows:
-                row = tk.Frame(host, bg=Palette.APP); row.pack(fill="x", pady=(0, 8))
+                row = tk.Frame(host, bg=Palette.APP); row.pack(fill="x", pady=(0, 5))
                 for column in range(3): row.grid_columnconfigure(column, weight=1, uniform="account")
                 fields: list[tk.Label] = []
                 for column, caption in enumerate(("TÀI KHOẢN MT5", "EQUITY", "LỆNH XAU/BTC")):
-                    card = self._card(row, padding=10); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
+                    card = self._card(row, padding=7); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
                     self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w")
-                    value = self._label(card, font=("Segoe UI", 12 if column == 2 else 14, "bold"), fg=(Palette.TEXT, Palette.SUCCESS, Palette.ACCENT)[column])
-                    value.pack(anchor="w", pady=(5, 0))
-                    detail = self._label(card, text="", font=("Segoe UI", 8), fg=Palette.MUTED); detail.pack(anchor="w", pady=(2, 0))
+                    if column == 0:
+                        account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w", pady=(2, 0))
+                        value = self._label(account_line, font=("Segoe UI", 14, "bold"), fg=Palette.TEXT)
+                        detail = self._label(account_line, text="", font=("Segoe UI", 8), fg=Palette.MUTED)
+                        value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(3, 0))
+                    else:
+                        value = self._label(card, font=("Segoe UI", 12 if column == 2 else 14, "bold"), fg=(Palette.TEXT, Palette.SUCCESS, Palette.ACCENT)[column])
+                        detail = self._label(card, text="", font=("Segoe UI", 8), fg=Palette.MUTED)
+                        value.pack(anchor="w", pady=(3, 0)); detail.pack(anchor="w", pady=(1, 0))
                     fields.extend((value, detail))
                 self._card_values.append(tuple(fields))
         for index, (candidate, snapshot) in enumerate(rows):

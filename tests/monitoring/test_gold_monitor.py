@@ -116,6 +116,10 @@ class GoldMonitorTests(TestCase):
     def test_requested_home_and_dialog_visual_contracts_are_present(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
         self.assertNotIn('text="XAU / BTC • read-only"', source)
+        self.assertIn('row.pack(fill="x", pady=(0, 5))', source)
+        self.assertIn('card = self._card(row, padding=7)', source)
+        self.assertIn('account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w", pady=(2, 0))', source)
+        self.assertIn('value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(3, 0))', source)
         self.assertIn('text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF"', source)
         self.assertIn('text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF"', source)
         self.assertIn('text="MỞ REMOTE DESKTOP  →", command=connect', source)
