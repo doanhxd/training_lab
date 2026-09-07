@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import TestCase
@@ -70,6 +70,29 @@ class GoldMonitorTests(TestCase):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
         self.assertNotIn('strftime("CẬP NHẬT', source)
         self.assertIn('self._updated_value.set(f"CẬP NHẬT\\n{now:%H:%M:%S}")', source)
+
+    def test_history_time_range_normalizes_and_recovers_invalid_values(self):
+        class Value:
+            def __init__(self, value): self.value = value
+            def get(self): return self.value
+            def set(self, value): self.value = value
+
+        app = object.__new__(GoldMonitorApp)
+        app._history_start_time_value = Value("08:15")
+        app._history_end_time_value = Value("17:30")
+        self.assertEqual((time(8, 15), time(17, 30, 59, 999999)), app._history_time_range())
+        app._history_start_time_value.value = "invalid"
+        self.assertEqual((time(0, 0), time(23, 59, 59, 999999)), app._history_time_range())
+        self.assertEqual("00:00", app._history_start_time_value.value)
+        self.assertEqual("23:59", app._history_end_time_value.value)
+
+    def test_history_ui_shows_time_filters_and_filtered_total_volume_metric(self):
+        source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
+        self.assertIn('"TỪ GIỜ (GMT+7)"', source)
+        self.assertIn('"ĐẾN GIỜ (GMT+7)"', source)
+        self.assertIn('"FOLLOW TREND RATIO"', source)
+        self.assertIn('records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]', source)
+        self.assertIn('sum(float(deal.volume) for deal in deals)', source)
 
     def test_rdp_rejects_blank_host(self):
         with self.assertRaises(ValueError):

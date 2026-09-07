@@ -90,6 +90,7 @@ class GoldMonitorApp(tk.Tk):
         self._history_winrate_value = tk.StringVar(value="0.0%")
         self._history_dd_value = tk.StringVar(value="0.00 USD")
         self._history_net_value = tk.StringVar(value="0.00 USD")
+        self._history_volume_value = tk.StringVar(value="0.00 LOT")
         self._account_cards_host: tk.Frame | None = None
         self._position_day_value = tk.StringVar(value=today.strftime("%d/%m"))
         self._updated_value = tk.StringVar(value="CHƯA CẬP NHẬT")
@@ -388,14 +389,15 @@ class GoldMonitorApp(tk.Tk):
         shell = tk.Frame(window, bg=Palette.APP, padx=22, pady=18); shell.pack(fill="both", expand=True)
         header = tk.Frame(shell, bg=Palette.APP); header.pack(fill="x", pady=(0, 14)); self._label(header, text="LỊCH SỬ LỆNH", font=("Segoe UI", 18, "bold"), bg=Palette.APP).pack(side="left"); self._label(header, textvariable=self._history_status_value, font=("Segoe UI", 9), fg=Palette.MUTED, bg=Palette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
         controls = self._card(shell, padding=14); controls.pack(fill="x", pady=(0, 12))
-        for column in range(4): controls.grid_columnconfigure(column, weight=1)
+        for column in range(6): controls.grid_columnconfigure(column, weight=1)
         self._combo(controls, 0, "KHOẢNG THỜI GIAN", self._history_filter_value, ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua", "1 năm qua", "Tùy chỉnh"])
         self._combo(controls, 1, "MÃ GIAO DỊCH", self._history_symbol_value, ["Tất cả", "XAUUSD", "BTCUSD"])
         self._entry(controls, 2, "START DATE (khi Tùy chỉnh)", self._history_start_date_value); self._entry(controls, 3, "END DATE (khi Tùy chỉnh)", self._history_end_date_value)
-        tk.Button(controls, text="LỌC / QUÉT", command=self._refresh_history, font=("Segoe UI", 9, "bold"), fg="#101722", bg=Palette.ACCENT, relief="flat", bd=0, padx=18, pady=9).grid(row=1, column=3, sticky="e", padx=6, pady=(6, 0))
+        self._entry(controls, 4, "TỪ GIỜ (GMT+7)", self._history_start_time_value); self._entry(controls, 5, "ĐẾN GIỜ (GMT+7)", self._history_end_time_value)
+        tk.Button(controls, text="LỌC / QUÉT", command=self._refresh_history, font=("Segoe UI", 9, "bold"), fg="#101722", bg=Palette.ACCENT, relief="flat", bd=0, padx=18, pady=9).grid(row=1, column=5, sticky="e", padx=6, pady=(6, 0))
         stats = tk.Frame(shell, bg=Palette.APP); stats.pack(fill="x", pady=(0, 12))
-        for column in range(4): stats.grid_columnconfigure(column, weight=1, uniform="history")
-        for column, caption, value, color in ((0, "DEALS", self._history_deals_value, Palette.ACCENT), (1, "WINRATE", self._history_winrate_value, Palette.SUCCESS), (2, "MAX DD NGÀY", self._history_dd_value, Palette.DANGER), (3, "NET P/L", self._history_net_value, Palette.SUCCESS)):
+        for column in range(5): stats.grid_columnconfigure(column, weight=1, uniform="history")
+        for column, caption, value, color in ((0, "DEALS", self._history_deals_value, Palette.ACCENT), (1, "WINRATE", self._history_winrate_value, Palette.SUCCESS), (2, "MAX DD NGÀY", self._history_dd_value, Palette.DANGER), (3, "NET P/L", self._history_net_value, Palette.SUCCESS), (4, "FOLLOW TREND RATIO", self._history_volume_value, Palette.ACCENT)):
             card = self._card(stats, padding=12); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5)); self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w"); self._label(card, textvariable=value, font=("Segoe UI", 14, "bold"), fg=color).pack(anchor="w", pady=(5, 0))
         history_card = self._card(shell, padding=0); history_card.pack(fill="both", expand=True)
         columns = ("time", "account", "symbol", "side", "volume", "price", "net")
@@ -416,11 +418,21 @@ class GoldMonitorApp(tk.Tk):
         if self._history_window: self._history_window.destroy()
         self._history_window, self._history_table = None, None
 
+    def _history_time_range(self) -> tuple[time, time]:
+        try:
+            start = time.fromisoformat(self._history_start_time_value.get().strip())
+            end = time.fromisoformat(self._history_end_time_value.get().strip())
+        except ValueError:
+            start, end = time(0, 0), time(23, 59)
+            self._history_start_time_value.set("00:00")
+            self._history_end_time_value.set("23:59")
+        return start.replace(second=0, microsecond=0), end.replace(second=59, microsecond=999999)
+
     def _refresh_history(self) -> None:
         if self._history_table is None: return
         if self._history_loading: self._history_pending = True; return
-        start, end = self._history_range(); self._history_table.delete(*self._history_table.get_children()); self._history_loading = True; self._history_request_id += 1; request_id = self._history_request_id
-        self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d}"); candidates = tuple(self._selected_local_accounts); self._history_status_value.set(f"Đang quét lịch sử read-only • {len(candidates) or 1} MT5 account…")
+        start, end = self._history_range(); start_time, end_time = self._history_time_range(); self._history_table.delete(*self._history_table.get_children()); self._history_loading = True; self._history_request_id += 1; request_id = self._history_request_id
+        self._history_range_value.set(f"{start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d} • {start_time:%H:%M}–{end_time:%H:%M}"); candidates = tuple(self._selected_local_accounts); self._history_status_value.set(f"Đang quét lịch sử read-only • {len(candidates) or 1} MT5 account…")
         def worker():
             try:
                 if candidates:
@@ -448,8 +460,10 @@ class GoldMonitorApp(tk.Tk):
     def _render_history(self, records: list[tuple[str, HistoryDealView]], raw: int) -> None:
         selected = self._history_symbol_value.get().strip().upper()
         if selected != "TẤT CẢ": records = [(account, deal) for account, deal in records if str(deal.symbol).upper().startswith(selected)]
+        start_time, end_time = self._history_time_range()
+        records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]
         deals = tuple(deal for _, deal in records); stats = GoldPositionMonitor.history_stats(deals, raw_deals=raw); currency = self._display_currency(self._latest_snapshot.currency if self._latest_snapshot else "USD")
-        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(f"{stats.max_daily_drawdown:,.2f} {currency}"); self._history_net_value.set(f"{stats.net_profit:+,.2f} {currency}")
+        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(f"{stats.max_daily_drawdown:,.2f} {currency}"); self._history_net_value.set(f"{stats.net_profit:+,.2f} {currency}"); self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f} LOT")
         if not deals: self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", "Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")); return
         for account, deal in records:
             self._history_table.insert("", "end", tags=("profit" if deal.net_profit >= 0 else "loss",), values=(self._format_datetime(deal.time), f"#{account}", self._display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}"))
