@@ -68,6 +68,7 @@ class GoldMonitorApp(tk.Tk):
         self._latest_snapshot: AccountSnapshot | None = None
         self._selected_local_accounts: list[Mt5TerminalCandidate] = []
         self._selected_account_snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]] = []
+        self._local_position_tickets: dict[str, set[int]] = {}
         self._card_keys: tuple[str, ...] = ()
         self._card_values: list[tuple[tk.Label, tk.Label, tk.Label, tk.Label, tk.Label, tk.Label]] = []
         self._log_history: list[LogEntry] = []
@@ -82,7 +83,7 @@ class GoldMonitorApp(tk.Tk):
         today = self._clock_gmt7().date()
         self._history_start_date_value = tk.StringVar(value=(today - timedelta(days=30)).isoformat())
         self._history_end_date_value = tk.StringVar(value=today.isoformat())
-        self._history_start_time_value = tk.StringVar(value="08:00")
+        self._history_start_time_value = tk.StringVar(value="00:00")
         self._history_end_time_value = tk.StringVar(value="23:59")
         self._history_status_value = tk.StringVar(value="Sẵn sàng quét lịch sử read-only.")
         self._history_range_value = tk.StringVar(value="—")
@@ -90,7 +91,7 @@ class GoldMonitorApp(tk.Tk):
         self._history_winrate_value = tk.StringVar(value="0.0%")
         self._history_dd_value = tk.StringVar(value="0.00 USD")
         self._history_net_value = tk.StringVar(value="0.00 USD")
-        self._history_volume_value = tk.StringVar(value="0.00 LOT")
+        self._history_volume_value = tk.StringVar(value="0.00")
         self._account_cards_host: tk.Frame | None = None
         self._position_day_value = tk.StringVar(value=today.strftime("%d/%m"))
         self._updated_value = tk.StringVar(value="CHƯA CẬP NHẬT")
@@ -205,7 +206,6 @@ class GoldMonitorApp(tk.Tk):
         section.pack(fill="x")
         self._label(section, text="LỆNH ĐANG MỞ", font=("Segoe UI", 11, "bold")).pack(side="left")
         self._label(section, textvariable=self._position_day_value, font=("Segoe UI", 9, "bold"), fg=Palette.MUTED).pack(side="left", padx=(10, 0), pady=(1, 0))
-        self._label(section, text="XAU / BTC • read-only", font=("Segoe UI", 9), fg=Palette.MUTED).pack(side="right")
         columns = ("time", "account", "symbol", "side", "volume", "entry", "sl", "tp", "profit")
         self.positions = ttk.Treeview(positions_card, columns=columns, show="headings", style="Gold.Treeview", height=12)
         for key, width, title in (("time", 70, "TIME"), ("account", 96, "ACCOUNT"), ("symbol", 64, "SYMBOL"), ("side", 52, "TYPE"), ("volume", 44, "LOT"), ("entry", 76, "ENTRY"), ("sl", 70, "SL"), ("tp", 70, "TP"), ("profit", 74, "PnL")):
@@ -274,6 +274,21 @@ class GoldMonitorApp(tk.Tk):
             self._label(row, text=entry.level, font=("Segoe UI", 8, "bold"), fg=colors.get(entry.level, Palette.INFO), bg=bg, width=7, anchor="w").pack(side="left")
             self._label(row, text=entry.message, font=("Segoe UI", 9), bg=bg, anchor="w", justify="left", wraplength=370).pack(side="left", fill="x", expand=True)
 
+    def _append_local_position_changes(self, snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]]) -> None:
+        """Append only genuine Local position transitions, not a fresh-probe replay."""
+        active_paths = {str(candidate.path).casefold() for candidate, _snapshot in snapshots}
+        self._local_position_tickets = {path: tickets for path, tickets in self._local_position_tickets.items() if path in active_paths}
+        for candidate, snapshot in snapshots:
+            path_key = str(candidate.path).casefold()
+            current = {int(getattr(position, "ticket", 0) or 0) for position in snapshot.positions}
+            previous = self._local_position_tickets.get(path_key)
+            if previous is not None:
+                for ticket in sorted(current - previous):
+                    self._append_log(f"MỞ position #{ticket} • #{snapshot.login}", "OPEN")
+                for ticket in sorted(previous - current):
+                    self._append_log(f"ĐÓNG position #{ticket} • #{snapshot.login}", "CLOSE")
+            self._local_position_tickets[path_key] = current
+
     def _clear_logs(self) -> None:
         self._log_history.clear(); self._append_log("Đã xóa nhật ký hiển thị.", "INFO")
 
@@ -320,7 +335,10 @@ class GoldMonitorApp(tk.Tk):
             self._render_cards()
             records = [(str(snapshot.login), position) for _candidate, snapshot in (self._selected_account_snapshots or [(Mt5TerminalCandidate(Path("current"), "Current"), primary)]) for position in snapshot.positions]
             self._render_positions(records)
-            for entry in primary.log_entries: self._append_log(entry, "OPEN" if entry.startswith("MỞ") else "CLOSE")
+            if self._selected_local_accounts:
+                self._append_local_position_changes(self._selected_account_snapshots)
+            else:
+                for entry in primary.log_entries: self._append_log(entry, "OPEN" if entry.startswith("MỞ") else "CLOSE")
         except Exception as exc:
             self._append_log(f"Không cập nhật được MT5: {exc}", "ERROR")
         finally:
@@ -365,10 +383,10 @@ class GoldMonitorApp(tk.Tk):
         def apply():
             selected = [candidate for candidate in candidates_by_iid.values() if str(candidate.path).casefold() in selected_paths]
             if not selected: status.set("Tick ít nhất một account để theo dõi."); return
-            self._selected_local_accounts = selected; self._selected_account_snapshots = []; status.set(f"Đã áp dụng {len(selected)} account read-only.")
+            self._selected_local_accounts = selected; self._selected_account_snapshots = []; self._local_position_tickets = {}; status.set(f"Đã áp dụng {len(selected)} account read-only.")
             self._append_log(f"Đang theo dõi {len(selected)} MT5 Local account.", "INFO"); self._schedule_refresh(0)
-        tk.Button(actions, text="QUÉT LẠI", command=scan, bg=Palette.ACCENT, fg="#101722", relief="flat", bd=0, padx=14, pady=7).pack(side="left")
-        tk.Button(actions, text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.CARD_ALT, fg=Palette.TEXT, relief="flat", bd=0, padx=14, pady=7).pack(side="left", padx=8)
+        tk.Button(actions, text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF", activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left")
+        tk.Button(actions, text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF", activebackground="#0F6D4D", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left", padx=8)
         cached = load_cached_candidates()
         if cached: render(cached, f"Hiển thị {len(cached)} account cache; đang cập nhật live…")
         scan(); self._center_window(window)
@@ -392,8 +410,8 @@ class GoldMonitorApp(tk.Tk):
         for column in range(6): controls.grid_columnconfigure(column, weight=1)
         self._combo(controls, 0, "KHOẢNG THỜI GIAN", self._history_filter_value, ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua", "1 năm qua", "Tùy chỉnh"])
         self._combo(controls, 1, "MÃ GIAO DỊCH", self._history_symbol_value, ["Tất cả", "XAUUSD", "BTCUSD"])
-        self._entry(controls, 2, "START DATE (khi Tùy chỉnh)", self._history_start_date_value); self._entry(controls, 3, "END DATE (khi Tùy chỉnh)", self._history_end_date_value)
-        self._entry(controls, 4, "TỪ GIỜ (GMT+7)", self._history_start_time_value); self._entry(controls, 5, "ĐẾN GIỜ (GMT+7)", self._history_end_time_value)
+        self._entry(controls, 2, "START DATE", self._history_start_date_value); self._entry(controls, 3, "END DATE", self._history_end_date_value)
+        self._entry(controls, 4, "START TIME", self._history_start_time_value); self._entry(controls, 5, "END TIME", self._history_end_time_value)
         tk.Button(controls, text="LỌC / QUÉT", command=self._refresh_history, font=("Segoe UI", 9, "bold"), fg="#101722", bg=Palette.ACCENT, relief="flat", bd=0, padx=18, pady=9).grid(row=1, column=5, sticky="e", padx=6, pady=(6, 0))
         stats = tk.Frame(shell, bg=Palette.APP); stats.pack(fill="x", pady=(0, 12))
         for column in range(5): stats.grid_columnconfigure(column, weight=1, uniform="history")
@@ -463,7 +481,7 @@ class GoldMonitorApp(tk.Tk):
         start_time, end_time = self._history_time_range()
         records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]
         deals = tuple(deal for _, deal in records); stats = GoldPositionMonitor.history_stats(deals, raw_deals=raw); currency = self._display_currency(self._latest_snapshot.currency if self._latest_snapshot else "USD")
-        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(f"{stats.max_daily_drawdown:,.2f} {currency}"); self._history_net_value.set(f"{stats.net_profit:+,.2f} {currency}"); self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f} LOT")
+        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(f"{stats.max_daily_drawdown:,.2f} {currency}"); self._history_net_value.set(f"{stats.net_profit:+,.2f} {currency}"); self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")
         if not deals: self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", "Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")); return
         for account, deal in records:
             self._history_table.insert("", "end", tags=("profit" if deal.net_profit >= 0 else "loss",), values=(self._format_datetime(deal.time), f"#{account}", self._display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}"))
@@ -480,10 +498,10 @@ class GoldMonitorApp(tk.Tk):
         def connect():
             try: open_remote_desktop(host.get(), username.get()); result.set("Đã mở Windows Remote Desktop. Nhập password trong cửa sổ RDP native.")
             except Exception as exc: result.set(f"Không mở được RDP: {exc}")
-        tk.Button(shell, text="MỞ REMOTE DESKTOP  →", command=connect, font=("Segoe UI", 10, "bold"), fg="#101722", bg=Palette.ACCENT, activeforeground="#101722", activebackground="#E8C270", relief="flat", bd=0, padx=18, pady=10, cursor="hand2").pack(anchor="w", pady=(18, 0)); self._center_window(window)
+        tk.Button(shell, text="MỞ REMOTE DESKTOP  →", command=connect, font=("Segoe UI", 10, "bold"), fg="#FFFFFF", bg=Palette.INFO, activeforeground="#FFFFFF", activebackground="#1D4ED8", relief="flat", bd=0, padx=18, pady=10, cursor="hand2").pack(anchor="w", pady=(18, 0)); self._center_window(window)
 
     def _rdp_entry(self, parent: tk.Misc, column: int, caption: str, variable: tk.StringVar) -> None:
-        wrap = tk.Frame(parent, bg=Palette.CARD); wrap.grid(row=0, column=column, sticky="ew", padx=6, pady=6); self._label(wrap, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w"); tk.Entry(wrap, textvariable=variable, font=("Segoe UI", 10, "bold"), fg=Palette.TEXT, bg=Palette.TABLE, relief="flat", bd=0, insertbackground=Palette.TEXT).pack(fill="x", pady=(6, 0), ipady=8)
+        wrap = tk.Frame(parent, bg=Palette.CARD); wrap.grid(row=0, column=column, sticky="ew", padx=6, pady=6); self._label(wrap, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w"); tk.Entry(wrap, textvariable=variable, font=("Segoe UI", 10, "bold"), fg=Palette.TEXT, bg="#E8EEF7", relief="flat", bd=0, highlightthickness=1, highlightbackground=Palette.INFO, highlightcolor=Palette.INFO, insertbackground=Palette.TEXT).pack(fill="x", pady=(6, 0), ipady=8)
 
     def _on_close(self) -> None:
         self._closed = True

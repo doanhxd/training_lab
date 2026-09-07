@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import TestCase
 
-from training_lab.monitoring.gold_monitor.adapter import GoldPositionMonitor, HistoryDealView
+from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, GoldPositionMonitor, HistoryDealView
 from training_lab.monitoring.gold_monitor.app import GoldMonitorApp
 from training_lab.monitoring.gold_monitor.mt5_accounts import open_remote_desktop
 
@@ -86,13 +86,40 @@ class GoldMonitorTests(TestCase):
         self.assertEqual("00:00", app._history_start_time_value.value)
         self.assertEqual("23:59", app._history_end_time_value.value)
 
-    def test_history_ui_shows_time_filters_and_filtered_total_volume_metric(self):
+    def test_history_ui_uses_english_time_labels_and_unqualified_volume_metric(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
-        self.assertIn('"TỪ GIỜ (GMT+7)"', source)
-        self.assertIn('"ĐẾN GIỜ (GMT+7)"', source)
+        self.assertIn('"START DATE"', source)
+        self.assertIn('"END DATE"', source)
+        self.assertIn('"START TIME"', source)
+        self.assertIn('"END TIME"', source)
+        self.assertNotIn('"TỪ GIỜ (GMT+7)"', source)
+        self.assertNotIn('"ĐẾN GIỜ (GMT+7)"', source)
         self.assertIn('"FOLLOW TREND RATIO"', source)
         self.assertIn('records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]', source)
-        self.assertIn('sum(float(deal.volume) for deal in deals)', source)
+        self.assertIn('self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")', source)
+        self.assertNotIn('sum(float(deal.volume) for deal in deals):,.2f} LOT', source)
+
+    def test_local_position_log_baseline_prevents_refresh_spam_but_keeps_real_changes(self):
+        app = object.__new__(GoldMonitorApp)
+        app._local_position_tickets = {}
+        entries = []
+        app._append_log = lambda message, level: entries.append((message, level))
+        candidate = SimpleNamespace(path=Path("C:/MT5/terminal64.exe"))
+        initial = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=7),), ())
+        app._append_local_position_changes([(candidate, initial)])
+        app._append_local_position_changes([(candidate, initial)])
+        self.assertEqual([], entries)
+        changed = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=8),), ())
+        app._append_local_position_changes([(candidate, changed)])
+        self.assertEqual([("MỞ position #8 • #123", "OPEN"), ("ĐÓNG position #7 • #123", "CLOSE")], entries)
+
+    def test_requested_home_and_dialog_visual_contracts_are_present(self):
+        source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
+        self.assertNotIn('text="XAU / BTC • read-only"', source)
+        self.assertIn('text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF"', source)
+        self.assertIn('text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF"', source)
+        self.assertIn('text="MỞ REMOTE DESKTOP  →", command=connect', source)
+        self.assertIn('bg="#E8EEF7", relief="flat", bd=0, highlightthickness=1, highlightbackground=Palette.INFO', source)
 
     def test_rdp_rejects_blank_host(self):
         with self.assertRaises(ValueError):
