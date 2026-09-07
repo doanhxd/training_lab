@@ -102,6 +102,7 @@ class GoldMonitorApp(tk.Tk):
         self.configure(bg=Palette.APP)
         self._configure_style()
         self._build_ui()
+        self._center_window(self)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._append_log("GOLD Monitor khởi động. Chỉ đọc dữ liệu MT5.", "INFO")
         self._schedule_refresh(0)
@@ -238,21 +239,21 @@ class GoldMonitorApp(tk.Tk):
             for child in host.winfo_children(): child.destroy()
             self._card_keys, self._card_values = keys, []
             for _candidate, _snapshot in rows:
-                row = tk.Frame(host, bg=Palette.APP); row.pack(fill="x", pady=(0, 5))
+                row = tk.Frame(host, bg=Palette.APP); row.pack(fill="x", pady=(0, 3))
                 for column in range(3): row.grid_columnconfigure(column, weight=1, uniform="account")
                 fields: list[tk.Label] = []
                 for column, caption in enumerate(("TÀI KHOẢN MT5", "EQUITY", "LỆNH XAU/BTC")):
-                    card = self._card(row, padding=7); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
+                    card = self._card(row, padding=3); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
                     self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w")
                     if column == 0:
-                        account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w", pady=(2, 0))
+                        account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w")
                         value = self._label(account_line, font=("Segoe UI", 14, "bold"), fg=Palette.TEXT)
                         detail = self._label(account_line, text="", font=("Segoe UI", 8), fg=Palette.MUTED)
-                        value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(3, 0))
+                        value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(2, 0))
                     else:
                         value = self._label(card, font=("Segoe UI", 12 if column == 2 else 14, "bold"), fg=(Palette.TEXT, Palette.SUCCESS, Palette.ACCENT)[column])
                         detail = self._label(card, text="", font=("Segoe UI", 8), fg=Palette.MUTED)
-                        value.pack(anchor="w", pady=(3, 0)); detail.pack(anchor="w", pady=(1, 0))
+                        value.pack(anchor="w")
                     fields.extend((value, detail))
                 self._card_values.append(tuple(fields))
         for index, (candidate, snapshot) in enumerate(rows):
@@ -390,7 +391,7 @@ class GoldMonitorApp(tk.Tk):
             selected = [candidate for candidate in candidates_by_iid.values() if str(candidate.path).casefold() in selected_paths]
             if not selected: status.set("Tick ít nhất một account để theo dõi."); return
             self._selected_local_accounts = selected; self._selected_account_snapshots = []; self._local_position_tickets = {}; status.set(f"Đã áp dụng {len(selected)} account read-only.")
-            self._append_log(f"Đang theo dõi {len(selected)} MT5 Local account.", "INFO"); self._schedule_refresh(0)
+            self._append_log(f"Đang theo dõi {len(selected)} MT5 Local account.", "INFO"); self._schedule_refresh(0); window.destroy()
         tk.Button(actions, text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF", activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left")
         tk.Button(actions, text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF", activebackground="#0F6D4D", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left", padx=8)
         cached = load_cached_candidates()
