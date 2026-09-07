@@ -234,14 +234,21 @@ class GoldMonitorApp(tk.Tk):
         tk.Button(header_actions, textvariable=self._updated_value, command=self._toggle_currency_alias, font=("Consolas", 9, "bold"), fg=Palette.ACCENT, bg=Palette.CARD_ALT, activeforeground=Palette.ACCENT, activebackground=Palette.BORDER, relief="flat", bd=0, padx=12, pady=9, cursor="hand2").pack(side="left")
         account_viewport = tk.Frame(content, bg=Palette.APP, height=ACCOUNT_VIEWPORT_HEIGHT)
         account_viewport.pack(fill="x", pady=(0, 14)); account_viewport.pack_propagate(False)
-        account_scrollbar = ttk.Scrollbar(account_viewport, orient="vertical")
-        account_canvas = tk.Canvas(account_viewport, bg=Palette.APP, highlightthickness=0, bd=0, yscrollcommand=account_scrollbar.set)
-        account_scrollbar.configure(command=account_canvas.yview)
-        account_scrollbar.pack(side="right", fill="y"); account_canvas.pack(side="left", fill="both", expand=True)
+        account_canvas = tk.Canvas(account_viewport, bg=Palette.APP, highlightthickness=0, bd=0)
+        account_canvas.pack(fill="both", expand=True)
         self._account_cards_host = tk.Frame(account_canvas, bg=Palette.APP)
         account_window = account_canvas.create_window((0, 0), window=self._account_cards_host, anchor="nw")
         self._account_cards_host.bind("<Configure>", lambda _event: account_canvas.configure(scrollregion=account_canvas.bbox("all")))
         account_canvas.bind("<Configure>", lambda event: account_canvas.itemconfigure(account_window, width=event.width))
+        def scroll_account_cards(event: tk.Event) -> str | None:
+            pointer_x, pointer_y = self.winfo_pointerx(), self.winfo_pointery()
+            inside = account_viewport.winfo_rootx() <= pointer_x < account_viewport.winfo_rootx() + account_viewport.winfo_width() and account_viewport.winfo_rooty() <= pointer_y < account_viewport.winfo_rooty() + account_viewport.winfo_height()
+            if not inside:
+                return None
+            steps = -max(1, abs(event.delta) // 120) if event.delta > 0 else max(1, abs(event.delta) // 120)
+            account_canvas.yview_scroll(steps, "units")
+            return "break"
+        self.bind_all("<MouseWheel>", scroll_account_cards, add="+")
 
         body = tk.Frame(content, bg=Palette.APP)
         body.pack(fill="both", expand=True); body.grid_propagate(False)
