@@ -186,6 +186,14 @@ class GoldMonitorApp(tk.Tk):
             else:
                 self._refresh_history()
 
+    def _format_history_money(self, amount: float, broker_currency: str, *, signed: bool = False) -> str:
+        raw_currency = str(broker_currency or "USD").upper()
+        displayed_currency = self._display_currency(raw_currency, preserve_broker_currency=self._show_broker_currency)
+        value = f"{float(amount):+,.2f}" if signed else f"{float(amount):,.2f}"
+        if self._show_broker_currency and raw_currency == "USC":
+            return f"{value} USC (${float(amount) / 100:,.3f})"
+        return f"{value} {displayed_currency}"
+
     def _build_ui(self) -> None:
         shell = tk.Frame(self, bg=Palette.APP)
         shell.pack(fill="both", expand=True)
@@ -433,8 +441,8 @@ class GoldMonitorApp(tk.Tk):
         self._entry(controls, 4, "START TIME", self._history_start_time_value); self._entry(controls, 5, "END TIME", self._history_end_time_value)
         tk.Button(controls, text="LỌC / QUÉT", command=self._refresh_history, font=("Segoe UI", 9, "bold"), fg="#101722", bg=Palette.ACCENT, relief="flat", bd=0, padx=18, pady=9).grid(row=1, column=5, sticky="e", padx=6, pady=(6, 0))
         stats = tk.Frame(shell, bg=Palette.APP); stats.pack(fill="x", pady=(0, 12))
-        for column in range(5): stats.grid_columnconfigure(column, weight=1, uniform="history")
-        for column, caption, value, color in ((0, "DEALS", self._history_deals_value, Palette.ACCENT), (1, "WINRATE", self._history_winrate_value, Palette.SUCCESS), (2, "MAX DD NGÀY", self._history_dd_value, Palette.DANGER), (3, "NET P/L", self._history_net_value, Palette.SUCCESS), (4, "FOLLOW TREND RATIO", self._history_volume_value, Palette.ACCENT)):
+        for column, weight in enumerate((3, 3, 5, 5, 4)): stats.grid_columnconfigure(column, weight=weight)
+        for column, caption, value, color in ((0, "DEALS", self._history_deals_value, Palette.ACCENT), (1, "WINRATE", self._history_winrate_value, Palette.SUCCESS), (2, "MAX DD", self._history_dd_value, Palette.DANGER), (3, "NET P/L", self._history_net_value, Palette.SUCCESS), (4, "FOLLOW TREND RATIO", self._history_volume_value, Palette.ACCENT)):
             card = self._card(stats, padding=12); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5)); self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w"); self._label(card, textvariable=value, font=("Segoe UI", 14, "bold"), fg=color).pack(anchor="w", pady=(5, 0))
         history_card = self._card(shell, padding=0); history_card.pack(fill="both", expand=True)
         columns = ("time", "account", "symbol", "side", "volume", "price", "net")
@@ -499,8 +507,8 @@ class GoldMonitorApp(tk.Tk):
         if selected != "TẤT CẢ": records = [(account, deal) for account, deal in records if str(deal.symbol).upper().startswith(selected)]
         start_time, end_time = self._history_time_range()
         records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]
-        deals = tuple(deal for _, deal in records); stats = GoldPositionMonitor.history_stats(deals, raw_deals=raw); currency = self._display_currency(self._latest_snapshot.currency if self._latest_snapshot else "USD", preserve_broker_currency=self._show_broker_currency)
-        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(f"{stats.max_daily_drawdown:,.2f} {currency}"); self._history_net_value.set(f"{stats.net_profit:+,.2f} {currency}"); self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")
+        deals = tuple(deal for _, deal in records); stats = GoldPositionMonitor.history_stats(deals, raw_deals=raw); broker_currency = self._latest_snapshot.currency if self._latest_snapshot else "USD"
+        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(self._format_history_money(stats.max_daily_drawdown, broker_currency)); self._history_net_value.set(self._format_history_money(stats.net_profit, broker_currency, signed=True)); self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")
         if not deals: self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", "Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")); return
         for account, deal in records:
             self._history_table.insert("", "end", tags=("profit" if deal.net_profit >= 0 else "loss",), values=(self._format_datetime(deal.time), f"#{account}", self._display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}"))

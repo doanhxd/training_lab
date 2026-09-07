@@ -79,6 +79,14 @@ class GoldMonitorTests(TestCase):
         self.assertIn("command=self._disable_currency_alias", source)
         self.assertIn("preserve_broker_currency=self._show_broker_currency", source)
 
+    def test_history_money_adds_usd_equivalent_only_in_raw_usc_mode(self):
+        app = object.__new__(GoldMonitorApp)
+        app._show_broker_currency = True
+        self.assertEqual("1,329.60 USC ($13.296)", app._format_history_money(1329.60, "USC"))
+        self.assertEqual("+6,727.80 USC ($67.278)", app._format_history_money(6727.80, "USC", signed=True))
+        app._show_broker_currency = False
+        self.assertEqual("1,329.60 USD", app._format_history_money(1329.60, "USC"))
+
     def test_history_time_range_normalizes_and_recovers_invalid_values(self):
         class Value:
             def __init__(self, value): self.value = value
@@ -103,6 +111,9 @@ class GoldMonitorTests(TestCase):
         self.assertNotIn('"TỪ GIỜ (GMT+7)"', source)
         self.assertNotIn('"ĐẾN GIỜ (GMT+7)"', source)
         self.assertIn('"FOLLOW TREND RATIO"', source)
+        self.assertIn('"MAX DD"', source)
+        self.assertNotIn('"MAX DD NGÀY"', source)
+        self.assertIn('for column, weight in enumerate((3, 3, 5, 5, 4))', source)
         self.assertIn('records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]', source)
         self.assertIn('self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")', source)
         self.assertNotIn('sum(float(deal.volume) for deal in deals):,.2f} LOT', source)
