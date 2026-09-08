@@ -1774,7 +1774,7 @@ class RsiquiV3MonitorApp(tk.Tk):
         self._label(shell, text="MT5 LOCAL ACCOUNTS", font=("Segoe UI", 15, "bold"), bg=UiPalette.APP).pack(anchor="w")
         self._label(shell, text="Quét terminal MT5 local và đọc account_info() — không gửi lệnh.", fg=UiPalette.MUTED, bg=UiPalette.APP).pack(anchor="w", pady=(4, 12))
         tree = ttk.Treeview(shell, columns=("selected", "account", "name", "server", "path"), show="headings", style="LocalAccount.Treeview", height=8)
-        for key, title, width in (("selected", "THEO DÕI", 108), ("account", "ACCOUNT", 118), ("name", "ACCOUNT NAME", 210), ("server", "SERVER", 220), ("path", "TERMINAL", 390)):
+        for key, title, width in (("selected", "CHỌN", 108), ("account", "ACCOUNT", 118), ("name", "ACCOUNT NAME", 210), ("server", "SERVER", 220), ("path", "TERMINAL", 390)):
             tree.heading(key, text=title); tree.column(key, width=width, anchor="w")
         tree.tag_configure("local_selected", background=UiPalette.CARD_ALT, foreground=UiPalette.TEXT)
         tree.tag_configure("local_alt", background=UiPalette.TABLE_ALT, foreground=UiPalette.TEXT)

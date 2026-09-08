@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta, timezone
+from decimal import ROUND_DOWN, Decimal
 from pathlib import Path
 import queue
 import re
@@ -94,6 +95,11 @@ class GoldMonitorApp(tk.Tk):
         self._history_net_value = tk.StringVar(value="0.00 USD")
         self._history_volume_value = tk.StringVar(value="0.00")
         self._account_cards_host: tk.Frame | None = None
+        self._position_tabs_host: tk.Frame | None = None
+        self._position_tab_keys: tuple[str, ...] = ()
+        self._position_tab_buttons: dict[str, tk.Button] = {}
+        self._active_position_tab = ""
+        self._position_snapshot_rows: list[tuple[Mt5TerminalCandidate, AccountSnapshot]] = []
         self._show_broker_currency = False
         self._total_equity_value = tk.StringVar(value="—")
         self._position_day_value = tk.StringVar(value=today.strftime("%d/%m"))
@@ -209,6 +215,13 @@ class GoldMonitorApp(tk.Tk):
             return f"{value} USC (${float(amount) / 100:,.3f})"
         return f"{value} {displayed_currency}"
 
+    def _format_history_volume(self, volume: float, broker_currency: str) -> str:
+        value = f"{float(volume):,.2f}"
+        if self._show_broker_currency and str(broker_currency or "USD").upper() == "USC":
+            usd_equivalent = (Decimal(str(volume)) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            return f"{value} ({usd_equivalent:,.2f})"
+        return value
+
     def _build_ui(self) -> None:
         shell = tk.Frame(self, bg=Palette.APP)
         shell.pack(fill="both", expand=True)
@@ -265,8 +278,11 @@ class GoldMonitorApp(tk.Tk):
         positions_card.grid(row=0, column=0, sticky="nsew", padx=(0, 7))
         section = tk.Frame(positions_card, bg=Palette.CARD, padx=18, pady=15)
         section.pack(fill="x")
-        self._label(section, text="LỆNH ĐANG MỞ", font=("Segoe UI", 11, "bold")).pack(side="left")
-        self._label(section, textvariable=self._position_day_value, font=("Segoe UI", 9, "bold"), fg=Palette.MUTED).pack(side="left", padx=(10, 0), pady=(1, 0))
+        title = tk.Frame(section, bg=Palette.CARD); title.pack(fill="x")
+        self._label(title, text="LỆNH ĐANG MỞ", font=("Segoe UI", 11, "bold")).pack(side="left")
+        self._label(title, textvariable=self._position_day_value, font=("Segoe UI", 9, "bold"), fg=Palette.MUTED).pack(side="left", padx=(10, 0), pady=(1, 0))
+        self._position_tabs_host = tk.Frame(section, bg=Palette.CARD)
+        self._position_tabs_host.pack(fill="x", pady=(10, 0))
         columns = ("time", "account", "symbol", "side", "volume", "entry", "sl", "tp", "profit")
         self.positions = ttk.Treeview(positions_card, columns=columns, show="headings", style="Gold.Treeview", height=12)
         for key, width, title in (("time", 70, "TIME"), ("account", 96, "ACCOUNT"), ("symbol", 64, "SYMBOL"), ("side", 52, "TYPE"), ("volume", 44, "LOT"), ("entry", 76, "ENTRY"), ("sl", 70, "SL"), ("tp", 70, "TP"), ("profit", 74, "PnL")):
@@ -322,6 +338,37 @@ class GoldMonitorApp(tk.Tk):
             account.configure(text=f"#{snapshot.login}"); account_detail.configure(text=f"ONLINE • {snapshot.server}")
             equity.configure(text=f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency, preserve_broker_currency=self._show_broker_currency)}")
             positions.configure(text=f"{len(snapshot.positions)} ({candidate.name or 'Read-only'})")
+
+    def _sync_position_tabs(self, rows: list[tuple[Mt5TerminalCandidate, AccountSnapshot]]) -> None:
+        host = self._position_tabs_host
+        if host is None:
+            return
+        tabs = tuple((str(candidate.path).casefold(), candidate.name or f"#{snapshot.login}") for candidate, snapshot in rows)
+        tab_keys = tuple(key for key, _label in tabs) + ("ALL",)
+        if tab_keys != self._position_tab_keys:
+            for child in host.winfo_children():
+                child.destroy()
+            self._position_tab_keys, self._position_tab_buttons = tab_keys, {}
+            for key, label in (*tabs, ("ALL", "ALL")):
+                button = tk.Button(host, text=label, command=lambda selected=key: self._select_position_tab(selected), font=("Segoe UI", 8, "bold"), relief="flat", bd=0, padx=10, pady=5, cursor="hand2")
+                button.pack(side="left", padx=(0, 5))
+                self._position_tab_buttons[key] = button
+        if self._active_position_tab not in tab_keys:
+            self._active_position_tab = tabs[0][0] if tabs else "ALL"
+        for key, button in self._position_tab_buttons.items():
+            selected = key == self._active_position_tab
+            button.configure(fg="#FFFFFF" if selected else Palette.MUTED, bg=Palette.INFO if selected else Palette.CARD_ALT, activeforeground="#FFFFFF" if selected else Palette.TEXT, activebackground="#1D4ED8" if selected else Palette.BORDER)
+
+    def _select_position_tab(self, tab_key: str) -> None:
+        self._active_position_tab = tab_key
+        self._sync_position_tabs(self._position_snapshot_rows)
+        self._render_active_positions()
+
+    def _render_active_positions(self) -> None:
+        rows = self._position_snapshot_rows
+        if self._active_position_tab != "ALL":
+            rows = [(candidate, snapshot) for candidate, snapshot in rows if str(candidate.path).casefold() == self._active_position_tab]
+        self._render_positions([(str(snapshot.login), position) for _candidate, snapshot in rows for position in snapshot.positions])
 
     def _render_positions(self, records: list[tuple[str, object]]) -> None:
         self.positions.delete(*self.positions.get_children())
@@ -401,8 +448,9 @@ class GoldMonitorApp(tk.Tk):
             now = self._clock_gmt7()
             self._position_day_value.set(now.strftime("%d/%m")); self._updated_value.set(f"CẬP NHẬT\n{now:%H:%M:%S}")
             self._render_cards()
-            records = [(str(snapshot.login), position) for _candidate, snapshot in (self._selected_account_snapshots or [(Mt5TerminalCandidate(Path("current"), "Current"), primary)]) for position in snapshot.positions]
-            self._render_positions(records)
+            self._position_snapshot_rows = self._selected_account_snapshots or [(Mt5TerminalCandidate(Path("current"), "Current"), primary)]
+            self._sync_position_tabs(self._position_snapshot_rows)
+            self._render_active_positions()
             if self._selected_local_accounts:
                 self._append_local_position_changes(self._selected_account_snapshots)
             else:
@@ -549,7 +597,7 @@ class GoldMonitorApp(tk.Tk):
         start_time, end_time = self._history_time_range()
         records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]
         deals = tuple(deal for _, deal in records); stats = GoldPositionMonitor.history_stats(deals, raw_deals=raw); broker_currency = self._latest_snapshot.currency if self._latest_snapshot else "USD"
-        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(self._format_history_money(stats.max_daily_drawdown, broker_currency)); self._history_net_value.set(self._format_history_money(stats.net_profit, broker_currency, signed=True)); self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")
+        self._history_deals_value.set(str(stats.deals)); self._history_winrate_value.set(f"{stats.winrate:.1f}%"); self._history_dd_value.set(self._format_history_money(stats.max_daily_drawdown, broker_currency)); self._history_net_value.set(self._format_history_money(stats.net_profit, broker_currency, signed=True)); self._history_volume_value.set(self._format_history_volume(sum(float(deal.volume) for deal in deals), broker_currency))
         if not deals: self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", "Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")); return
         for account, deal in records:
             self._history_table.insert("", "end", tags=("profit" if deal.net_profit >= 0 else "loss",), values=(self._format_datetime(deal.time), f"#{account}", self._display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}"))

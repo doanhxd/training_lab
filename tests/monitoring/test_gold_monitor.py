@@ -108,6 +108,13 @@ class GoldMonitorTests(TestCase):
         app._show_broker_currency = False
         self.assertEqual("1,329.60 USD", app._format_history_money(1329.60, "USC"))
 
+    def test_history_volume_adds_usd_equivalent_only_in_raw_usc_mode(self):
+        app = object.__new__(GoldMonitorApp)
+        app._show_broker_currency = True
+        self.assertEqual("278.57 (2.78)", app._format_history_volume(278.57, "USC"))
+        app._show_broker_currency = False
+        self.assertEqual("278.57", app._format_history_volume(278.57, "USC"))
+
     def test_history_time_range_normalizes_and_recovers_invalid_values(self):
         class Value:
             def __init__(self, value): self.value = value
@@ -138,7 +145,10 @@ class GoldMonitorTests(TestCase):
         self.assertIn('text="TỔNG VỐN"', source)
         self.assertIn('textvariable=self._total_equity_value', source)
         self.assertIn('records = [(account, deal) for account, deal in records if start_time <= deal.time.replace(tzinfo=None).time() <= end_time]', source)
-        self.assertIn('self._history_volume_value.set(f"{sum(float(deal.volume) for deal in deals):,.2f}")', source)
+        self.assertIn('def _format_history_volume(self, volume: float, broker_currency: str)', source)
+        self.assertIn('usd_equivalent = (Decimal(str(volume)) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_DOWN)', source)
+        self.assertIn('return f"{value} ({usd_equivalent:,.2f})"', source)
+        self.assertIn('self._history_volume_value.set(self._format_history_volume(sum(float(deal.volume) for deal in deals), broker_currency))', source)
         self.assertNotIn('sum(float(deal.volume) for deal in deals):,.2f} LOT', source)
 
     def test_local_position_log_baseline_prevents_refresh_spam_but_keeps_real_changes(self):
@@ -169,6 +179,13 @@ class GoldMonitorTests(TestCase):
         self.assertIn('body.pack(fill="both", expand=True); body.grid_propagate(False)', source)
         self.assertIn('left_width = round(available * 0.60)', source)
         self.assertIn('body.grid_columnconfigure(1, minsize=available - left_width)', source)
+        self.assertIn('self._position_tabs_host = tk.Frame(section, bg=Palette.CARD)', source)
+        self.assertIn('def _sync_position_tabs(self, rows: list[tuple[Mt5TerminalCandidate, AccountSnapshot]])', source)
+        self.assertIn('candidate.name or f"#{snapshot.login}"', source)
+        self.assertIn('tab_keys = tuple(key for key, _label in tabs) + ("ALL",)', source)
+        self.assertIn('for key, label in (*tabs, ("ALL", "ALL")):', source)
+        self.assertIn('def _select_position_tab(self, tab_key: str)', source)
+        self.assertIn('self._render_active_positions()', source)
         self.assertIn('row.pack(fill="x", pady=(0, 3))', source)
         self.assertIn('card = self._card(row, padding=0); card.configure(padx=10, pady=7)', source)
         self.assertIn('account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w")', source)
