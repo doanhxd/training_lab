@@ -82,11 +82,20 @@ class GoldMonitorTests(TestCase):
         app._show_broker_currency, app._history_table = False, None
         calls = []
         app._schedule_refresh = lambda delay: calls.append(delay)
+        app._render_logs = lambda: None
         app._toggle_currency_alias()
         self.assertTrue(app._show_broker_currency)
         app._toggle_currency_alias()
         self.assertFalse(app._show_broker_currency)
         self.assertEqual([0, 0], calls)
+
+    def test_monitoring_log_symbol_alias_tracks_update_toggle(self):
+        app = object.__new__(GoldMonitorApp)
+        app._show_broker_currency = False
+        message = "MỞ SELL #1858772808 • XAUUSDc • 0.03 lot"
+        self.assertEqual("MỞ SELL #1858772808 • XAUUSD • 0.03 lot", app._format_log_message(message))
+        app._show_broker_currency = True
+        self.assertEqual(message, app._format_log_message(message))
 
     def test_total_equity_sums_selected_accounts_per_currency(self):
         app = object.__new__(GoldMonitorApp)
@@ -186,6 +195,9 @@ class GoldMonitorTests(TestCase):
         self.assertIn('for key, label in (*tabs, ("ALL", "ALL")):', source)
         self.assertIn('def _select_position_tab(self, tab_key: str)', source)
         self.assertIn('self._render_active_positions()', source)
+        self.assertIn('def _format_log_message(self, message: str)', source)
+        self.assertIn('return re.sub(r"\\bXAUUSD[A-Za-z0-9._-]*\\b", lambda match: self._display_symbol(match.group(0)), message, flags=re.IGNORECASE)', source)
+        self.assertIn('self._render_logs()', source)
         self.assertIn('row.pack(fill="x", pady=(0, 3))', source)
         self.assertIn('card = self._card(row, padding=0); card.configure(padx=10, pady=7)', source)
         self.assertIn('account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w")', source)

@@ -187,6 +187,7 @@ class GoldMonitorApp(tk.Tk):
     def _toggle_currency_alias(self) -> None:
         """Toggle the display-only USC→USD alias without changing broker data."""
         self._show_broker_currency = not self._show_broker_currency
+        self._render_logs()
         self._schedule_refresh(0)
         if self._history_table is not None:
             if self._history_loading:
@@ -379,6 +380,15 @@ class GoldMonitorApp(tk.Tk):
     def _append_log(self, message: str, level: str = "INFO") -> None:
         self._log_history.insert(0, LogEntry(self._clock_gmt7().strftime("%H:%M:%S"), level, message))
         self._log_history = self._log_history[:250]
+        self._render_logs()
+
+    def _format_log_message(self, message: str) -> str:
+        """Keep broker symbols raw only while the display alias is explicitly off."""
+        if self._show_broker_currency:
+            return message
+        return re.sub(r"\bXAUUSD[A-Za-z0-9._-]*\b", lambda match: self._display_symbol(match.group(0)), message, flags=re.IGNORECASE)
+
+    def _render_logs(self) -> None:
         if not hasattr(self, "_log_host"): return
         for child in self._log_host.winfo_children(): child.destroy()
         colors = {"INFO": Palette.INFO, "ERROR": Palette.DANGER, "OPEN": Palette.SUCCESS, "CLOSE": Palette.MUTED}
@@ -387,7 +397,7 @@ class GoldMonitorApp(tk.Tk):
             row = tk.Frame(self._log_host, bg=bg, padx=12, pady=8); row.pack(fill="x", pady=(0, 1))
             self._label(row, text=entry.timestamp, font=("Consolas", 9), fg=Palette.MUTED, bg=bg, width=9, anchor="w").pack(side="left")
             self._label(row, text=entry.level, font=("Segoe UI", 8, "bold"), fg=colors.get(entry.level, Palette.INFO), bg=bg, width=7, anchor="w").pack(side="left")
-            self._label(row, text=entry.message, font=("Segoe UI", 9), bg=bg, anchor="w", justify="left", wraplength=370).pack(side="left", fill="x", expand=True)
+            self._label(row, text=self._format_log_message(entry.message), font=("Segoe UI", 9), bg=bg, anchor="w", justify="left", wraplength=370).pack(side="left", fill="x", expand=True)
 
     def _append_local_position_changes(self, snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]]) -> None:
         """Append only genuine Local position transitions, not a fresh-probe replay."""
