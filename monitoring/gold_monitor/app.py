@@ -829,7 +829,7 @@ class GoldMonitorApp(tk.Tk):
             canvas.create_rectangle(x, height - 26, x + 12, height - 14, fill=color, outline=color)
             canvas.create_text(x + 18, height - 20, text=label, anchor="w", fill=Palette.TEXT, font=("Segoe UI", 8, "bold"))
         currency_label = self._display_currency(scale_currency, preserve_broker_currency=self._show_broker_currency)
-        self._equity_status_value.set(f"{len(curves)} account • {len(all_events)} events • deposits + closed P/L ({currency_label}) • withdrawals excluded • {start:%Y-%m-%d} → {end:%Y-%m-%d}")
+        self._equity_status_value.set(f"{len(curves)} account • {len(all_events)} events • deposits + closed P/L ({currency_label}) • withdrawals excluded • weekends excluded • {start:%Y-%m-%d} → {end:%Y-%m-%d}")
 
     def _open_vps_window(self) -> None:
         window = tk.Toplevel(self); window.title("VPS / RDP"); window.geometry("720x420"); window.minsize(640, 380); window.configure(bg=Palette.APP)
