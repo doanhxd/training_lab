@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable
 
-from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, GoldPositionMonitor, HistoryDealView
+from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, EquityEvent, GoldPositionMonitor, HistoryDealView
 from training_lab.monitoring.gold_monitor.mt5_accounts import Mt5TerminalCandidate, load_cached_candidates, open_remote_desktop, scan_mt5_terminals
 
 APP_TITLE = "GOLD Monitor • Read-only"
@@ -93,6 +93,10 @@ class GoldMonitorApp(tk.Tk):
         self._history_end_date_value = tk.StringVar(value=today.isoformat())
         self._history_start_time_value = tk.StringVar(value="00:00")
         self._history_end_time_value = tk.StringVar(value="23:59")
+        self._equity_start_date_value = tk.StringVar(value=(today - timedelta(days=30)).isoformat())
+        self._equity_end_date_value = tk.StringVar(value=today.isoformat())
+        self._equity_start_time_value = tk.StringVar(value="00:00")
+        self._equity_end_time_value = tk.StringVar(value="23:59")
         self._history_status_value = tk.StringVar(value="Sẵn sàng quét lịch sử read-only.")
         self._history_range_value = tk.StringVar(value="—")
         self._history_deals_value = tk.StringVar(value="0")
@@ -636,7 +640,15 @@ class GoldMonitorApp(tk.Tk):
         header.pack(fill="x", pady=(0, 12))
         self._label(header, text="EQUITY CURVE", font=("Segoe UI", 18, "bold"), bg=Palette.APP).pack(side="left")
         self._label(header, text="Cumulative closed P/L • read-only", font=("Segoe UI", 9), fg=Palette.MUTED, bg=Palette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
-        tk.Button(header, text="TÍNH LẠI", command=self._refresh_equity_curve, font=("Segoe UI", 9, "bold"), fg="#FFFFFF", bg=Palette.INFO, activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7).pack(side="right")
+        controls = self._card(shell, padding=10)
+        controls.pack(fill="x", pady=(0, 10))
+        for column in range(4):
+            controls.grid_columnconfigure(column, weight=1)
+        self._entry(controls, 0, "START DATE", self._equity_start_date_value)
+        self._entry(controls, 1, "END DATE", self._equity_end_date_value)
+        self._entry(controls, 2, "START TIME", self._equity_start_time_value)
+        self._entry(controls, 3, "END TIME", self._equity_end_time_value)
+        tk.Button(controls, text="TÍNH LẠI", command=self._refresh_equity_curve, font=("Segoe UI", 9, "bold"), fg="#FFFFFF", bg=Palette.INFO, activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7).grid(row=1, column=3, sticky="e", padx=6, pady=(4, 0))
         self._label(shell, textvariable=self._equity_status_value, font=("Segoe UI", 9), fg=Palette.MUTED, bg=Palette.APP).pack(anchor="w", pady=(0, 8))
         chart_card = self._card(shell, padding=8)
         chart_card.pack(fill="both", expand=True)
@@ -652,10 +664,40 @@ class GoldMonitorApp(tk.Tk):
             self._equity_window.destroy()
         self._equity_window, self._equity_canvas = None, None
 
+    def _equity_range(self) -> tuple[datetime, datetime]:
+        today = self._clock_gmt7().date()
+        try:
+            start_date = date.fromisoformat(self._equity_start_date_value.get().strip())
+            end_date = date.fromisoformat(self._equity_end_date_value.get().strip())
+            start_time = time.fromisoformat(self._equity_start_time_value.get().strip())
+            end_time = time.fromisoformat(self._equity_end_time_value.get().strip())
+        except ValueError:
+            start_date, end_date = today - timedelta(days=30), today
+            start_time, end_time = time(0, 0), time(23, 59)
+            self._equity_start_date_value.set(start_date.isoformat())
+            self._equity_end_date_value.set(end_date.isoformat())
+            self._equity_start_time_value.set("00:00")
+            self._equity_end_time_value.set("23:59")
+        start = datetime.combine(min(start_date, end_date), start_time.replace(second=0, microsecond=0))
+        end = datetime.combine(max(start_date, end_date), end_time.replace(second=59, microsecond=999999))
+        return start, end
+
+    def _read_local_equity(self, candidate: Mt5TerminalCandidate, start: datetime, end: datetime) -> tuple[EquityEvent, ...]:
+        import MetaTrader5 as mt5
+        mt5.shutdown()
+        if not mt5.initialize(path=str(candidate.path)):
+            raise RuntimeError(f"{candidate.login or candidate.path.name}: {mt5.last_error()}")
+        probe = GoldPositionMonitor(mt5=mt5)
+        probe._connected = True
+        try:
+            return probe.equity_events(start, end)
+        finally:
+            probe.stop()
+
     def _refresh_equity_curve(self) -> None:
         if self._equity_canvas is None or self._equity_loading:
             return
-        start, end = self._history_range()
+        start, end = self._equity_range()
         candidates = tuple(self._selected_local_accounts)
         self._equity_loading = True
         self._equity_request_id += 1
@@ -664,15 +706,15 @@ class GoldMonitorApp(tk.Tk):
 
         def worker() -> None:
             try:
-                curves: dict[str, tuple[str, tuple[HistoryDealView, ...]]] = {}
+                curves: dict[str, tuple[str, tuple[EquityEvent, ...]]] = {}
                 if candidates:
                     for candidate in candidates:
-                        _snapshot, deals, _count = self._read_local(candidate, history_range=(start, end))
+                        events = self._read_local_equity(candidate, start, end)
                         key = str(candidate.path).casefold()
-                        curves[key] = (candidate.name or f"#{candidate.login or 'CURRENT'}", deals)
+                        curves[key] = (candidate.name or f"#{candidate.login or 'CURRENT'}", events)
                 else:
-                    deals, _stats = self.monitor.history(start, end)
-                    curves["CURRENT"] = (f"#{self._latest_snapshot.login if self._latest_snapshot else 'CURRENT'}", deals)
+                    events = self.monitor.equity_events(start, end)
+                    curves["CURRENT"] = (f"#{self._latest_snapshot.login if self._latest_snapshot else 'CURRENT'}", events)
                 self._equity_results.put((request_id, curves, None))
             except Exception as exc:
                 self._equity_results.put((request_id, {}, exc))
@@ -698,13 +740,14 @@ class GoldMonitorApp(tk.Tk):
             self._equity_status_value.set(f"Không tính được Equity Curve: {error}")
             self._equity_canvas.delete("all")
             return
-        self._render_equity_curve(curves)
+        self._render_equity_curve(curves, self._equity_range())
 
-    def _render_equity_curve(self, curves: dict[str, tuple[str, tuple[HistoryDealView, ...]]]) -> None:
+    def _render_equity_curve(self, curves: dict[str, tuple[str, tuple[EquityEvent, ...]]], selected_range: tuple[datetime, datetime]) -> None:
         canvas = self._equity_canvas
         if canvas is None:
             return
         canvas.delete("all")
+        start, end = selected_range
         canvas.update_idletasks()
         width, height = max(1, canvas.winfo_width()), max(1, canvas.winfo_height())
         left, right, top, bottom = 76, 24, 24, 52
@@ -713,13 +756,13 @@ class GoldMonitorApp(tk.Tk):
         all_events: list[tuple[datetime, float]] = []
         scale_currency = str(self._latest_snapshot.currency if self._latest_snapshot else "USD").upper()
         scale = 0.01 if scale_currency == "USC" and not self._show_broker_currency else 1.0
-        for key, (_label, deals) in curves.items():
+        for key, (_label, events) in curves.items():
             running = 0.0
             points = []
-            for deal in sorted(deals, key=lambda item: item.time):
-                running += float(deal.net_profit) * scale
-                points.append((deal.time, running))
-                all_events.append((deal.time, float(deal.net_profit) * scale))
+            for event in sorted(events, key=lambda item: item.time):
+                running += float(event.amount) * scale
+                points.append((event.time, running))
+                all_events.append((event.time, float(event.amount) * scale))
             points_by_key[key] = points
         all_events.sort(key=lambda item: item[0])
         aggregate: list[tuple[datetime, float]] = []
@@ -728,8 +771,8 @@ class GoldMonitorApp(tk.Tk):
             running += value
             aggregate.append((moment, running))
         if not all_events:
-            canvas.create_text(width / 2, height / 2, text="KHÔNG CÓ CLOSED P/L TRONG KHOẢNG ĐÃ CHỌN", fill=Palette.MUTED, font=("Segoe UI", 11, "bold"))
-            self._equity_status_value.set("Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")
+            canvas.create_text(width / 2, height / 2, text="KHÔNG CÓ TIỀN NẠP / CLOSED P/L TRONG KHOẢNG ĐÃ CHỌN", fill=Palette.MUTED, font=("Segoe UI", 11, "bold"))
+            self._equity_status_value.set("Không có tiền nạp hoặc P/L lệnh đã đóng trong khoảng đã chọn.")
             return
         series = list(points_by_key.values()) + [aggregate]
         values = [value for points in series for _moment, value in points] + [0.0]
@@ -751,20 +794,20 @@ class GoldMonitorApp(tk.Tk):
             canvas.create_text(left - 8, y, text=f"{value:,.2f}", anchor="e", fill=Palette.MUTED, font=("Consolas", 8))
         colors = (Palette.INFO, Palette.SUCCESS, Palette.ACCENT, "#8B5CF6", "#D04454")
         legend = []
-        for index, (key, (label, _deals)) in enumerate(curves.items()):
+        for index, (key, (label, _events)) in enumerate(curves.items()):
             points = points_by_key[key]
             if points:
-                canvas.create_line(*(coord for point in points for coord in (x_for(point[0]), y_for(point[1]))), fill=colors[index % len(colors)], width=2, smooth=True)
+                canvas.create_line(*(coord for point in points for coord in (x_for(point[0]), y_for(point[1]))), fill=colors[index % len(colors)], width=1, smooth=True)
             legend.append((label, colors[index % len(colors)]))
         if aggregate:
-            canvas.create_line(*(coord for point in aggregate for coord in (x_for(point[0]), y_for(point[1]))), fill=Palette.TEXT, width=3, smooth=True)
+            canvas.create_line(*(coord for point in aggregate for coord in (x_for(point[0]), y_for(point[1]))), fill=Palette.TEXT, width=1, smooth=True)
             legend.append(("ALL", Palette.TEXT))
         for index, (label, color) in enumerate(legend):
             x = left + index * 130
             canvas.create_rectangle(x, height - 26, x + 12, height - 14, fill=color, outline=color)
             canvas.create_text(x + 18, height - 20, text=label, anchor="w", fill=Palette.TEXT, font=("Segoe UI", 8, "bold"))
         currency_label = self._display_currency(scale_currency, preserve_broker_currency=self._show_broker_currency)
-        self._equity_status_value.set(f"{len(curves)} account • {len(all_events)} closed deal • Cumulative P/L ({currency_label}) • {start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d}")
+        self._equity_status_value.set(f"{len(curves)} account • {len(all_events)} events • deposits + closed P/L ({currency_label}) • withdrawals excluded • {start:%Y-%m-%d} → {end:%Y-%m-%d}")
 
     def _open_vps_window(self) -> None:
         window = tk.Toplevel(self); window.title("VPS / RDP"); window.geometry("720x420"); window.minsize(640, 380); window.configure(bg=Palette.APP)

@@ -57,6 +57,13 @@ class HistoryStats:
     raw_deals: int = 0
 
 
+@dataclass(frozen=True)
+class EquityEvent:
+    time: datetime
+    amount: float
+    kind: str
+
+
 class GoldPositionMonitor:
     """Read-only observer for the MT5 terminal already logged in by the user.
 
@@ -247,6 +254,37 @@ class GoldPositionMonitor:
             key=lambda item: item.time, reverse=True,
         ))
         return deals, self.history_stats(deals, raw_deals=len(raw_deals))
+
+    def equity_events(self, start: datetime, end: datetime) -> tuple[EquityEvent, ...]:
+        """Return deposits and closed-trade P/L for a display-only equity curve.
+
+        Positive DEAL_TYPE_BALANCE records represent deposits. Negative balance
+        records (withdrawals) and other balance/credit movements are excluded.
+        """
+        self._ensure_connected()
+        raw_deals = self.mt5.history_deals_get(start, end)
+        if raw_deals is None:
+            raise RuntimeError(f"MT5 không trả về lịch sử equity: {self.mt5.last_error()}")
+        opening_entry = int(getattr(self.mt5, "DEAL_ENTRY_IN", 0))
+        opening_comments = {
+            int(getattr(deal, "position_id", 0) or 0): str(getattr(deal, "comment", "") or "")
+            for deal in raw_deals
+            if int(getattr(deal, "entry", -1)) == opening_entry and int(getattr(deal, "position_id", 0) or 0)
+        }
+        balance_type = int(getattr(self.mt5, "DEAL_TYPE_BALANCE", 2))
+        events: list[EquityEvent] = []
+        for deal in raw_deals:
+            deal_type = int(getattr(deal, "type", -1))
+            timestamp = int(getattr(deal, "time", 0) or 0)
+            if deal_type == balance_type:
+                amount = float(getattr(deal, "profit", 0.0) or 0.0)
+                if amount > 0:
+                    events.append(EquityEvent(self._timestamp_gmt7(timestamp) or datetime.fromtimestamp(timestamp, tz=UTC).astimezone(GMT_PLUS_7), amount, "DEPOSIT"))
+                continue
+            view = self._history_deal_view(deal, opening_comments)
+            if view is not None:
+                events.append(EquityEvent(view.time, view.net_profit, "TRADE"))
+        return tuple(sorted(events, key=lambda item: item.time))
 
     def refresh(self) -> AccountSnapshot:
         self._ensure_connected()

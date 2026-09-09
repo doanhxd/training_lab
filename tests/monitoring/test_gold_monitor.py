@@ -17,6 +17,7 @@ class FakeMt5:
     DEAL_ENTRY_IN = 0
     DEAL_ENTRY_OUT = 1
     DEAL_ENTRY_INOUT = 2
+    DEAL_TYPE_BALANCE = 2
 
     def initialize(self, **_kwargs): return True
     def shutdown(self): pass
@@ -25,6 +26,15 @@ class FakeMt5:
     def positions_get(self): return (SimpleNamespace(ticket=1, time=0, symbol="XAUUSDm", type=0, volume=0.01, price_open=2300.0, sl=2290.0, tp=2320.0, profit=10.0, comment="Manual", magic=0),)
     def history_deals_get(self, _start, _end): return ()
     def symbol_info_tick(self, _symbol): return None
+
+
+class FakeEquityMt5(FakeMt5):
+    def history_deals_get(self, _start, _end):
+        return (
+            SimpleNamespace(time=1_700_000_000, type=2, entry=0, profit=500.0, position_id=0, symbol=""),
+            SimpleNamespace(time=1_700_000_100, type=2, entry=0, profit=-100.0, position_id=0, symbol=""),
+            SimpleNamespace(time=1_700_000_200, type=1, entry=1, profit=25.0, commission=-1.0, swap=0.0, fee=0.0, position_id=7, symbol="XAUUSDc", price=2300.0, volume=0.03, comment=""),
+        )
 
 
 class GoldMonitorTests(TestCase):
@@ -45,6 +55,12 @@ class GoldMonitorTests(TestCase):
         self.assertEqual(50.0, stats.winrate)
         self.assertEqual(6.0, stats.net_profit)
         self.assertEqual(4.0, stats.max_daily_drawdown)
+
+    def test_equity_events_include_deposits_and_closed_pl_but_exclude_withdrawals(self):
+        adapter = GoldPositionMonitor(mt5=FakeEquityMt5())
+        events = adapter.equity_events(datetime(2023, 11, 1, tzinfo=timezone.utc), datetime(2023, 11, 30, tzinfo=timezone.utc))
+        self.assertEqual(["DEPOSIT", "TRADE"], [event.kind for event in events])
+        self.assertEqual([500.0, 24.0], [event.amount for event in events])
 
     def test_standalone_gui_has_no_rsiqui_runner_signal_telegram_or_trade_apis(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8").lower()
@@ -214,6 +230,15 @@ class GoldMonitorTests(TestCase):
         self.assertIn('def _render_equity_curve(self, curves:', source)
         self.assertIn('legend.append(("ALL", Palette.TEXT))', source)
         self.assertIn('Cumulative closed P/L', source)
+        self.assertIn('self._equity_start_date_value', source)
+        self.assertIn('self._equity_end_date_value', source)
+        self.assertIn('def _equity_range(self)', source)
+        self.assertIn('def _read_local_equity(self, candidate: Mt5TerminalCandidate, start: datetime, end: datetime)', source)
+        self.assertIn('events = self._read_local_equity(candidate, start, end)', source)
+        self.assertIn('deposits + closed P/L', source)
+        self.assertIn('withdrawals excluded', source)
+        self.assertIn('width=1, smooth=True', source)
+        self.assertIn('DEAL_TYPE_BALANCE', Path("monitoring/gold_monitor/adapter.py").read_text(encoding="utf-8"))
         self.assertIn('field = tk.Frame(wrap, bg=Palette.INFO, padx=1, pady=1)', source)
         self.assertIn('highlightthickness=0, insertbackground=Palette.TEXT).pack(fill="x", padx=10, pady=1, ipady=8)', source)
 
