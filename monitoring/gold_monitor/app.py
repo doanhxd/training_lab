@@ -411,19 +411,13 @@ class GoldMonitorApp(tk.Tk):
             self._label(row, text=self._format_log_message(entry.message), font=("Segoe UI", 9), bg=bg, anchor="w", justify="left", wraplength=370).pack(side="left", fill="x", expand=True)
 
     def _append_local_position_changes(self, snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]]) -> None:
-        """Append only genuine Local position transitions, not a fresh-probe replay."""
+        """Track Local position tickets without writing OPEN/CLOSE rows to the log."""
         active_paths = {str(candidate.path).casefold() for candidate, _snapshot in snapshots}
         self._local_position_tickets = {path: tickets for path, tickets in self._local_position_tickets.items() if path in active_paths}
         for candidate, snapshot in snapshots:
-            path_key = str(candidate.path).casefold()
-            current = {int(getattr(position, "ticket", 0) or 0) for position in snapshot.positions}
-            previous = self._local_position_tickets.get(path_key)
-            if previous is not None:
-                for ticket in sorted(current - previous):
-                    self._append_log(f"MỞ position #{ticket} • #{snapshot.login}", "OPEN")
-                for ticket in sorted(previous - current):
-                    self._append_log(f"ĐÓNG position #{ticket} • #{snapshot.login}", "CLOSE")
-            self._local_position_tickets[path_key] = current
+            self._local_position_tickets[str(candidate.path).casefold()] = {
+                int(getattr(position, "ticket", 0) or 0) for position in snapshot.positions
+            }
 
     def _clear_logs(self) -> None:
         self._log_history.clear(); self._append_log("Đã xóa nhật ký hiển thị.", "INFO")
@@ -474,8 +468,6 @@ class GoldMonitorApp(tk.Tk):
             self._render_active_positions()
             if self._selected_local_accounts:
                 self._append_local_position_changes(self._selected_account_snapshots)
-            else:
-                for entry in primary.log_entries: self._append_log(entry, "OPEN" if entry.startswith("MỞ") else "CLOSE")
         except Exception as exc:
             self._append_log(f"Không cập nhật được MT5: {exc}", "ERROR")
         finally:

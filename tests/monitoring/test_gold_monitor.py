@@ -189,7 +189,7 @@ class GoldMonitorTests(TestCase):
         self.assertEqual([], entries)
         changed = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=8),), ())
         app._append_local_position_changes([(candidate, changed)])
-        self.assertEqual([("MỞ position #8 • #123", "OPEN"), ("ĐÓNG position #7 • #123", "CLOSE")], entries)
+        self.assertEqual([], entries)
 
     def test_requested_home_and_dialog_visual_contracts_are_present(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
