@@ -243,6 +243,8 @@ class GoldMonitorTests(TestCase):
         self.assertIn('text="TÍNH TỔNG"', source)
         self.assertIn('start, end = self._equity_range()', source)
         self.assertIn('ALL — TỔNG CÁC ACCOUNT', source)
+        self.assertIn('scale = 1.0', source)
+        self.assertNotIn('scale = 0.01 if scale_currency == "USC"', source)
         self.assertIn('width=1.5, smooth=True', source)
         self.assertIn('tzinfo=GMT_PLUS_7', source)
         self.assertIn('DEAL_TYPE_BALANCE', Path("monitoring/gold_monitor/adapter.py").read_text(encoding="utf-8"))

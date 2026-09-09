@@ -772,7 +772,7 @@ class GoldMonitorApp(tk.Tk):
         points_by_key: dict[str, list[tuple[datetime, float]]] = {}
         all_events: list[tuple[datetime, float]] = []
         scale_currency = str(self._latest_snapshot.currency if self._latest_snapshot else "USD").upper()
-        scale = 0.01 if scale_currency == "USC" and not self._show_broker_currency else 1.0
+        scale = 1.0
         for key, (_label, events, baseline) in curves.items():
             running = float(baseline) * scale
             points = []
