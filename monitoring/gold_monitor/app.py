@@ -706,15 +706,17 @@ class GoldMonitorApp(tk.Tk):
 
         def worker() -> None:
             try:
-                curves: dict[str, tuple[str, tuple[EquityEvent, ...]]] = {}
+                curves: dict[str, tuple[str, tuple[EquityEvent, ...], float]] = {}
                 if candidates:
                     for candidate in candidates:
-                        events = self._read_local_equity(candidate, start, end)
+                        events = self._read_local_equity(candidate, datetime(2000, 1, 1), end)
                         key = str(candidate.path).casefold()
-                        curves[key] = (candidate.name or f"#{candidate.login or 'CURRENT'}", events)
+                        baseline = sum(event.amount for event in events if event.kind == "DEPOSIT" and event.time < start)
+                        curves[key] = (candidate.name or f"#{candidate.login or 'CURRENT'}", events, baseline)
                 else:
-                    events = self.monitor.equity_events(start, end)
-                    curves["CURRENT"] = (f"#{self._latest_snapshot.login if self._latest_snapshot else 'CURRENT'}", events)
+                    events = self.monitor.equity_events(datetime(2000, 1, 1), end)
+                    baseline = sum(event.amount for event in events if event.kind == "DEPOSIT" and event.time < start)
+                    curves["CURRENT"] = (f"#{self._latest_snapshot.login if self._latest_snapshot else 'CURRENT'}", events, baseline)
                 self._equity_results.put((request_id, curves, None))
             except Exception as exc:
                 self._equity_results.put((request_id, {}, exc))
@@ -742,7 +744,7 @@ class GoldMonitorApp(tk.Tk):
             return
         self._render_equity_curve(curves, self._equity_range())
 
-    def _render_equity_curve(self, curves: dict[str, tuple[str, tuple[EquityEvent, ...]]], selected_range: tuple[datetime, datetime]) -> None:
+    def _render_equity_curve(self, curves: dict[str, tuple[str, tuple[EquityEvent, ...], float]], selected_range: tuple[datetime, datetime]) -> None:
         canvas = self._equity_canvas
         if canvas is None:
             return
@@ -756,13 +758,16 @@ class GoldMonitorApp(tk.Tk):
         all_events: list[tuple[datetime, float]] = []
         scale_currency = str(self._latest_snapshot.currency if self._latest_snapshot else "USD").upper()
         scale = 0.01 if scale_currency == "USC" and not self._show_broker_currency else 1.0
-        for key, (_label, events) in curves.items():
-            running = 0.0
+        for key, (_label, events, baseline) in curves.items():
+            running = float(baseline) * scale
             points = []
-            for event in sorted(events, key=lambda item: item.time):
+            visible_events = (event for event in events if start <= event.time <= end)
+            points.append((start, running))
+            for event in sorted(visible_events, key=lambda item: item.time):
                 running += float(event.amount) * scale
                 points.append((event.time, running))
                 all_events.append((event.time, float(event.amount) * scale))
+            all_events.append((start, float(baseline) * scale))
             points_by_key[key] = points
         all_events.sort(key=lambda item: item[0])
         aggregate: list[tuple[datetime, float]] = []
@@ -794,7 +799,7 @@ class GoldMonitorApp(tk.Tk):
             canvas.create_text(left - 8, y, text=f"{value:,.2f}", anchor="e", fill=Palette.MUTED, font=("Consolas", 8))
         colors = (Palette.INFO, Palette.SUCCESS, Palette.ACCENT, "#8B5CF6", "#D04454")
         legend = []
-        for index, (key, (label, _events)) in enumerate(curves.items()):
+        for index, (key, (label, _events, _baseline)) in enumerate(curves.items()):
             points = points_by_key[key]
             if points:
                 canvas.create_line(*(coord for point in points for coord in (x_for(point[0]), y_for(point[1]))), fill=colors[index % len(colors)], width=1, smooth=True)

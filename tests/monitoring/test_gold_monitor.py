@@ -234,7 +234,7 @@ class GoldMonitorTests(TestCase):
         self.assertIn('self._equity_end_date_value', source)
         self.assertIn('def _equity_range(self)', source)
         self.assertIn('def _read_local_equity(self, candidate: Mt5TerminalCandidate, start: datetime, end: datetime)', source)
-        self.assertIn('events = self._read_local_equity(candidate, start, end)', source)
+        self.assertIn('events = self._read_local_equity(candidate, datetime(2000, 1, 1), end)', source)
         self.assertIn('deposits + closed P/L', source)
         self.assertIn('withdrawals excluded', source)
         self.assertIn('width=1, smooth=True', source)
