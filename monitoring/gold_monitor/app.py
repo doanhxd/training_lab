@@ -678,8 +678,8 @@ class GoldMonitorApp(tk.Tk):
             self._equity_end_date_value.set(end_date.isoformat())
             self._equity_start_time_value.set("00:00")
             self._equity_end_time_value.set("23:59")
-        start = datetime.combine(min(start_date, end_date), start_time.replace(second=0, microsecond=0))
-        end = datetime.combine(max(start_date, end_date), end_time.replace(second=59, microsecond=999999))
+        start = datetime.combine(min(start_date, end_date), start_time.replace(second=0, microsecond=0), tzinfo=GMT_PLUS_7)
+        end = datetime.combine(max(start_date, end_date), end_time.replace(second=59, microsecond=999999), tzinfo=GMT_PLUS_7)
         return start, end
 
     def _read_local_equity(self, candidate: Mt5TerminalCandidate, start: datetime, end: datetime) -> tuple[EquityEvent, ...]:
@@ -802,10 +802,10 @@ class GoldMonitorApp(tk.Tk):
         for index, (key, (label, _events, _baseline)) in enumerate(curves.items()):
             points = points_by_key[key]
             if points:
-                canvas.create_line(*(coord for point in points for coord in (x_for(point[0]), y_for(point[1]))), fill=colors[index % len(colors)], width=1, smooth=True)
+                canvas.create_line(*(coord for point in points for coord in (x_for(point[0]), y_for(point[1]))), fill=colors[index % len(colors)], width=1.5, smooth=True)
             legend.append((label, colors[index % len(colors)]))
         if aggregate:
-            canvas.create_line(*(coord for point in aggregate for coord in (x_for(point[0]), y_for(point[1]))), fill=Palette.TEXT, width=1, smooth=True)
+            canvas.create_line(*(coord for point in aggregate for coord in (x_for(point[0]), y_for(point[1]))), fill=Palette.TEXT, width=1.5, smooth=True)
             legend.append(("ALL", Palette.TEXT))
         for index, (label, color) in enumerate(legend):
             x = left + index * 130
