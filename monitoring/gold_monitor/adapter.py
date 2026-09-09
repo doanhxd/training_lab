@@ -278,11 +278,12 @@ class GoldPositionMonitor:
             timestamp = int(getattr(deal, "time", 0) or 0)
             if deal_type == balance_type:
                 amount = float(getattr(deal, "profit", 0.0) or 0.0)
-                if amount > 0:
-                    events.append(EquityEvent(self._timestamp_gmt7(timestamp) or datetime.fromtimestamp(timestamp, tz=UTC).astimezone(GMT_PLUS_7), amount, "DEPOSIT"))
+                event_time = self._timestamp_gmt7(timestamp) or datetime.fromtimestamp(timestamp, tz=UTC).astimezone(GMT_PLUS_7)
+                if amount > 0 and event_time.weekday() < 5:
+                    events.append(EquityEvent(event_time, amount, "DEPOSIT"))
                 continue
             view = self._history_deal_view(deal, opening_comments)
-            if view is not None:
+            if view is not None and view.time.weekday() < 5:
                 events.append(EquityEvent(view.time, view.net_profit, "TRADE"))
         return tuple(sorted(events, key=lambda item: item.time))
 

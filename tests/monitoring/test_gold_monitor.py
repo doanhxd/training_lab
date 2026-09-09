@@ -193,6 +193,7 @@ class GoldMonitorTests(TestCase):
 
     def test_requested_home_and_dialog_visual_contracts_are_present(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
+        adapter_source = Path("monitoring/gold_monitor/adapter.py").read_text(encoding="utf-8")
         self.assertNotIn('text="XAU / BTC • read-only"', source)
         self.assertIn('self._center_window(self)', source)
         self.assertIn('ACCOUNT_VIEWPORT_HEIGHT = 256', source)
@@ -235,6 +236,8 @@ class GoldMonitorTests(TestCase):
         self.assertIn('def _equity_range(self)', source)
         self.assertIn('def _read_local_equity(self, candidate: Mt5TerminalCandidate, start: datetime, end: datetime)', source)
         self.assertIn('events = self._read_local_equity(candidate, datetime(2000, 1, 1), end)', source)
+        self.assertIn('view.time.weekday() < 5', adapter_source)
+        self.assertIn('event_time.weekday() < 5', adapter_source)
         self.assertIn('deposits + closed P/L', source)
         self.assertIn('withdrawals excluded', source)
         self.assertIn('text="TỔNG TOÀN BỘ LỊCH SỬ"', source)
