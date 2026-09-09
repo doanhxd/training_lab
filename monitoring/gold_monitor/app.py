@@ -80,6 +80,12 @@ class GoldMonitorApp(tk.Tk):
         self._history_loading = False
         self._history_request_id = 0
         self._history_pending = False
+        self._equity_window: tk.Toplevel | None = None
+        self._equity_canvas: tk.Canvas | None = None
+        self._equity_status_value = tk.StringVar(value="Sẵn sàng tính đường cong closed P/L.")
+        self._equity_results: queue.Queue = queue.Queue()
+        self._equity_request_id = 0
+        self._equity_loading = False
         self._history_filter_value = tk.StringVar(value="Hôm nay")
         self._history_symbol_value = tk.StringVar(value="Tất cả")
         today = self._clock_gmt7().date()
@@ -231,7 +237,7 @@ class GoldMonitorApp(tk.Tk):
         sidebar.pack_propagate(False)
         self._label(sidebar, text="GOLD\nMONITOR", font=("Segoe UI", 17, "bold"), fg=Palette.NAV, bg=Palette.SIDEBAR, justify="left").pack(anchor="w")
         self._label(sidebar, text="LOCAL MT5 • READ-ONLY", font=("Segoe UI", 8, "bold"), fg="#B7C5D8", bg=Palette.SIDEBAR).pack(anchor="w", pady=(6, 24))
-        for text, command in (("▣  TÀI KHOẢN LOCAL", self._open_local_accounts_window), ("◷  LỊCH SỬ LỆNH", self._open_history_window), ("▤  VPS / RDP", self._open_vps_window)):
+        for text, command in (("▣  TÀI KHOẢN LOCAL", self._open_local_accounts_window), ("◷  LỊCH SỬ LỆNH", self._open_history_window), ("⌁  EQUITY CURVE", self._open_equity_curve_window), ("▤  VPS / RDP", self._open_vps_window)):
             tk.Button(sidebar, text=text, command=command, font=("Segoe UI", 10, "bold"), fg=Palette.NAV, bg=Palette.SIDEBAR, activeforeground=Palette.NAV, activebackground="#1C2B3F", relief="flat", bd=0, padx=12, pady=11, anchor="w", cursor="hand2").pack(fill="x", pady=(8, 0))
         self._label(sidebar, text="Không gửi lệnh\nKhông lưu password\nKhông gọi đăng nhập MT5", font=("Segoe UI", 8), fg="#B7C5D8", bg=Palette.SIDEBAR, justify="left").pack(side="bottom", anchor="w")
 
@@ -611,6 +617,154 @@ class GoldMonitorApp(tk.Tk):
         if not deals: self._history_table.insert("", "end", values=("KHÔNG CÓ DỮ LIỆU", "", "", "", "", "", "Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")); return
         for account, deal in records:
             self._history_table.insert("", "end", tags=("profit" if deal.net_profit >= 0 else "loss",), values=(self._format_datetime(deal.time), f"#{account}", self._display_symbol(deal.symbol), deal.side, f"{deal.volume:.2f}", f"{deal.price:.2f}", f"{deal.net_profit:+.2f}"))
+
+    def _open_equity_curve_window(self) -> None:
+        if self._equity_window and self._equity_window.winfo_exists():
+            self._equity_window.lift()
+            self._refresh_equity_curve()
+            return
+        window = tk.Toplevel(self)
+        self._equity_window = window
+        window.title("Equity Curve — GOLD Monitor")
+        window.geometry("1120x680")
+        window.minsize(860, 520)
+        window.configure(bg=Palette.APP)
+        window.protocol("WM_DELETE_WINDOW", self._close_equity_curve)
+        shell = tk.Frame(window, bg=Palette.APP, padx=22, pady=18)
+        shell.pack(fill="both", expand=True)
+        header = tk.Frame(shell, bg=Palette.APP)
+        header.pack(fill="x", pady=(0, 12))
+        self._label(header, text="EQUITY CURVE", font=("Segoe UI", 18, "bold"), bg=Palette.APP).pack(side="left")
+        self._label(header, text="Cumulative closed P/L • read-only", font=("Segoe UI", 9), fg=Palette.MUTED, bg=Palette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
+        tk.Button(header, text="TÍNH LẠI", command=self._refresh_equity_curve, font=("Segoe UI", 9, "bold"), fg="#FFFFFF", bg=Palette.INFO, activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7).pack(side="right")
+        self._label(shell, textvariable=self._equity_status_value, font=("Segoe UI", 9), fg=Palette.MUTED, bg=Palette.APP).pack(anchor="w", pady=(0, 8))
+        chart_card = self._card(shell, padding=8)
+        chart_card.pack(fill="both", expand=True)
+        self._equity_canvas = tk.Canvas(chart_card, bg=Palette.TABLE, highlightthickness=0, bd=0)
+        self._equity_canvas.pack(fill="both", expand=True)
+        self._center_window(window)
+        self._refresh_equity_curve()
+
+    def _close_equity_curve(self) -> None:
+        self._equity_request_id += 1
+        self._equity_loading = False
+        if self._equity_window:
+            self._equity_window.destroy()
+        self._equity_window, self._equity_canvas = None, None
+
+    def _refresh_equity_curve(self) -> None:
+        if self._equity_canvas is None or self._equity_loading:
+            return
+        start, end = self._history_range()
+        candidates = tuple(self._selected_local_accounts)
+        self._equity_loading = True
+        self._equity_request_id += 1
+        request_id = self._equity_request_id
+        self._equity_status_value.set(f"Đang quét closed P/L • {len(candidates) or 1} MT5 account…")
+
+        def worker() -> None:
+            try:
+                curves: dict[str, tuple[str, tuple[HistoryDealView, ...]]] = {}
+                if candidates:
+                    for candidate in candidates:
+                        _snapshot, deals, _count = self._read_local(candidate, history_range=(start, end))
+                        key = str(candidate.path).casefold()
+                        curves[key] = (candidate.name or f"#{candidate.login or 'CURRENT'}", deals)
+                else:
+                    deals, _stats = self.monitor.history(start, end)
+                    curves["CURRENT"] = (f"#{self._latest_snapshot.login if self._latest_snapshot else 'CURRENT'}", deals)
+                self._equity_results.put((request_id, curves, None))
+            except Exception as exc:
+                self._equity_results.put((request_id, {}, exc))
+
+        threading.Thread(target=worker, name="gold-monitor-equity-curve", daemon=True).start()
+        self.after(40, self._poll_equity_curve)
+
+    def _poll_equity_curve(self) -> None:
+        if not self._equity_loading:
+            return
+        try:
+            request_id, curves, error = self._equity_results.get_nowait()
+        except queue.Empty:
+            self.after(40, self._poll_equity_curve)
+            return
+        if request_id != self._equity_request_id:
+            self.after(0, self._poll_equity_curve)
+            return
+        self._equity_loading = False
+        if self._equity_canvas is None:
+            return
+        if error is not None:
+            self._equity_status_value.set(f"Không tính được Equity Curve: {error}")
+            self._equity_canvas.delete("all")
+            return
+        self._render_equity_curve(curves)
+
+    def _render_equity_curve(self, curves: dict[str, tuple[str, tuple[HistoryDealView, ...]]]) -> None:
+        canvas = self._equity_canvas
+        if canvas is None:
+            return
+        canvas.delete("all")
+        canvas.update_idletasks()
+        width, height = max(1, canvas.winfo_width()), max(1, canvas.winfo_height())
+        left, right, top, bottom = 76, 24, 24, 52
+        plot_w, plot_h = max(1, width - left - right), max(1, height - top - bottom)
+        points_by_key: dict[str, list[tuple[datetime, float]]] = {}
+        all_events: list[tuple[datetime, float]] = []
+        scale_currency = str(self._latest_snapshot.currency if self._latest_snapshot else "USD").upper()
+        scale = 0.01 if scale_currency == "USC" and not self._show_broker_currency else 1.0
+        for key, (_label, deals) in curves.items():
+            running = 0.0
+            points = []
+            for deal in sorted(deals, key=lambda item: item.time):
+                running += float(deal.net_profit) * scale
+                points.append((deal.time, running))
+                all_events.append((deal.time, float(deal.net_profit) * scale))
+            points_by_key[key] = points
+        all_events.sort(key=lambda item: item[0])
+        aggregate: list[tuple[datetime, float]] = []
+        running = 0.0
+        for moment, value in all_events:
+            running += value
+            aggregate.append((moment, running))
+        if not all_events:
+            canvas.create_text(width / 2, height / 2, text="KHÔNG CÓ CLOSED P/L TRONG KHOẢNG ĐÃ CHỌN", fill=Palette.MUTED, font=("Segoe UI", 11, "bold"))
+            self._equity_status_value.set("Không có deal BUY/SELL đã đóng trong khoảng đã chọn.")
+            return
+        series = list(points_by_key.values()) + [aggregate]
+        values = [value for points in series for _moment, value in points] + [0.0]
+        min_value, max_value = min(values), max(values)
+        if abs(max_value - min_value) < 1e-9:
+            min_value, max_value = min_value - 1.0, max_value + 1.0
+        def x_for(moment: datetime) -> float:
+            start_moment, end_moment = all_events[0][0], all_events[-1][0]
+            span = max(1.0, (end_moment - start_moment).total_seconds())
+            return left + (moment - start_moment).total_seconds() / span * plot_w
+        def y_for(value: float) -> float:
+            return top + (max_value - value) / (max_value - min_value) * plot_h
+        canvas.create_line(left, top, left, top + plot_h, fill=Palette.BORDER)
+        canvas.create_line(left, top + plot_h, left + plot_w, top + plot_h, fill=Palette.BORDER)
+        for fraction in (0.0, 0.5, 1.0):
+            value = max_value - (max_value - min_value) * fraction
+            y = top + plot_h * fraction
+            canvas.create_line(left, y, left + plot_w, y, fill=Palette.TABLE_ALT)
+            canvas.create_text(left - 8, y, text=f"{value:,.2f}", anchor="e", fill=Palette.MUTED, font=("Consolas", 8))
+        colors = (Palette.INFO, Palette.SUCCESS, Palette.ACCENT, "#8B5CF6", "#D04454")
+        legend = []
+        for index, (key, (label, _deals)) in enumerate(curves.items()):
+            points = points_by_key[key]
+            if points:
+                canvas.create_line(*(coord for point in points for coord in (x_for(point[0]), y_for(point[1]))), fill=colors[index % len(colors)], width=2, smooth=True)
+            legend.append((label, colors[index % len(colors)]))
+        if aggregate:
+            canvas.create_line(*(coord for point in aggregate for coord in (x_for(point[0]), y_for(point[1]))), fill=Palette.TEXT, width=3, smooth=True)
+            legend.append(("ALL", Palette.TEXT))
+        for index, (label, color) in enumerate(legend):
+            x = left + index * 130
+            canvas.create_rectangle(x, height - 26, x + 12, height - 14, fill=color, outline=color)
+            canvas.create_text(x + 18, height - 20, text=label, anchor="w", fill=Palette.TEXT, font=("Segoe UI", 8, "bold"))
+        currency_label = self._display_currency(scale_currency, preserve_broker_currency=self._show_broker_currency)
+        self._equity_status_value.set(f"{len(curves)} account • {len(all_events)} closed deal • Cumulative P/L ({currency_label}) • {start:%Y-%m-%d} → {(end - timedelta(seconds=1)):%Y-%m-%d}")
 
     def _open_vps_window(self) -> None:
         window = tk.Toplevel(self); window.title("VPS / RDP"); window.geometry("720x420"); window.minsize(640, 380); window.configure(bg=Palette.APP)

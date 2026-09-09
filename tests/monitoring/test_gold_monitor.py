@@ -60,6 +60,7 @@ class GoldMonitorTests(TestCase):
         self.assertIn("class goldmonitorapp", source)
         self.assertIn("áp dụng theo dõi", source)
         self.assertIn("read-only", source)
+        self.assertIn("_open_equity_curve_window", source)
 
     def test_display_helpers_preserve_account_path_and_broker_aliases(self):
         self.assertEqual("MetaTrader 5\\terminal64.exe", GoldMonitorApp._display_terminal_path(r"C:\Program Files\MetaTrader 5\terminal64.exe"))
@@ -207,6 +208,12 @@ class GoldMonitorTests(TestCase):
         self.assertIn('text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF"', source)
         self.assertIn('text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF"', source)
         self.assertIn('text="MỞ REMOTE DESKTOP  →", command=connect', source)
+        self.assertIn('"⌁  EQUITY CURVE", self._open_equity_curve_window', source)
+        self.assertIn('def _refresh_equity_curve(self)', source)
+        self.assertIn('name="gold-monitor-equity-curve"', source)
+        self.assertIn('def _render_equity_curve(self, curves:', source)
+        self.assertIn('legend.append(("ALL", Palette.TEXT))', source)
+        self.assertIn('Cumulative closed P/L', source)
         self.assertIn('field = tk.Frame(wrap, bg=Palette.INFO, padx=1, pady=1)', source)
         self.assertIn('highlightthickness=0, insertbackground=Palette.TEXT).pack(fill="x", padx=10, pady=1, ipady=8)', source)
 
