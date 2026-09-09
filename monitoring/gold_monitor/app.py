@@ -86,6 +86,7 @@ class GoldMonitorApp(tk.Tk):
         self._equity_results: queue.Queue = queue.Queue()
         self._equity_request_id = 0
         self._equity_loading = False
+        self._equity_aggregate_only = False
         self._history_filter_value = tk.StringVar(value="Hôm nay")
         self._history_symbol_value = tk.StringVar(value="Tất cả")
         today = self._clock_gmt7().date()
@@ -648,7 +649,10 @@ class GoldMonitorApp(tk.Tk):
         self._entry(controls, 1, "END DATE", self._equity_end_date_value)
         self._entry(controls, 2, "START TIME", self._equity_start_time_value)
         self._entry(controls, 3, "END TIME", self._equity_end_time_value)
-        tk.Button(controls, text="TÍNH LẠI", command=self._refresh_equity_curve, font=("Segoe UI", 9, "bold"), fg="#FFFFFF", bg=Palette.INFO, activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7).grid(row=1, column=3, sticky="e", padx=6, pady=(4, 0))
+        actions = tk.Frame(controls, bg=Palette.CARD)
+        actions.grid(row=1, column=3, sticky="e", padx=6, pady=(4, 0))
+        tk.Button(actions, text="TÍNH LẠI", command=self._refresh_equity_curve, font=("Segoe UI", 9, "bold"), fg="#FFFFFF", bg=Palette.INFO, activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7).pack(side="left")
+        tk.Button(actions, text="TỔNG TOÀN BỘ LỊCH SỬ", command=self._refresh_full_equity_curve, font=("Segoe UI", 9, "bold"), fg="#FFFFFF", bg=Palette.SUCCESS, activebackground="#0F6D4D", activeforeground="#FFFFFF", relief="flat", bd=0, padx=12, pady=7).pack(side="left", padx=(6, 0))
         self._label(shell, textvariable=self._equity_status_value, font=("Segoe UI", 9), fg=Palette.MUTED, bg=Palette.APP).pack(anchor="w", pady=(0, 8))
         chart_card = self._card(shell, padding=8)
         chart_card.pack(fill="both", expand=True)
@@ -698,6 +702,23 @@ class GoldMonitorApp(tk.Tk):
         if self._equity_canvas is None or self._equity_loading:
             return
         start, end = self._equity_range()
+        self._equity_aggregate_only = False
+        self._start_equity_scan(start, end)
+
+    def _refresh_full_equity_curve(self) -> None:
+        if self._equity_canvas is None or self._equity_loading:
+            return
+        today = self._clock_gmt7().date()
+        start = datetime(2000, 1, 1, tzinfo=GMT_PLUS_7)
+        end = datetime.combine(today, time(23, 59, 59, 999999), tzinfo=GMT_PLUS_7)
+        self._equity_start_date_value.set(start.date().isoformat())
+        self._equity_end_date_value.set(end.date().isoformat())
+        self._equity_start_time_value.set("00:00")
+        self._equity_end_time_value.set("23:59")
+        self._equity_aggregate_only = True
+        self._start_equity_scan(start, end)
+
+    def _start_equity_scan(self, start: datetime, end: datetime) -> None:
         candidates = tuple(self._selected_local_accounts)
         self._equity_loading = True
         self._equity_request_id += 1
@@ -801,12 +822,14 @@ class GoldMonitorApp(tk.Tk):
         legend = []
         for index, (key, (label, _events, _baseline)) in enumerate(curves.items()):
             points = points_by_key[key]
+            if self._equity_aggregate_only:
+                continue
             if points:
                 canvas.create_line(*(coord for point in points for coord in (x_for(point[0]), y_for(point[1]))), fill=colors[index % len(colors)], width=1.5, smooth=True)
             legend.append((label, colors[index % len(colors)]))
         if aggregate:
             canvas.create_line(*(coord for point in aggregate for coord in (x_for(point[0]), y_for(point[1]))), fill=Palette.TEXT, width=1.5, smooth=True)
-            legend.append(("ALL", Palette.TEXT))
+            legend.append(("ALL — TOÀN BỘ LỊCH SỬ" if self._equity_aggregate_only else "ALL", Palette.TEXT))
         for index, (label, color) in enumerate(legend):
             x = left + index * 130
             canvas.create_rectangle(x, height - 26, x + 12, height - 14, fill=color, outline=color)
