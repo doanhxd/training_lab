@@ -19,6 +19,23 @@ class Mt5TerminalCandidate:
     equity: float | None = None
 
 
+# TEMPORARY GOLD Monitor allowlist. Restore discovery after account review.
+FIXED_MONITORED_TERMINALS: tuple[tuple[str, str, str, str], ...] = (
+    (r"C:\Program Files\MetaTrader 5\terminal64.exe", "263555815", "BOT VIP 1", "Exness-MT5Real37"),
+    (r"C:\Program Files\MetaTrader 5_2\terminal64.exe", "263557311", "BOT VIP 2", "Exness-MT5Real37"),
+    (r"C:\Program Files\MetaTrader 5_3\terminal64.exe", "257536208", "BOT VIP 3", "Exness-MT5Real36"),
+    (r"C:\Program Files\MetaTrader 5_5_Mom\terminal64.exe", "184127910", "BOT VIP 4", "Exness-MT5Real25"),
+)
+
+
+def load_fixed_candidates() -> tuple[Mt5TerminalCandidate, ...]:
+    return tuple(
+        Mt5TerminalCandidate(path=Path(path), source="Temporary allowlist", login=login, name=name, server=server, currency="USC")
+        for path, login, name, server in FIXED_MONITORED_TERMINALS
+        if Path(path).is_file()
+    )
+
+
 def _cache_file() -> Path:
     root = Path(os.environ.get("LOCALAPPDATA", "")) or Path.home() / ".gold_monitor"
     return root / "GOLDMonitor" / "mt5_terminal_cache.json"

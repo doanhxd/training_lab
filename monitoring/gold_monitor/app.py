@@ -13,7 +13,7 @@ from tkinter import ttk
 from typing import Callable
 
 from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, EquityEvent, GoldPositionMonitor, HistoryDealView
-from training_lab.monitoring.gold_monitor.mt5_accounts import Mt5TerminalCandidate, load_cached_candidates, open_remote_desktop, scan_mt5_terminals
+from training_lab.monitoring.gold_monitor.mt5_accounts import Mt5TerminalCandidate, load_cached_candidates, load_fixed_candidates, open_remote_desktop, scan_mt5_terminals
 
 APP_TITLE = "GOLD Monitor • Read-only"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
@@ -68,7 +68,7 @@ class GoldMonitorApp(tk.Tk):
         self._refresh_after_id: str | None = None
         self._refresh_in_progress = False
         self._latest_snapshot: AccountSnapshot | None = None
-        self._selected_local_accounts: list[Mt5TerminalCandidate] = []
+        self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())
         self._selected_account_snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]] = []
         self._local_position_tickets: dict[str, set[int]] = {}
         self._card_keys: tuple[str, ...] = ()
@@ -514,11 +514,16 @@ class GoldMonitorApp(tk.Tk):
             if not selected: status.set("Tick ít nhất một account để theo dõi."); return
             self._selected_local_accounts = selected; self._selected_account_snapshots = []; self._local_position_tickets = {}; status.set(f"Đã áp dụng {len(selected)} account read-only.")
             self._append_log(f"Đang theo dõi {len(selected)} MT5 Local account.", "INFO"); self._schedule_refresh(0); window.destroy()
-        tk.Button(actions, text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF", activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left")
-        tk.Button(actions, text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF", activebackground="#0F6D4D", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left", padx=8)
-        cached = load_cached_candidates()
-        if cached: render(cached, f"Hiển thị {len(cached)} account cache; đang cập nhật live…")
-        scan(); self._center_window(window)
+        # TEMPORARILY DISABLED: discovery can enumerate and initialize unrelated MT5 terminals.
+        # tk.Button(actions, text="QUÉT LẠI", command=scan, ...).pack(side="left")
+        tk.Button(actions, text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF", activebackground="#0F6D4D", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left")
+        fixed = load_fixed_candidates()
+        render(fixed, f"Đã khóa tạm thời {len(fixed)} MT5 account được phép theo dõi.")
+        # TEMPORARILY DISABLED: do not load cache or scan other terminals.
+        # cached = load_cached_candidates()
+        # if cached: render(cached, f"Hiển thị {len(cached)} account cache; đang cập nhật live…")
+        # scan()
+        self._center_window(window)
 
     def _history_range(self) -> tuple[datetime, datetime]:
         today = self._clock_gmt7().date(); mode = self._history_filter_value.get().lower()
