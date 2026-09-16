@@ -25,6 +25,8 @@ FIXED_MONITORED_TERMINALS: tuple[tuple[str, str, str, str], ...] = (
     (r"C:\Program Files\MetaTrader 5_2\terminal64.exe", "263557311", "BOT VIP 2", "Exness-MT5Real37"),
     (r"C:\Program Files\MetaTrader 5_3\terminal64.exe", "257536208", "BOT VIP 3", "Exness-MT5Real36"),
     (r"C:\Program Files\MetaTrader 5_5_Mom\terminal64.exe", "184127910", "BOT VIP 4", "Exness-MT5Real25"),
+    (r"C:\Program Files\HFM Metatrader 5\terminal64.exe", "205159447", "HFM", "HFMarketsGlobal-Live15"),
+    (r"C:\Program Files\HFM Metatrader 5_2\terminal64.exe", "", "HFM MT5 2", ""),
 )
 
 

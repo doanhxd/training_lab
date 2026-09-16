@@ -227,8 +227,9 @@ class GoldMonitorTests(TestCase):
         self.assertIn('text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF"', source)
         mt5_source = Path("monitoring/gold_monitor/mt5_accounts.py").read_text(encoding="utf-8")
         self.assertIn('FIXED_MONITORED_TERMINALS', mt5_source)
-        for login in ("263555815", "263557311", "257536208", "184127910"):
+        for login in ("263555815", "263557311", "257536208", "184127910", "205159447"):
             self.assertIn(login, mt5_source)
+        self.assertIn('HFM Metatrader 5_2', mt5_source)
         self.assertIn('self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())', source)
         self.assertIn('do not load cache or scan other terminals', source)
         self.assertNotIn('scan(); self._center_window(window)', source)
