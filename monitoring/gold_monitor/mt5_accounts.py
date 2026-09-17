@@ -28,6 +28,7 @@ FIXED_MONITORED_TERMINALS: tuple[tuple[str, str, str, str], ...] = (
     (r"C:\Program Files\HFM Metatrader 5\terminal64.exe", "205159447", "HFM", "HFMarketsGlobal-Live15"),
     (r"C:\Program Files\HFM Metatrader 5_2\terminal64.exe", "", "HFM MT5 2", ""),
 )
+AUTO_OPEN_ALLOWLIST_COUNT = 4
 
 
 def load_fixed_candidates() -> tuple[Mt5TerminalCandidate, ...]:
@@ -36,6 +37,13 @@ def load_fixed_candidates() -> tuple[Mt5TerminalCandidate, ...]:
         for path, login, name, server in FIXED_MONITORED_TERMINALS
         if Path(path).is_file()
     )
+
+
+def open_local_terminal(path: Path | str) -> None:
+    terminal = Path(path)
+    if not terminal.is_file():
+        raise FileNotFoundError(f"Không tìm thấy MT5 terminal: {terminal}")
+    subprocess.Popen([str(terminal)], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def _cache_file() -> Path:

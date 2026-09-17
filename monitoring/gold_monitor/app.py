@@ -13,7 +13,7 @@ from tkinter import ttk
 from typing import Callable
 
 from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, EquityEvent, GoldPositionMonitor, HistoryDealView
-from training_lab.monitoring.gold_monitor.mt5_accounts import Mt5TerminalCandidate, load_cached_candidates, load_fixed_candidates, open_remote_desktop, scan_mt5_terminals
+from training_lab.monitoring.gold_monitor.mt5_accounts import AUTO_OPEN_ALLOWLIST_COUNT, Mt5TerminalCandidate, load_fixed_candidates, open_local_terminal, open_remote_desktop, scan_mt5_terminals
 
 APP_TITLE = "GOLD Monitor • Read-only"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
@@ -68,7 +68,8 @@ class GoldMonitorApp(tk.Tk):
         self._refresh_after_id: str | None = None
         self._refresh_in_progress = False
         self._latest_snapshot: AccountSnapshot | None = None
-        self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())
+        self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())[:AUTO_OPEN_ALLOWLIST_COUNT]
+        self._explicitly_opened_local_paths: set[str] = set()
         self._selected_account_snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]] = []
         self._local_position_tickets: dict[str, set[int]] = {}
         self._card_keys: tuple[str, ...] = ()
@@ -133,7 +134,7 @@ class GoldMonitorApp(tk.Tk):
         style.configure("Gold.Treeview", background=Palette.TABLE, fieldbackground=Palette.TABLE, foreground=Palette.TEXT, borderwidth=0, rowheight=32, font=("Segoe UI", 9))
         style.map("Gold.Treeview", background=[("selected", "#E6EEF8")], foreground=[("selected", Palette.TEXT)])
         style.configure("Gold.Treeview.Heading", background=Palette.SIDEBAR, foreground=Palette.NAV, borderwidth=0, relief="flat", font=("Segoe UI", 9, "bold"), padding=(10, 8))
-        style.configure("Local.Treeview", rowheight=38, font=("Segoe UI Symbol", 11))
+        style.configure("Local.Treeview", rowheight=42, font=("Segoe UI Symbol", 16))
         style.configure("Local.Treeview.Heading", font=("Segoe UI", 9, "bold"), padding=(12, 9))
         style.configure("Gold.TCombobox", fieldbackground=Palette.TABLE, background=Palette.CARD_ALT, foreground=Palette.TEXT, arrowcolor=Palette.ACCENT, bordercolor=Palette.BORDER, padding=(10, 6), font=("Segoe UI", 10))
         style.map("Gold.TCombobox", bordercolor=[("focus", Palette.ACCENT), ("active", Palette.ACCENT)])
@@ -478,9 +479,9 @@ class GoldMonitorApp(tk.Tk):
         shell = tk.Frame(window, bg=Palette.APP, padx=20, pady=18); shell.pack(fill="both", expand=True)
         self._label(shell, text="MT5 LOCAL ACCOUNTS", font=("Segoe UI", 15, "bold"), bg=Palette.APP).pack(anchor="w")
         self._label(shell, text="Quét terminal Local và đọc account_info() tuần tự — không gửi lệnh.", fg=Palette.MUTED, bg=Palette.APP).pack(anchor="w", pady=(4, 12))
-        tree = ttk.Treeview(shell, columns=("selected", "account", "name", "server", "path"), show="headings", style="Local.Treeview", height=8)
-        for key, title, width in (("selected", "THEO DÕI", 108), ("account", "ACCOUNT", 118), ("name", "ACCOUNT NAME", 210), ("server", "SERVER", 220), ("path", "TERMINAL", 390)):
-            tree.heading(key, text=title); tree.column(key, width=width, anchor="w")
+        tree = ttk.Treeview(shell, columns=("selected", "account", "name", "server", "path", "open"), show="headings", style="Local.Treeview", height=8)
+        for key, title, width, anchor in (("selected", "THEO DÕI", 108, "center"), ("account", "ACCOUNT", 118, "center"), ("name", "ACCOUNT NAME", 210, "w"), ("server", "SERVER", 220, "w"), ("path", "TERMINAL", 390, "w"), ("open", "OPEN", 90, "center")):
+            tree.heading(key, text=title); tree.column(key, width=width, anchor=anchor)
         tree.pack(fill="both", expand=True); status = tk.StringVar(value="Chưa quét")
         self._label(shell, textvariable=status, fg=Palette.MUTED, bg=Palette.APP).pack(anchor="w", pady=(8, 6))
         actions = tk.Frame(shell, bg=Palette.APP); actions.pack(fill="x")
@@ -489,12 +490,21 @@ class GoldMonitorApp(tk.Tk):
             tree.delete(*tree.get_children()); candidates_by_iid.clear()
             for index, candidate in enumerate(candidates):
                 iid = str(index); candidates_by_iid[iid] = candidate; checked = "☑" if str(candidate.path).casefold() in selected_paths else "☐"
-                tree.insert("", "end", iid=iid, values=(checked, candidate.login or "—", candidate.name or "—", candidate.server or "—", self._display_terminal_path(candidate.path)))
+                tree.insert("", "end", iid=iid, values=(checked, candidate.login or "—", candidate.name or "—", candidate.server or "—", self._display_terminal_path(candidate.path), "OPEN"))
             status.set(message)
         def toggle(event):
             row = tree.identify_row(event.y)
-            if not row or tree.identify_column(event.x) != "#1": return None
-            candidate = candidates_by_iid[row]; key = str(candidate.path).casefold()
+            if not row: return None
+            candidate = candidates_by_iid[row]; key = str(candidate.path).casefold(); column = tree.identify_column(event.x)
+            if column == "#6":
+                try:
+                    open_local_terminal(candidate.path)
+                    self._explicitly_opened_local_paths.add(key)
+                    status.set(f"Đã yêu cầu mở {candidate.name or candidate.path.name}.")
+                except Exception as exc:
+                    status.set(f"Không mở được MT5: {exc}")
+                return "break"
+            if column != "#1": return None
             if key in selected_paths: selected_paths.remove(key)
             else: selected_paths.add(key)
             values = list(tree.item(row, "values")); values[0] = "☑" if key in selected_paths else "☐"; tree.item(row, values=values)
@@ -511,6 +521,10 @@ class GoldMonitorApp(tk.Tk):
             threading.Thread(target=worker, name="gold-monitor-scan", daemon=True).start()
         def apply():
             selected = [candidate for candidate in candidates_by_iid.values() if str(candidate.path).casefold() in selected_paths]
+            blocked = [candidate for candidate in selected if candidate not in tuple(load_fixed_candidates())[:AUTO_OPEN_ALLOWLIST_COUNT] and str(candidate.path).casefold() not in self._explicitly_opened_local_paths]
+            if blocked:
+                status.set("Bấm OPEN cho MT5 ngoài 4 terminal đầu tiên trước khi áp dụng.")
+                return
             if not selected: status.set("Tick ít nhất một account để theo dõi."); return
             self._selected_local_accounts = selected; self._selected_account_snapshots = []; self._local_position_tickets = {}; status.set(f"Đã áp dụng {len(selected)} account read-only.")
             self._append_log(f"Đang theo dõi {len(selected)} MT5 Local account.", "INFO"); self._schedule_refresh(0); window.destroy()
