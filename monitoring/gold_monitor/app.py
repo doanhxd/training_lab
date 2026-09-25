@@ -8,9 +8,15 @@ from pathlib import Path
 import queue
 import re
 import threading
+import time as wall_time
 import tkinter as tk
 from tkinter import ttk
 from typing import Callable
+
+try:
+    import winsound
+except ImportError:  # pragma: no cover - Windows-only alert feature
+    winsound = None
 
 from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, EquityEvent, GoldPositionMonitor, HistoryDealView
 from training_lab.monitoring.gold_monitor.mt5_accounts import AUTO_OPEN_ALLOWLIST_COUNT, Mt5TerminalCandidate, load_fixed_candidates, open_local_terminal, open_remote_desktop, scan_mt5_terminals
@@ -19,6 +25,9 @@ APP_TITLE = "GOLD Monitor • Read-only"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
 REFRESH_MILLISECONDS = 2_000
 ACCOUNT_VIEWPORT_HEIGHT = 256
+VOLUME_ALERT_THRESHOLD = 1.40
+VOLUME_ALERT_DURATION_SECONDS = 30
+VOLUME_ALERT_BEEP_INTERVAL_SECONDS = 1.0
 
 
 class Palette:
@@ -72,6 +81,9 @@ class GoldMonitorApp(tk.Tk):
         self._explicitly_opened_local_paths: set[str] = set()
         self._selected_account_snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]] = []
         self._local_position_tickets: dict[str, set[int]] = {}
+        self._volume_alerted_position_tickets: dict[str, set[int]] = {}
+        self._volume_alert_sound_lock = threading.Lock()
+        self._volume_alert_stop_event = threading.Event()
         self._card_keys: tuple[str, ...] = ()
         self._card_values: list[tuple[tk.Label, tk.Label, tk.Label, tk.Label, tk.Label, tk.Label]] = []
         self._log_history: list[LogEntry] = []
@@ -115,6 +127,7 @@ class GoldMonitorApp(tk.Tk):
         self._show_broker_currency = False
         self._total_equity_value = tk.StringVar(value="—")
         self._position_day_value = tk.StringVar(value=today.strftime("%d/%m"))
+        self._volume_alert_value = tk.StringVar(value=f"{VOLUME_ALERT_THRESHOLD:.2f}")
         self._updated_value = tk.StringVar(value="CHƯA CẬP NHẬT")
 
         self.title(APP_TITLE)
@@ -294,6 +307,15 @@ class GoldMonitorApp(tk.Tk):
         title = tk.Frame(section, bg=Palette.CARD); title.pack(fill="x")
         self._label(title, text="LỆNH ĐANG MỞ", font=("Segoe UI", 11, "bold")).pack(side="left")
         self._label(title, textvariable=self._position_day_value, font=("Segoe UI", 9, "bold"), fg=Palette.MUTED).pack(side="left", padx=(10, 0), pady=(1, 0))
+        alert_controls = tk.Frame(title, bg=Palette.CARD)
+        alert_controls.pack(side="right")
+        self._label(alert_controls, text="CẢNH BÁO ≥", font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(side="left", padx=(0, 5))
+        alert_entry = tk.Entry(alert_controls, textvariable=self._volume_alert_value, width=8, justify="center", font=("Segoe UI", 9, "bold"), fg=Palette.TEXT, bg=Palette.TABLE, relief="solid", bd=1, insertbackground=Palette.TEXT)
+        alert_entry.pack(side="left", ipady=3)
+        tk.Button(alert_controls, text="SET", command=self._set_volume_alert_threshold, font=("Segoe UI", 8, "bold"), fg="#FFFFFF", bg=Palette.INFO, activeforeground="#FFFFFF", activebackground="#1D4ED8", relief="flat", bd=0, padx=7, pady=4, cursor="hand2").pack(side="left", padx=(5, 5))
+        self._label(alert_controls, text="LOT", font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(side="left", padx=(0, 7))
+        tk.Button(alert_controls, text="🔊", command=self._toggle_volume_alert_sound, font=("Segoe UI Symbol", 12), fg=Palette.TEXT, bg=Palette.CARD_ALT, activeforeground=Palette.TEXT, activebackground=Palette.BORDER, relief="flat", bd=0, padx=7, pady=2, cursor="hand2").pack(side="left")
+        tk.Button(alert_controls, text="🔇", command=self._stop_volume_alert_sound, font=("Segoe UI Symbol", 12), fg=Palette.DANGER, bg=Palette.CARD_ALT, activeforeground=Palette.DANGER, activebackground=Palette.BORDER, relief="flat", bd=0, padx=7, pady=2, cursor="hand2").pack(side="left", padx=(4, 0))
         self._position_tabs_host = tk.Frame(section, bg=Palette.CARD)
         self._position_tabs_host.pack(fill="x", pady=(10, 0))
         columns = ("time", "account", "symbol", "side", "volume", "entry", "sl", "tp", "profit")
@@ -403,7 +425,7 @@ class GoldMonitorApp(tk.Tk):
     def _render_logs(self) -> None:
         if not hasattr(self, "_log_host"): return
         for child in self._log_host.winfo_children(): child.destroy()
-        colors = {"INFO": Palette.INFO, "ERROR": Palette.DANGER, "OPEN": Palette.SUCCESS, "CLOSE": Palette.MUTED}
+        colors = {"INFO": Palette.INFO, "ERROR": Palette.DANGER, "ALERT": Palette.DANGER, "OPEN": Palette.SUCCESS, "CLOSE": Palette.MUTED}
         for index, entry in enumerate(self._log_history):
             bg = Palette.TABLE if index % 2 == 0 else Palette.TABLE_ALT
             row = tk.Frame(self._log_host, bg=bg, padx=12, pady=8); row.pack(fill="x", pady=(0, 1))
@@ -412,13 +434,109 @@ class GoldMonitorApp(tk.Tk):
             self._label(row, text=self._format_log_message(entry.message), font=("Segoe UI", 9), bg=bg, anchor="w", justify="left", wraplength=370).pack(side="left", fill="x", expand=True)
 
     def _append_local_position_changes(self, snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]]) -> None:
-        """Track Local position tickets without writing OPEN/CLOSE rows to the log."""
+        """Track Local positions and sound one alert for a new threshold-sized position."""
         active_paths = {str(candidate.path).casefold() for candidate, _snapshot in snapshots}
         self._local_position_tickets = {path: tickets for path, tickets in self._local_position_tickets.items() if path in active_paths}
+        self._volume_alerted_position_tickets = {
+            path: tickets for path, tickets in self._volume_alerted_position_tickets.items() if path in active_paths
+        }
         for candidate, snapshot in snapshots:
-            self._local_position_tickets[str(candidate.path).casefold()] = {
-                int(getattr(position, "ticket", 0) or 0) for position in snapshot.positions
-            }
+            path_key = str(candidate.path).casefold()
+            current_tickets = {int(getattr(position, "ticket", 0) or 0) for position in snapshot.positions}
+            previous_tickets = self._local_position_tickets.get(path_key)
+            alerted_tickets = self._volume_alerted_position_tickets.setdefault(path_key, set())
+
+            # Establish a silent baseline at startup or when accounts are applied.
+            if previous_tickets is not None:
+                for position in snapshot.positions:
+                    ticket = int(getattr(position, "ticket", 0) or 0)
+                    volume = float(getattr(position, "volume", 0.0) or 0.0)
+                    if ticket not in previous_tickets and ticket not in alerted_tickets and volume >= self._volume_alert_threshold():
+                        alerted_tickets.add(ticket)
+                        self._sound_volume_alert(candidate, snapshot, position)
+            self._local_position_tickets[path_key] = current_tickets
+
+    def _sound_volume_alert(self, candidate: Mt5TerminalCandidate, snapshot: AccountSnapshot, position: object) -> None:
+        """Windows-only sound notification; no order, login, or MT5 state change."""
+        volume = float(getattr(position, "volume", 0.0) or 0.0)
+        ticket = int(getattr(position, "ticket", 0) or 0)
+        symbol = self._display_symbol(str(getattr(position, "symbol", "")))
+        side = str(getattr(position, "side", ""))
+        self._append_log(
+            f"CẢNH BÁO LOT LỚN • #{snapshot.login} • {side} {symbol} #{ticket} • {volume:.2f} lot",
+            "ALERT",
+        )
+        self._play_volume_alert_sound()
+
+    def _volume_alert_threshold(self) -> float:
+        """Read and normalize the UI lot threshold without changing trade data."""
+        try:
+            variable = self.__dict__.get("_volume_alert_value")
+            raw_value = variable.get() if variable is not None else f"{VOLUME_ALERT_THRESHOLD:g}"
+            value = float(raw_value.strip().replace(",", "."))
+        except (AttributeError, ValueError):
+            value = VOLUME_ALERT_THRESHOLD
+        value = max(0.01, value)
+        if variable is not None:
+            variable.set(f"{value:g}")
+        return value
+
+    def _test_volume_alert(self) -> None:
+        threshold = self._volume_alert_threshold()
+        self._append_log(f"THỬ ÂM THANH CẢNH BÁO • ngưỡng {threshold:g} lot", "ALERT")
+        self._play_volume_alert_sound()
+
+    def _set_volume_alert_threshold(self) -> None:
+        threshold = self._volume_alert_threshold()
+        self._append_log(f"ĐÃ LƯU NGƯỠNG CẢNH BÁO • {threshold:g} lot", "INFO")
+
+    def _toggle_volume_alert_sound(self) -> None:
+        lock = self.__dict__.get("_volume_alert_sound_lock")
+        if lock is not None and lock.locked():
+            self._stop_volume_alert_sound()
+            return
+        self._test_volume_alert()
+
+    def _stop_volume_alert_sound(self) -> None:
+        stop_event = self.__dict__.get("_volume_alert_stop_event")
+        if stop_event is not None:
+            stop_event.set()
+        if winsound is not None:
+            try:
+                winsound.PlaySound(None, winsound.SND_PURGE)
+            except (AttributeError, RuntimeError):
+                pass
+        self._append_log("ĐÃ DỪNG ÂM THANH CẢNH BÁO.", "INFO")
+
+    def _play_volume_alert_sound(self) -> None:
+        """Play a non-blocking 30-second repeating Windows warning sound."""
+        if winsound is None:
+            return
+        lock = self.__dict__.get("_volume_alert_sound_lock")
+        if lock is None:
+            lock = threading.Lock()
+            self._volume_alert_sound_lock = lock
+        if not lock.acquire(blocking=False):
+            return
+        stop_event = self.__dict__.get("_volume_alert_stop_event")
+        if stop_event is None:
+            stop_event = threading.Event()
+            self._volume_alert_stop_event = stop_event
+        stop_event.clear()
+
+        def worker() -> None:
+            try:
+                deadline = wall_time.monotonic() + VOLUME_ALERT_DURATION_SECONDS
+                while not stop_event.is_set() and wall_time.monotonic() < deadline:
+                    try:
+                        winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    except RuntimeError:
+                        break
+                    stop_event.wait(VOLUME_ALERT_BEEP_INTERVAL_SECONDS)
+            finally:
+                lock.release()
+
+        threading.Thread(target=worker, name="gold-monitor-volume-alert", daemon=True).start()
 
     def _clear_logs(self) -> None:
         self._log_history.clear(); self._append_log("Đã xóa nhật ký hiển thị.", "INFO")
@@ -526,7 +644,7 @@ class GoldMonitorApp(tk.Tk):
                 status.set("Bấm OPEN cho MT5 ngoài 4 terminal đầu tiên trước khi áp dụng.")
                 return
             if not selected: status.set("Tick ít nhất một account để theo dõi."); return
-            self._selected_local_accounts = selected; self._selected_account_snapshots = []; self._local_position_tickets = {}; status.set(f"Đã áp dụng {len(selected)} account read-only.")
+            self._selected_local_accounts = selected; self._selected_account_snapshots = []; self._local_position_tickets = {}; self._volume_alerted_position_tickets = {}; status.set(f"Đã áp dụng {len(selected)} account read-only.")
             self._append_log(f"Đang theo dõi {len(selected)} MT5 Local account.", "INFO"); self._schedule_refresh(0); window.destroy()
         # TEMPORARILY DISABLED: discovery can enumerate and initialize unrelated MT5 terminals.
         # tk.Button(actions, text="QUÉT LẠI", command=scan, ...).pack(side="left")

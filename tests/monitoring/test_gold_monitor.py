@@ -180,16 +180,131 @@ class GoldMonitorTests(TestCase):
     def test_local_position_log_baseline_prevents_refresh_spam_but_keeps_real_changes(self):
         app = object.__new__(GoldMonitorApp)
         app._local_position_tickets = {}
+        app._volume_alerted_position_tickets = {}
         entries = []
         app._append_log = lambda message, level: entries.append((message, level))
+        app._sound_volume_alert = lambda candidate, snapshot, position: entries.append((int(position.ticket), float(position.volume)))
         candidate = SimpleNamespace(path=Path("C:/MT5/terminal64.exe"))
-        initial = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=7),), ())
+        initial = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=7, volume=1.40),), ())
         app._append_local_position_changes([(candidate, initial)])
         app._append_local_position_changes([(candidate, initial)])
         self.assertEqual([], entries)
-        changed = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=8),), ())
+        changed = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=8, volume=1.39),), ())
         app._append_local_position_changes([(candidate, changed)])
         self.assertEqual([], entries)
+
+    def test_new_position_at_or_above_1_4_lot_sounds_once_after_silent_baseline(self):
+        app = object.__new__(GoldMonitorApp)
+        app._local_position_tickets = {}
+        app._volume_alerted_position_tickets = {}
+        app._volume_alert_value = SimpleNamespace(get=lambda: "1.40", set=lambda _value: None)
+        alerts = []
+        app._sound_volume_alert = lambda candidate, snapshot, position: alerts.append((snapshot.login, position.ticket, position.volume))
+        candidate = SimpleNamespace(path=Path("C:/MT5/terminal64.exe"))
+        baseline = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=7, volume=1.40),), ())
+        app._append_local_position_changes([(candidate, baseline)])
+        added = AccountSnapshot(123, "Demo", 500.0, 500.0, "USD", (SimpleNamespace(ticket=7, volume=1.40), SimpleNamespace(ticket=8, volume=1.40)), ())
+        app._append_local_position_changes([(candidate, added)])
+        app._append_local_position_changes([(candidate, added)])
+        self.assertEqual([(123, 8, 1.40)], alerts)
+
+    def test_volume_alert_input_parses_decimal_comma_and_rejects_invalid_or_zero(self):
+        class Value:
+            def __init__(self, value): self.value = value
+            def get(self): return self.value
+            def set(self, value): self.value = value
+
+        app = object.__new__(GoldMonitorApp)
+        app._volume_alert_value = Value("1,4")
+        self.assertEqual(1.4, app._volume_alert_threshold())
+        self.assertEqual("1.4", app._volume_alert_value.value)
+        app._volume_alert_value.value = "0"
+        self.assertEqual(0.01, app._volume_alert_threshold())
+        app._volume_alert_value.value = "không hợp lệ"
+        self.assertEqual(1.4, app._volume_alert_threshold())
+
+    def test_set_volume_alert_threshold_normalizes_input_and_logs_saved_value(self):
+        class Value:
+            def __init__(self, value): self.value = value
+            def get(self): return self.value
+            def set(self, value): self.value = value
+
+        app = object.__new__(GoldMonitorApp)
+        app._volume_alert_value = Value("0,93")
+        entries = []
+        app._append_log = lambda message, level: entries.append((message, level))
+        app._set_volume_alert_threshold()
+        self.assertEqual("0.93", app._volume_alert_value.value)
+        self.assertEqual([("ĐÃ LƯU NGƯỠNG CẢNH BÁO • 0.93 lot", "INFO")], entries)
+
+    def test_volume_alert_sound_runs_in_one_non_blocking_worker(self):
+        app = object.__new__(GoldMonitorApp)
+        calls = []
+
+        class Lock:
+            def __init__(self): self.locked = False
+            def acquire(self, blocking=False):
+                if self.locked: return False
+                self.locked = True
+                return True
+            def release(self): self.locked = False
+
+        class Thread:
+            def __init__(self, *, target, **_kwargs): self.target = target
+            def start(self): self.target()
+
+        class Sound:
+            MB_ICONEXCLAMATION = 1
+            def MessageBeep(self, kind): calls.append(kind)
+
+        app._volume_alert_sound_lock = Lock()
+        import training_lab.monitoring.gold_monitor.app as app_module
+        original_sound, original_thread, original_monotonic, original_sleep = app_module.winsound, app_module.threading.Thread, app_module.wall_time.monotonic, app_module.wall_time.sleep
+        ticks = iter((0.0, 0.0, 31.0))
+        try:
+            app_module.winsound = Sound()
+            app_module.threading.Thread = Thread
+            app_module.wall_time.monotonic = lambda: next(ticks)
+            app_module.wall_time.sleep = lambda _seconds: None
+            app._play_volume_alert_sound()
+            self.assertEqual([1], calls)
+            self.assertFalse(app._volume_alert_sound_lock.locked)
+        finally:
+            app_module.winsound, app_module.threading.Thread = original_sound, original_thread
+            app_module.wall_time.monotonic, app_module.wall_time.sleep = original_monotonic, original_sleep
+
+    def test_second_speaker_click_or_muted_speaker_stops_active_alert(self):
+        app = object.__new__(GoldMonitorApp)
+        calls = []
+
+        class Lock:
+            def locked(self): return True
+
+        app._volume_alert_sound_lock = Lock()
+        app._stop_volume_alert_sound = lambda: calls.append("stop")
+        app._test_volume_alert = lambda: calls.append("start")
+        app._toggle_volume_alert_sound()
+        self.assertEqual(["stop"], calls)
+
+        class Event:
+            def __init__(self): self.set_called = False
+            def set(self): self.set_called = True
+
+        class Sound:
+            SND_PURGE = 1
+            def PlaySound(self, *_args): calls.append("purge")
+
+        app._volume_alert_stop_event = Event()
+        app._append_log = lambda message, level: calls.append((message, level))
+        import training_lab.monitoring.gold_monitor.app as app_module
+        original_sound = app_module.winsound
+        try:
+            app_module.winsound = Sound()
+            GoldMonitorApp._stop_volume_alert_sound(app)
+        finally:
+            app_module.winsound = original_sound
+        self.assertTrue(app._volume_alert_stop_event.set_called)
+        self.assertIn("purge", calls)
 
     def test_requested_home_and_dialog_visual_contracts_are_present(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
