@@ -7,6 +7,7 @@ from unittest import TestCase
 
 from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, GoldPositionMonitor, HistoryDealView
 from training_lab.monitoring.gold_monitor.app import GoldMonitorApp
+from training_lab.monitoring.gold_monitor import mt5_accounts
 from training_lab.monitoring.gold_monitor.mt5_accounts import open_remote_desktop
 
 
@@ -337,24 +338,31 @@ class GoldMonitorTests(TestCase):
         self.assertIn('value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(2, 0))', source)
         self.assertIn('value.pack(anchor="w")', source)
         self.assertIn('self._schedule_refresh(0); window.destroy()', source)
-        self.assertIn('TEMPORARILY DISABLED: discovery can enumerate', source)
-        self.assertNotIn('tk.Button(actions, text="QUÉT LẠI", command=scan, bg=', source)
+        self.assertIn('Discovery is manual only: opening and monitoring remain explicit operator actions.', source)
+        self.assertIn('tk.Button(actions, text="QUÉT LẠI", command=scan, bg=Palette.INFO', source)
         self.assertIn('text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF"', source)
         mt5_source = Path("monitoring/gold_monitor/mt5_accounts.py").read_text(encoding="utf-8")
-        self.assertIn('FIXED_MONITORED_TERMINALS', mt5_source)
-        for login in ("263555815", "263557311", "257536208", "184127910", "205159447"):
-            self.assertIn(login, mt5_source)
-        self.assertIn('HFM Metatrader 5_2', mt5_source)
+        self.assertIn('CONFIG_PATH', mt5_source)
+        config = Path("mt5_terminals.json").read_text(encoding="utf-8")
+        self.assertIn('"terminals": [', config)
+        self.assertNotIn('"login": "114194239"', mt5_source)
+        self.assertNotIn('"login": "114197286"', mt5_source)
+        self.assertNotIn('"login": "55683360"', mt5_source)
+        self.assertNotIn('"login": "263598208"', mt5_source)
+        self.assertNotIn('"login": "235254235"', mt5_source)
+        self.assertNotIn('C:\\\\Program Files\\\\', mt5_source)
         self.assertIn('style.configure("Local.Treeview", rowheight=42, font=("Segoe UI Symbol", 16))', source)
         self.assertIn('columns=("selected", "account", "name", "server", "path", "open")', source)
         self.assertIn('("open", "OPEN", 90, "center")', source)
         self.assertIn('if column == "#6":', source)
         self.assertIn('open_local_terminal(candidate.path)', source)
-        self.assertIn('Bấm OPEN cho MT5 ngoài 4 terminal đầu tiên', source)
-        self.assertIn('self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())[:AUTO_OPEN_ALLOWLIST_COUNT]', source)
-        self.assertIn('do not load cache or scan other terminals', source)
-        self.assertNotIn('scan(); self._center_window(window)', source)
+        self.assertIn('Bấm OPEN cho MT5 chưa nằm trong nhóm auto-open trước khi áp dụng.', source)
+        self.assertIn('self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())[:configured_auto_open_count()]', source)
+        self.assertIn('Discovery is manual only: opening and monitoring remain explicit operator actions.', source)
+        self.assertIn('Discovery is manual only: opening and monitoring remain explicit operator actions.', source)
         self.assertIn('text="MỞ REMOTE DESKTOP  →", command=connect', source)
+        self.assertIn('window.geometry("1180x570")', source)
+        self.assertIn('window.minsize(1040, 520)', source)
         self.assertIn('"⌁  EQUITY CURVE", self._open_equity_curve_window', source)
         self.assertIn('def _refresh_equity_curve(self)', source)
         self.assertIn('name="gold-monitor-equity-curve"', source)
@@ -391,3 +399,20 @@ class GoldMonitorTests(TestCase):
         self.assertIn("training_lab.monitoring.gold_monitor.app", launcher)
         self.assertNotIn("--config", launcher)
         self.assertNotIn("rsiqui", launcher)
+
+    def test_mt5_terminal_profiles_are_portable_config_and_keep_auto_open_disabled(self):
+        config = Path("mt5_terminals.json").read_text(encoding="utf-8")
+        source = Path("monitoring/gold_monitor/mt5_accounts.py").read_text(encoding="utf-8")
+        self.assertIn('"auto_open_count": 5', config)
+        self.assertIn('CONFIG_PATH = Path(__file__).resolve().parents[2] / "mt5_terminals.json"', source)
+        self.assertIn('def configured_auto_open_count()', source)
+        self.assertNotIn('C:\\\\Program Files\\\\MetaTrader 5', source)
+
+    def test_missing_config_has_no_hardcoded_account_or_path_fallback(self):
+        original = mt5_accounts.CONFIG_PATH
+        try:
+            mt5_accounts.CONFIG_PATH = Path("C:/definitely-missing-gold-monitor-config.json")
+            self.assertEqual((), mt5_accounts.load_fixed_candidates())
+            self.assertEqual(0, mt5_accounts.configured_auto_open_count())
+        finally:
+            mt5_accounts.CONFIG_PATH = original

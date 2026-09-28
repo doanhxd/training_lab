@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "description": "GOLD Monitor MT5 terminal profiles. Paths are local to each computer; refresh with QUÉT LẠI on a new machine.",
+  "auto_open_count": 5,
+  "terminals": [
+    {"path": "C:\\Program Files\\MetaTrader 5\\terminal64.exe", "login": "114194239", "name": "HFM VIP 1", "server": "HFMarketsGlobal-Live7"},
+    {"path": "C:\\Program Files\\MetaTrader 5_2\\terminal64.exe", "login": "114197286", "name": "HFM VIP 2", "server": "HFMarketsGlobal-Live7"},
+    {"path": "C:\\Program Files\\MetaTrader 5_3\\terminal64.exe", "login": "55683360", "name": "TRAN THI LONG", "server": "GTCGlobalSA-Server 5"},
+    {"path": "C:\\Program Files\\MetaTrader 5_4\\terminal64.exe", "login": "55682615", "name": "Trần Thị Long", "server": "GTCGlobalSA-Server 5"},
+    {"path": "C:\\Program Files\\MetaTrader 5_5\\terminal64.exe", "login": "263598208", "name": "EXN VIP 5", "server": "Exness-MT5Real37"},
+    {"path": "C:\\Program Files\\HFM Metatrader 5\\terminal64.exe", "login": "235254235", "name": "#Trung PQ - Hua Dinh Doanh", "server": "HFMarketsGlobal-Demo4"},
+    {"path": "C:\\Program Files\\HFM Metatrader 5_2\\terminal64.exe", "login": "114203733", "name": "Thunguyen HFM cent", "server": "HFMarketsGlobal-Live7"}
+  ]
+}

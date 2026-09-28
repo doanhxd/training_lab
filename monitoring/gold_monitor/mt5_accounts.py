@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 from typing import Any
 
+CONFIG_PATH = Path(__file__).resolve().parents[2] / "mt5_terminals.json"
+
 
 @dataclass(frozen=True)
 class Mt5TerminalCandidate:
@@ -19,23 +21,36 @@ class Mt5TerminalCandidate:
     equity: float | None = None
 
 
-# TEMPORARY GOLD Monitor allowlist. Restore discovery after account review.
-FIXED_MONITORED_TERMINALS: tuple[tuple[str, str, str, str], ...] = (
-    (r"C:\Program Files\MetaTrader 5\terminal64.exe", "263555815", "BOT VIP 1", "Exness-MT5Real37"),
-    (r"C:\Program Files\MetaTrader 5_2\terminal64.exe", "263557311", "BOT VIP 2", "Exness-MT5Real37"),
-    (r"C:\Program Files\MetaTrader 5_3\terminal64.exe", "257536208", "BOT VIP 3", "Exness-MT5Real36"),
-    (r"C:\Program Files\MetaTrader 5_5_Mom\terminal64.exe", "184127910", "BOT VIP 4", "Exness-MT5Real25"),
-    (r"C:\Program Files\HFM Metatrader 5\terminal64.exe", "205159447", "HFM", "HFMarketsGlobal-Live15"),
-    (r"C:\Program Files\HFM Metatrader 5_2\terminal64.exe", "", "HFM MT5 2", ""),
-)
-AUTO_OPEN_ALLOWLIST_COUNT = 4
+AUTO_OPEN_ALLOWLIST_COUNT = 0  # legacy compatibility only; config is authoritative.
+
+
+def _configured_terminals() -> tuple[tuple[tuple[str, str, str, str], ...], int]:
+    try:
+        payload = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        rows = payload.get("terminals", []) if isinstance(payload, dict) else []
+        terminals = tuple(
+            (
+                str(item.get("path", "")), str(item.get("login", "")),
+                str(item.get("name", "")), str(item.get("server", "")),
+            )
+            for item in rows if isinstance(item, dict) and str(item.get("path", "")).strip()
+        )
+        count = int(payload.get("auto_open_count", 0)) if isinstance(payload, dict) else 0
+        return terminals, max(0, count)
+    except (OSError, ValueError, TypeError):
+        return (), 0
+
+
+def configured_auto_open_count() -> int:
+    _terminals, count = _configured_terminals()
+    return count
 
 
 def load_fixed_candidates() -> tuple[Mt5TerminalCandidate, ...]:
+    configured, _auto_open_count = _configured_terminals()
     return tuple(
         Mt5TerminalCandidate(path=Path(path), source="Temporary allowlist", login=login, name=name, server=server, currency="USC")
-        for path, login, name, server in FIXED_MONITORED_TERMINALS
-        if Path(path).is_file()
+        for path, login, name, server in configured
     )
 
 
@@ -44,6 +59,27 @@ def open_local_terminal(path: Path | str) -> None:
     if not terminal.is_file():
         raise FileNotFoundError(f"Không tìm thấy MT5 terminal: {terminal}")
     subprocess.Popen([str(terminal)], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def terminal_is_running(path: Path | str) -> bool:
+    target = str(Path(path)).casefold()
+    try:
+        import psutil  # type: ignore
+        for process in psutil.process_iter(["name", "exe"]):
+            try:
+                info = process.info or {}
+                executable = str(info.get("exe") or "").casefold()
+                process_name = str(info.get("name") or "").casefold()
+                if executable and (executable == target or Path(executable).name == Path(target).name and Path(executable).parent == Path(target).parent):
+                    return True
+                if process_name in {"terminal.exe", "terminal64.exe"} and executable:
+                    if Path(executable).name == Path(target).name and Path(executable).parent.name.casefold() == Path(target).parent.name.casefold():
+                        return True
+            except (psutil.Error, OSError, ValueError):
+                continue
+    except ImportError:
+        return False
+    return False
 
 
 def _cache_file() -> Path:

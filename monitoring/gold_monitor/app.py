@@ -19,7 +19,7 @@ except ImportError:  # pragma: no cover - Windows-only alert feature
     winsound = None
 
 from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, EquityEvent, GoldPositionMonitor, HistoryDealView
-from training_lab.monitoring.gold_monitor.mt5_accounts import AUTO_OPEN_ALLOWLIST_COUNT, Mt5TerminalCandidate, load_fixed_candidates, open_local_terminal, open_remote_desktop, scan_mt5_terminals
+from training_lab.monitoring.gold_monitor.mt5_accounts import AUTO_OPEN_ALLOWLIST_COUNT, Mt5TerminalCandidate, configured_auto_open_count, load_fixed_candidates, open_local_terminal, open_remote_desktop, scan_mt5_terminals
 
 APP_TITLE = "GOLD Monitor • Read-only"
 GMT_PLUS_7 = timezone(timedelta(hours=7))
@@ -77,7 +77,7 @@ class GoldMonitorApp(tk.Tk):
         self._refresh_after_id: str | None = None
         self._refresh_in_progress = False
         self._latest_snapshot: AccountSnapshot | None = None
-        self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())[:AUTO_OPEN_ALLOWLIST_COUNT]
+        self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())[:configured_auto_open_count()]
         self._explicitly_opened_local_paths: set[str] = set()
         self._selected_account_snapshots: list[tuple[Mt5TerminalCandidate, AccountSnapshot]] = []
         self._local_position_tickets: dict[str, set[int]] = {}
@@ -639,22 +639,18 @@ class GoldMonitorApp(tk.Tk):
             threading.Thread(target=worker, name="gold-monitor-scan", daemon=True).start()
         def apply():
             selected = [candidate for candidate in candidates_by_iid.values() if str(candidate.path).casefold() in selected_paths]
-            blocked = [candidate for candidate in selected if candidate not in tuple(load_fixed_candidates())[:AUTO_OPEN_ALLOWLIST_COUNT] and str(candidate.path).casefold() not in self._explicitly_opened_local_paths]
+            blocked = [candidate for candidate in selected if candidate not in tuple(load_fixed_candidates())[:configured_auto_open_count()] and str(candidate.path).casefold() not in self._explicitly_opened_local_paths]
             if blocked:
-                status.set("Bấm OPEN cho MT5 ngoài 4 terminal đầu tiên trước khi áp dụng.")
+                status.set("Bấm OPEN cho MT5 chưa nằm trong nhóm auto-open trước khi áp dụng.")
                 return
             if not selected: status.set("Tick ít nhất một account để theo dõi."); return
             self._selected_local_accounts = selected; self._selected_account_snapshots = []; self._local_position_tickets = {}; self._volume_alerted_position_tickets = {}; status.set(f"Đã áp dụng {len(selected)} account read-only.")
             self._append_log(f"Đang theo dõi {len(selected)} MT5 Local account.", "INFO"); self._schedule_refresh(0); window.destroy()
-        # TEMPORARILY DISABLED: discovery can enumerate and initialize unrelated MT5 terminals.
-        # tk.Button(actions, text="QUÉT LẠI", command=scan, ...).pack(side="left")
+        tk.Button(actions, text="QUÉT LẠI", command=scan, bg=Palette.INFO, fg="#FFFFFF", activebackground="#1D4ED8", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left", padx=(0, 8))
         tk.Button(actions, text="ÁP DỤNG THEO DÕI", command=apply, bg=Palette.SUCCESS, fg="#FFFFFF", activebackground="#0F6D4D", activeforeground="#FFFFFF", relief="flat", bd=0, padx=14, pady=7, cursor="hand2").pack(side="left")
         fixed = load_fixed_candidates()
-        render(fixed, f"Đã khóa tạm thời {len(fixed)} MT5 account được phép theo dõi.")
-        # TEMPORARILY DISABLED: do not load cache or scan other terminals.
-        # cached = load_cached_candidates()
-        # if cached: render(cached, f"Hiển thị {len(cached)} account cache; đang cập nhật live…")
-        # scan()
+        render(fixed, f"Đã tải {len(fixed)} MT5 từ mt5_terminals.json; discovery chỉ khi bấm QUÉT LẠI.")
+        # Discovery is manual only: opening and monitoring remain explicit operator actions.
         self._center_window(window)
 
     def _history_range(self) -> tuple[datetime, datetime]:
