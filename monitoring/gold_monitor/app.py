@@ -18,6 +18,11 @@ try:
 except ImportError:  # pragma: no cover - Windows-only alert feature
     winsound = None
 
+try:
+    from playsound3 import playsound as play_mp3
+except ImportError:  # pragma: no cover - optional MP3 fallback
+    play_mp3 = None
+
 from training_lab.monitoring.gold_monitor.adapter import AccountSnapshot, EquityEvent, GoldPositionMonitor, HistoryDealView
 from training_lab.monitoring.gold_monitor.mt5_accounts import AUTO_OPEN_ALLOWLIST_COUNT, Mt5TerminalCandidate, configured_auto_open_count, load_fixed_candidates, open_local_terminal, open_remote_desktop, scan_mt5_terminals
 
@@ -28,6 +33,8 @@ ACCOUNT_VIEWPORT_HEIGHT = 256
 VOLUME_ALERT_THRESHOLD = 1.40
 VOLUME_ALERT_DURATION_SECONDS = 30
 VOLUME_ALERT_BEEP_INTERVAL_SECONDS = 1.0
+VOLUME_ALERT_SOUND_PATH = Path(__file__).resolve().parent / "ship_horn.mp3"
+VOLUME_ALERT_SOUND_REPEAT_DELAY_SECONDS = 0
 
 
 class Palette:
@@ -350,46 +357,63 @@ class GoldMonitorApp(tk.Tk):
         if keys != self._card_keys:
             for child in host.winfo_children(): child.destroy()
             self._card_keys, self._card_values = keys, []
-            for _candidate, _snapshot in rows:
+            for row_index in range(0, len(rows), 2):
                 row = tk.Frame(host, bg=Palette.APP); row.pack(fill="x", pady=(0, 3))
-                for column in range(3): row.grid_columnconfigure(column, weight=1, uniform="account")
+                for column, weight in enumerate((3, 2, 3, 2)): row.grid_columnconfigure(column, weight=weight, uniform="account")
                 fields: list[tk.Label] = []
-                for column, caption in enumerate(("TÀI KHOẢN MT5", "EQUITY", "LỆNH XAU/BTC")):
-                    card = self._card(row, padding=0); card.configure(padx=10, pady=7); card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5, 5))
-                    self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w")
-                    if column == 0:
-                        account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w")
-                        value = self._label(account_line, font=("Segoe UI", 14, "bold"), fg=Palette.TEXT)
-                        detail = self._label(account_line, text="", font=("Segoe UI", 8), fg=Palette.MUTED)
-                        value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(2, 0))
-                    else:
-                        value = self._label(card, font=("Segoe UI", 12 if column == 2 else 14, "bold"), fg=(Palette.TEXT, Palette.SUCCESS, Palette.ACCENT)[column])
-                        detail = self._label(card, text="", font=("Segoe UI", 8), fg=Palette.MUTED)
-                        value.pack(anchor="w")
-                    fields.extend((value, detail))
-                self._card_values.append(tuple(fields))
-        for index, (candidate, snapshot) in enumerate(rows):
-            account, account_detail, equity, _equity_detail, positions, _positions_detail = self._card_values[index]
-            account.configure(text=f"#{snapshot.login}"); account_detail.configure(text=f"ONLINE • {snapshot.server}")
-            equity.configure(text=f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency, preserve_broker_currency=self._show_broker_currency)}")
-            positions.configure(text=f"{len(snapshot.positions)} ({candidate.name or 'Read-only'})")
+                for account_index in range(2):
+                    column = account_index * 2
+                    if row_index + account_index >= len(rows):
+                        for empty_column in (column, column + 1):
+                            card = self._card(row, padding=0); card.configure(padx=10, pady=7); card.grid(row=0, column=empty_column, sticky="nsew", padx=(0 if empty_column == 0 else 5, 5))
+                        continue
+                    for card_column, caption in ((column, "TÀI KHOẢN MT5"), (column + 1, "EQUITY")):
+                        card = self._card(row, padding=0); card.configure(padx=10, pady=7); card.grid(row=0, column=card_column, sticky="nsew", padx=(0 if card_column == 0 else 5, 5))
+                        self._label(card, text=caption, font=("Segoe UI", 8, "bold"), fg=Palette.MUTED).pack(anchor="w")
+                        if caption == "TÀI KHOẢN MT5":
+                            account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(fill="x")
+                            value = self._label(account_line, font=("Segoe UI", 11, "bold"), fg=Palette.TEXT)
+                            detail = self._label(account_line, text="", font=("Segoe UI", 8, "bold"), fg=Palette.SUCCESS)
+                            position_count = self._label(account_line, text="", font=("Segoe UI", 11, "bold"), fg=Palette.ACCENT)
+                            value.pack(side="left")
+                            detail.pack(side="left", padx=(7, 0), pady=(2, 0))
+                            position_count.pack(side="right", padx=(8, 0), pady=(0, 0))
+                            fields.extend((value, detail, position_count))
+                        else:
+                            value = self._label(card, font=("Segoe UI", 12, "bold"), fg=Palette.SUCCESS)
+                            detail = self._label(card, text="", font=("Segoe UI", 8), fg=Palette.MUTED)
+                            value.pack(anchor="w")
+                            fields.extend((value, detail))
+                self._card_values.extend([tuple(fields)])
+        for row_index in range(0, len(rows), 2):
+            card_fields = self._card_values[row_index // 2]
+            for account_index in range(2):
+                if row_index + account_index >= len(rows):
+                    continue
+                candidate, snapshot = rows[row_index + account_index]
+                offset = account_index * 5
+                account, account_detail, position_count, equity, _equity_detail = card_fields[offset:offset + 5]
+                account.configure(text=f"#{snapshot.login}")
+                account_detail.configure(text=f"●  {snapshot.server}", fg=Palette.SUCCESS)
+                position_count.configure(text=str(len(snapshot.positions)))
+                equity.configure(text=f"{snapshot.equity:,.2f} {self._display_currency(snapshot.currency, preserve_broker_currency=self._show_broker_currency)}")
 
     def _sync_position_tabs(self, rows: list[tuple[Mt5TerminalCandidate, AccountSnapshot]]) -> None:
         host = self._position_tabs_host
         if host is None:
             return
         tabs = tuple((str(candidate.path).casefold(), candidate.name or f"#{snapshot.login}") for candidate, snapshot in rows)
-        tab_keys = tuple(key for key, _label in tabs) + ("ALL",)
+        tab_keys = ("ALL",) + tuple(key for key, _label in tabs)
         if tab_keys != self._position_tab_keys:
             for child in host.winfo_children():
                 child.destroy()
             self._position_tab_keys, self._position_tab_buttons = tab_keys, {}
-            for key, label in (*tabs, ("ALL", "ALL")):
+            for key, label in (("ALL", "ALL"), *tabs):
                 button = tk.Button(host, text=label, command=lambda selected=key: self._select_position_tab(selected), font=("Segoe UI", 8, "bold"), relief="flat", bd=0, padx=10, pady=5, cursor="hand2")
                 button.pack(side="left", padx=(0, 5))
                 self._position_tab_buttons[key] = button
         if self._active_position_tab not in tab_keys:
-            self._active_position_tab = tabs[0][0] if tabs else "ALL"
+            self._active_position_tab = "ALL"
         for key, button in self._position_tab_buttons.items():
             selected = key == self._active_position_tab
             button.configure(fg="#FFFFFF" if selected else Palette.MUTED, bg=Palette.INFO if selected else Palette.CARD_ALT, activeforeground="#FFFFFF" if selected else Palette.TEXT, activebackground="#1D4ED8" if selected else Palette.BORDER)
@@ -488,6 +512,11 @@ class GoldMonitorApp(tk.Tk):
 
     def _set_volume_alert_threshold(self) -> None:
         threshold = self._volume_alert_threshold()
+        if hasattr(self, "focus_set"):
+            try:
+                self.focus_set()
+            except (AttributeError, RecursionError, tk.TclError):
+                pass
         self._append_log(f"ĐÃ LƯU NGƯỠNG CẢNH BÁO • {threshold:g} lot", "INFO")
 
     def _toggle_volume_alert_sound(self) -> None:
@@ -509,7 +538,7 @@ class GoldMonitorApp(tk.Tk):
         self._append_log("ĐÃ DỪNG ÂM THANH CẢNH BÁO.", "INFO")
 
     def _play_volume_alert_sound(self) -> None:
-        """Play a non-blocking 30-second repeating Windows warning sound."""
+        """Play the configured ship-horn alert without blocking the Tkinter UI."""
         if winsound is None:
             return
         lock = self.__dict__.get("_volume_alert_sound_lock")
@@ -529,10 +558,15 @@ class GoldMonitorApp(tk.Tk):
                 deadline = wall_time.monotonic() + VOLUME_ALERT_DURATION_SECONDS
                 while not stop_event.is_set() and wall_time.monotonic() < deadline:
                     try:
-                        winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
-                    except RuntimeError:
+                        if VOLUME_ALERT_SOUND_PATH.is_file() and play_mp3 is not None and hasattr(winsound, "PlaySound"):
+                            play_mp3(str(VOLUME_ALERT_SOUND_PATH), block=True)
+                        elif VOLUME_ALERT_SOUND_PATH.is_file() and hasattr(winsound, "PlaySound"):
+                            winsound.PlaySound(str(VOLUME_ALERT_SOUND_PATH), winsound.SND_FILENAME)
+                        else:
+                            winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                    except (RuntimeError, TypeError):
                         break
-                    stop_event.wait(VOLUME_ALERT_BEEP_INTERVAL_SECONDS)
+                    stop_event.wait(VOLUME_ALERT_SOUND_REPEAT_DELAY_SECONDS)
             finally:
                 lock.release()
 
@@ -655,6 +689,12 @@ class GoldMonitorApp(tk.Tk):
 
     def _history_range(self) -> tuple[datetime, datetime]:
         today = self._clock_gmt7().date(); mode = self._history_filter_value.get().lower()
+        if mode == "tuần này":
+            start_date, end_date = today - timedelta(days=today.weekday()), today
+            return datetime.combine(start_date, time.min), datetime.combine(end_date + timedelta(days=1), time.min)
+        if mode == "tháng này":
+            start_date = today.replace(day=1)
+            return datetime.combine(start_date, time.min), datetime.combine(today + timedelta(days=1), time.min)
         days = {"hôm nay": 1, "7 ngày qua": 7, "30 ngày qua": 30, "90 ngày qua": 90, "1 năm qua": 365}.get(mode)
         if days:
             start_date, end_date = today - timedelta(days=days - 1), today
@@ -670,7 +710,7 @@ class GoldMonitorApp(tk.Tk):
         header = tk.Frame(shell, bg=Palette.APP); header.pack(fill="x", pady=(0, 14)); self._label(header, text="LỊCH SỬ LỆNH", font=("Segoe UI", 18, "bold"), bg=Palette.APP).pack(side="left"); self._label(header, textvariable=self._history_status_value, font=("Segoe UI", 9), fg=Palette.MUTED, bg=Palette.APP).pack(side="left", padx=(14, 0), pady=(6, 0))
         controls = self._card(shell, padding=14); controls.pack(fill="x", pady=(0, 12))
         for column in range(6): controls.grid_columnconfigure(column, weight=1)
-        self._combo(controls, 0, "KHOẢNG THỜI GIAN", self._history_filter_value, ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua", "1 năm qua", "Tùy chỉnh"])
+        self._combo(controls, 0, "KHOẢNG THỜI GIAN", self._history_filter_value, ["Hôm nay", "Tuần này", "Tháng này", "7 ngày qua", "30 ngày qua", "90 ngày qua", "1 năm qua", "Tùy chỉnh"])
         self._combo(controls, 1, "MÃ GIAO DỊCH", self._history_symbol_value, ["Tất cả", "XAUUSD", "BTCUSD"])
         self._entry(controls, 2, "START DATE", self._history_start_date_value); self._entry(controls, 3, "END DATE", self._history_end_date_value)
         self._entry(controls, 4, "START TIME", self._history_start_time_value); self._entry(controls, 5, "END TIME", self._history_end_time_value)

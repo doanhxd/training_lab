@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import TestCase
@@ -156,6 +156,24 @@ class GoldMonitorTests(TestCase):
         self.assertEqual((time(0, 0), time(23, 59, 59, 999999)), app._history_time_range())
         self.assertEqual("00:00", app._history_start_time_value.value)
         self.assertEqual("23:59", app._history_end_time_value.value)
+
+    def test_history_range_supports_current_week_and_month(self):
+        class Value:
+            def __init__(self, value): self.value = value
+            def get(self): return self.value
+
+        app = object.__new__(GoldMonitorApp)
+        app.clock = lambda: datetime(2026, 10, 12, 12, tzinfo=timezone(timedelta(hours=7)))
+        app._history_filter_value = Value("Tuần này")
+        week_start, week_end = app._history_range()
+        self.assertEqual(datetime(2026, 10, 12), week_start)
+        self.assertEqual(datetime(2026, 10, 13), week_end)
+        app._history_filter_value = Value("Tháng này")
+        month_start, month_end = app._history_range()
+        self.assertEqual(datetime(2026, 10, 1), month_start)
+        self.assertEqual(datetime(2026, 10, 13), month_end)
+        source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
+        self.assertIn('"Tuần này", "Tháng này"', source)
 
     def test_history_ui_uses_english_time_labels_and_unqualified_volume_metric(self):
         source = Path("monitoring/gold_monitor/app.py").read_text(encoding="utf-8")
@@ -325,8 +343,9 @@ class GoldMonitorTests(TestCase):
         self.assertIn('self._position_tabs_host = tk.Frame(section, bg=Palette.CARD)', source)
         self.assertIn('def _sync_position_tabs(self, rows: list[tuple[Mt5TerminalCandidate, AccountSnapshot]])', source)
         self.assertIn('candidate.name or f"#{snapshot.login}"', source)
-        self.assertIn('tab_keys = tuple(key for key, _label in tabs) + ("ALL",)', source)
-        self.assertIn('for key, label in (*tabs, ("ALL", "ALL")):', source)
+        self.assertIn('tab_keys = ("ALL",) + tuple(key for key, _label in tabs)', source)
+        self.assertIn('for key, label in (("ALL", "ALL"), *tabs):', source)
+        self.assertIn('self._active_position_tab = "ALL"', source)
         self.assertIn('def _select_position_tab(self, tab_key: str)', source)
         self.assertIn('self._render_active_positions()', source)
         self.assertIn('def _format_log_message(self, message: str)', source)
@@ -334,8 +353,8 @@ class GoldMonitorTests(TestCase):
         self.assertIn('self._render_logs()', source)
         self.assertIn('row.pack(fill="x", pady=(0, 3))', source)
         self.assertIn('card = self._card(row, padding=0); card.configure(padx=10, pady=7)', source)
-        self.assertIn('account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(anchor="w")', source)
-        self.assertIn('value.pack(side="left"); detail.pack(side="left", padx=(8, 0), pady=(2, 0))', source)
+        self.assertIn('account_line = tk.Frame(card, bg=Palette.CARD); account_line.pack(fill="x")', source)
+        self.assertIn('value.pack(anchor="w")', source)
         self.assertIn('value.pack(anchor="w")', source)
         self.assertIn('self._schedule_refresh(0); window.destroy()', source)
         self.assertIn('Discovery is manual only: opening and monitoring remain explicit operator actions.', source)
@@ -358,6 +377,14 @@ class GoldMonitorTests(TestCase):
         self.assertIn('open_local_terminal(candidate.path)', source)
         self.assertIn('Bấm OPEN cho MT5 chưa nằm trong nhóm auto-open trước khi áp dụng.', source)
         self.assertIn('self._selected_local_accounts: list[Mt5TerminalCandidate] = list(load_fixed_candidates())[:configured_auto_open_count()]', source)
+        self.assertIn('for column, weight in enumerate((3, 2, 3, 2)): row.grid_columnconfigure(column, weight=weight, uniform="account")', source)
+        self.assertIn('for row_index in range(0, len(rows), 2):', source)
+        self.assertIn('value = self._label(account_line, font=("Segoe UI", 11, "bold"), fg=Palette.TEXT)', source)
+        self.assertIn('detail = self._label(account_line, text="", font=("Segoe UI", 8, "bold"), fg=Palette.SUCCESS)', source)
+        self.assertIn('position_count = self._label(account_line, text="", font=("Segoe UI", 11, "bold"), fg=Palette.ACCENT)', source)
+        self.assertIn('position_count.configure(text=str(len(snapshot.positions)))', source)
+        self.assertNotIn('LỆNH XAU/BTC', source)
+        self.assertNotIn('"XAU/BTC"', source)
         self.assertIn('Discovery is manual only: opening and monitoring remain explicit operator actions.', source)
         self.assertIn('Discovery is manual only: opening and monitoring remain explicit operator actions.', source)
         self.assertIn('text="MỞ REMOTE DESKTOP  →", command=connect', source)
@@ -389,6 +416,12 @@ class GoldMonitorTests(TestCase):
         self.assertIn('DEAL_TYPE_BALANCE', Path("monitoring/gold_monitor/adapter.py").read_text(encoding="utf-8"))
         self.assertIn('field = tk.Frame(wrap, bg=Palette.INFO, padx=1, pady=1)', source)
         self.assertIn('highlightthickness=0, insertbackground=Palette.TEXT).pack(fill="x", padx=10, pady=1, ipady=8)', source)
+        self.assertIn('VOLUME_ALERT_SOUND_PATH = Path(__file__).resolve().parent / "ship_horn.mp3"', source)
+        self.assertIn('winsound.PlaySound(str(VOLUME_ALERT_SOUND_PATH), winsound.SND_FILENAME)', source)
+        self.assertIn('self.focus_set()', source)
+        self.assertIn('play_mp3(str(VOLUME_ALERT_SOUND_PATH), block=True)', source)
+        self.assertIn('VOLUME_ALERT_SOUND_REPEAT_DELAY_SECONDS = 0', source)
+        self.assertIn('stop_event.wait(VOLUME_ALERT_SOUND_REPEAT_DELAY_SECONDS)', source)
 
     def test_rdp_rejects_blank_host(self):
         with self.assertRaises(ValueError):
@@ -403,7 +436,7 @@ class GoldMonitorTests(TestCase):
     def test_mt5_terminal_profiles_are_portable_config_and_keep_auto_open_disabled(self):
         config = Path("mt5_terminals.json").read_text(encoding="utf-8")
         source = Path("monitoring/gold_monitor/mt5_accounts.py").read_text(encoding="utf-8")
-        self.assertIn('"auto_open_count": 5', config)
+        self.assertIn('"auto_open_count": 6', config)
         self.assertIn('CONFIG_PATH = Path(__file__).resolve().parents[2] / "mt5_terminals.json"', source)
         self.assertIn('def configured_auto_open_count()', source)
         self.assertNotIn('C:\\\\Program Files\\\\MetaTrader 5', source)
